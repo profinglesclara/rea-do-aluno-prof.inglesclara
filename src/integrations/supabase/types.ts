@@ -333,6 +333,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gerar_relatorios_mensais: { Args: never; Returns: undefined }
       get_user_type: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["tipo_usuario"]
