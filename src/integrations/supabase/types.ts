@@ -47,6 +47,13 @@ export type Database = {
             foreignKeyName: "atividades_sugeridas_aluno_fkey"
             columns: ["aluno"]
             isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "atividades_sugeridas_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["user_id"]
           },
@@ -78,6 +85,13 @@ export type Database = {
           titulo?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "atividades_tarefas_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
           {
             foreignKeyName: "atividades_tarefas_aluno_fkey"
             columns: ["aluno"]
@@ -117,6 +131,13 @@ export type Database = {
             foreignKeyName: "aulas_aluno_fkey"
             columns: ["aluno"]
             isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "aulas_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["user_id"]
           },
@@ -151,6 +172,13 @@ export type Database = {
           titulo?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conquistas_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
           {
             foreignKeyName: "conquistas_aluno_fkey"
             columns: ["aluno"]
@@ -195,6 +223,13 @@ export type Database = {
           relatorio_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "relatorios_mensais_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
           {
             foreignKeyName: "relatorios_mensais_aluno_fkey"
             columns: ["aluno"]
@@ -257,6 +292,13 @@ export type Database = {
           ultima_atualizacao?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "topicos_progresso_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
           {
             foreignKeyName: "topicos_progresso_aluno_fkey"
             columns: ["aluno"]
@@ -347,6 +389,13 @@ export type Database = {
             foreignKeyName: "usuarios_responsavel_por_fkey"
             columns: ["responsavel_por"]
             isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "usuarios_responsavel_por_fkey"
+            columns: ["responsavel_por"]
+            isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["user_id"]
           },
@@ -354,7 +403,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      resumo_aulas_por_aluno: {
+        Row: {
+          aluno_id: string | null
+          nome_aluno: string | null
+          proxima_aula_data: string | null
+          total_agendadas: number | null
+          total_aulas: number | null
+          total_canceladas: number | null
+          total_concluidas: number | null
+          total_remarcadas: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       gerar_relatorios_mensais: { Args: never; Returns: undefined }
