@@ -249,6 +249,7 @@ export type Database = {
           email: string
           email_confirmado: boolean | null
           foto_perfil: string | null
+          frequencia_mensal: number | null
           grafico_progresso: Json | null
           modalidade: Database["public"]["Enums"]["modalidade"] | null
           nivel_cefr: Database["public"]["Enums"]["nivel_cefr"] | null
@@ -271,6 +272,7 @@ export type Database = {
           email: string
           email_confirmado?: boolean | null
           foto_perfil?: string | null
+          frequencia_mensal?: number | null
           grafico_progresso?: Json | null
           modalidade?: Database["public"]["Enums"]["modalidade"] | null
           nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"] | null
@@ -293,6 +295,7 @@ export type Database = {
           email?: string
           email_confirmado?: boolean | null
           foto_perfil?: string | null
+          frequencia_mensal?: number | null
           grafico_progresso?: Json | null
           modalidade?: Database["public"]["Enums"]["modalidade"] | null
           nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"] | null
