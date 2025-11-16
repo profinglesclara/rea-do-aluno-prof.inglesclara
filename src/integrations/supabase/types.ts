@@ -251,6 +251,7 @@ export type Database = {
           foto_perfil: string | null
           frequencia_mensal: number | null
           grafico_progresso: Json | null
+          historico_progresso: Json | null
           modalidade: Database["public"]["Enums"]["modalidade"] | null
           nivel_cefr: Database["public"]["Enums"]["nivel_cefr"] | null
           nome_completo: string
@@ -259,6 +260,7 @@ export type Database = {
           observacoes_internas: string | null
           preferencia_contato: string | null
           progresso_geral: number | null
+          progresso_por_categoria: Json | null
           responsavel_por: string | null
           senha: string
           status_aluno: string | null
@@ -274,6 +276,7 @@ export type Database = {
           foto_perfil?: string | null
           frequencia_mensal?: number | null
           grafico_progresso?: Json | null
+          historico_progresso?: Json | null
           modalidade?: Database["public"]["Enums"]["modalidade"] | null
           nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"] | null
           nome_completo: string
@@ -282,6 +285,7 @@ export type Database = {
           observacoes_internas?: string | null
           preferencia_contato?: string | null
           progresso_geral?: number | null
+          progresso_por_categoria?: Json | null
           responsavel_por?: string | null
           senha: string
           status_aluno?: string | null
@@ -297,6 +301,7 @@ export type Database = {
           foto_perfil?: string | null
           frequencia_mensal?: number | null
           grafico_progresso?: Json | null
+          historico_progresso?: Json | null
           modalidade?: Database["public"]["Enums"]["modalidade"] | null
           nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"] | null
           nome_completo?: string
@@ -305,6 +310,7 @@ export type Database = {
           observacoes_internas?: string | null
           preferencia_contato?: string | null
           progresso_geral?: number | null
+          progresso_por_categoria?: Json | null
           responsavel_por?: string | null
           senha?: string
           status_aluno?: string | null
@@ -334,6 +340,10 @@ export type Database = {
       is_responsavel_of: {
         Args: { _aluno_id: string; _user_id: string }
         Returns: boolean
+      }
+      status_to_numeric: {
+        Args: { status: Database["public"]["Enums"]["status_topico"] }
+        Returns: number
       }
     }
     Enums: {
