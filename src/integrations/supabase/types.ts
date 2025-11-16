@@ -204,6 +204,30 @@ export type Database = {
           },
         ]
       }
+      topicos_padrao: {
+        Row: {
+          categoria: string
+          descricao_topico: string
+          modelo_id: string
+          nivel_cefr: Database["public"]["Enums"]["nivel_cefr"]
+          ordem: number | null
+        }
+        Insert: {
+          categoria: string
+          descricao_topico: string
+          modelo_id?: string
+          nivel_cefr: Database["public"]["Enums"]["nivel_cefr"]
+          ordem?: number | null
+        }
+        Update: {
+          categoria?: string
+          descricao_topico?: string
+          modelo_id?: string
+          nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"]
+          ordem?: number | null
+        }
+        Relationships: []
+      }
       topicos_progresso: {
         Row: {
           aluno: string
