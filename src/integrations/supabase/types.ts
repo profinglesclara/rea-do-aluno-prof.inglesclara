@@ -419,6 +419,7 @@ export type Database = {
     }
     Functions: {
       gerar_relatorios_mensais: { Args: never; Returns: undefined }
+      get_dashboard_aluno: { Args: { p_aluno: string }; Returns: Json }
       get_user_type: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["tipo_usuario"]
