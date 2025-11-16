@@ -245,6 +245,7 @@ export type Database = {
       usuarios: {
         Row: {
           data_criacao: string | null
+          data_inicio_aulas: string | null
           email: string
           email_confirmado: boolean | null
           foto_perfil: string | null
@@ -253,14 +254,20 @@ export type Database = {
           nivel_cefr: Database["public"]["Enums"]["nivel_cefr"] | null
           nome_completo: string
           nome_de_usuario: string
+          objetivo_principal: string | null
+          observacoes_internas: string | null
+          preferencia_contato: string | null
           progresso_geral: number | null
           responsavel_por: string | null
           senha: string
+          status_aluno: string | null
+          telefone_responsavel: string | null
           tipo_usuario: Database["public"]["Enums"]["tipo_usuario"]
           user_id: string
         }
         Insert: {
           data_criacao?: string | null
+          data_inicio_aulas?: string | null
           email: string
           email_confirmado?: boolean | null
           foto_perfil?: string | null
@@ -269,14 +276,20 @@ export type Database = {
           nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"] | null
           nome_completo: string
           nome_de_usuario: string
+          objetivo_principal?: string | null
+          observacoes_internas?: string | null
+          preferencia_contato?: string | null
           progresso_geral?: number | null
           responsavel_por?: string | null
           senha: string
+          status_aluno?: string | null
+          telefone_responsavel?: string | null
           tipo_usuario: Database["public"]["Enums"]["tipo_usuario"]
           user_id?: string
         }
         Update: {
           data_criacao?: string | null
+          data_inicio_aulas?: string | null
           email?: string
           email_confirmado?: boolean | null
           foto_perfil?: string | null
@@ -285,9 +298,14 @@ export type Database = {
           nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"] | null
           nome_completo?: string
           nome_de_usuario?: string
+          objetivo_principal?: string | null
+          observacoes_internas?: string | null
+          preferencia_contato?: string | null
           progresso_geral?: number | null
           responsavel_por?: string | null
           senha?: string
+          status_aluno?: string | null
+          telefone_responsavel?: string | null
           tipo_usuario?: Database["public"]["Enums"]["tipo_usuario"]
           user_id?: string
         }
@@ -306,7 +324,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_type: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["tipo_usuario"]
+      }
+      is_responsavel_of: {
+        Args: { _aluno_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       categoria_topico:
