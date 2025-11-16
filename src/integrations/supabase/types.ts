@@ -47,6 +47,13 @@ export type Database = {
             foreignKeyName: "atividades_sugeridas_aluno_fkey"
             columns: ["aluno"]
             isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "atividades_sugeridas_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
             referencedRelation: "resumo_aulas_por_aluno"
             referencedColumns: ["aluno_id"]
           },
@@ -85,6 +92,13 @@ export type Database = {
           titulo?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "atividades_tarefas_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
           {
             foreignKeyName: "atividades_tarefas_aluno_fkey"
             columns: ["aluno"]
@@ -131,6 +145,13 @@ export type Database = {
             foreignKeyName: "aulas_aluno_fkey"
             columns: ["aluno"]
             isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "aulas_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
             referencedRelation: "resumo_aulas_por_aluno"
             referencedColumns: ["aluno_id"]
           },
@@ -172,6 +193,13 @@ export type Database = {
           titulo?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conquistas_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
           {
             foreignKeyName: "conquistas_aluno_fkey"
             columns: ["aluno"]
@@ -223,6 +251,13 @@ export type Database = {
           relatorio_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "relatorios_mensais_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
           {
             foreignKeyName: "relatorios_mensais_aluno_fkey"
             columns: ["aluno"]
@@ -292,6 +327,13 @@ export type Database = {
           ultima_atualizacao?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "topicos_progresso_aluno_fkey"
+            columns: ["aluno"]
+            isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
           {
             foreignKeyName: "topicos_progresso_aluno_fkey"
             columns: ["aluno"]
@@ -389,6 +431,13 @@ export type Database = {
             foreignKeyName: "usuarios_responsavel_por_fkey"
             columns: ["responsavel_por"]
             isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "usuarios_responsavel_por_fkey"
+            columns: ["responsavel_por"]
+            isOneToOne: false
             referencedRelation: "resumo_aulas_por_aluno"
             referencedColumns: ["aluno_id"]
           },
@@ -403,6 +452,33 @@ export type Database = {
       }
     }
     Views: {
+      dashboard_resumo_alunos: {
+        Row: {
+          aluno_id: string | null
+          atividades_sugeridas_pendentes: number | null
+          atividades_tarefas_pendentes: number | null
+          data_inicio_aulas: string | null
+          frequencia_mensal: number | null
+          modalidade: Database["public"]["Enums"]["modalidade"] | null
+          nivel_cefr: Database["public"]["Enums"]["nivel_cefr"] | null
+          nome_aluno: string | null
+          nome_de_usuario: string | null
+          progresso_geral: number | null
+          proxima_aula_data: string | null
+          status_aluno: string | null
+          total_agendadas: number | null
+          total_aulas: number | null
+          total_canceladas: number | null
+          total_concluidas: number | null
+          total_conquistas: number | null
+          total_remarcadas: number | null
+          ultimo_mes_referencia: string | null
+          ultimo_relatorio_concluida: number | null
+          ultimo_relatorio_data: string | null
+          ultimo_relatorio_em_desenvolvimento: number | null
+        }
+        Relationships: []
+      }
       resumo_aulas_por_aluno: {
         Row: {
           aluno_id: string | null
