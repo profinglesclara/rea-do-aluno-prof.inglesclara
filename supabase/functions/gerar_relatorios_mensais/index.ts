@@ -209,21 +209,70 @@ async function gerarComentarioIA(
   porcentagemEmDesenvolvimento: number
 ): Promise<string> {
   try {
-    const prompt = `Você é um professor de inglês experiente. Gere um comentário curto, positivo e personalizado (máximo 3 frases) sobre o progresso do aluno baseado nos dados abaixo.
+    // Extrair primeiro nome
+    const primeiroNome = nome.split(' ')[0];
+    
+    // Preparar dados das categorias de forma legível
+    let categoriasMelhorDesempenho = '';
+    let categoriasAMelhorar = '';
+    
+    if (typeof progressoPorCategoria === 'object' && progressoPorCategoria !== null) {
+      const categoriasArray = Object.entries(progressoPorCategoria)
+        .map(([nome, dados]: [string, any]) => ({
+          nome,
+          concluido: dados?.percentual_concluido || 0,
+          emDesenvolvimento: dados?.percentual_em_desenvolvimento || 0
+        }))
+        .sort((a, b) => b.concluido - a.concluido);
+      
+      if (categoriasArray.length > 0) {
+        // Top 2-3 categorias com melhor desempenho
+        categoriasMelhorDesempenho = categoriasArray
+          .slice(0, Math.min(3, categoriasArray.length))
+          .map(c => `${c.nome} (${c.concluido.toFixed(0)}% concluído)`)
+          .join(', ');
+        
+        // Bottom 1-2 categorias para desenvolver
+        categoriasAMelhorar = categoriasArray
+          .slice(-2)
+          .map(c => `${c.nome} (${c.concluido.toFixed(0)}% concluído)`)
+          .join(', ');
+      }
+    }
+    
+    const prompt = `Você é uma professora de inglês experiente e acolhedora. Gere um comentário personalizado sobre o progresso mensal do aluno seguindo EXATAMENTE este formato:
 
-Aluno: ${nome}
+DADOS DO ALUNO:
+Nome: ${nome}
+Primeiro nome: ${primeiroNome}
 Progresso Geral: ${progressoGeral}%
 Percentual Concluído: ${porcentagemConcluida.toFixed(2)}%
 Percentual Em Desenvolvimento: ${porcentagemEmDesenvolvimento.toFixed(2)}%
+Categorias com melhor desempenho: ${categoriasMelhorDesempenho}
+Categorias a desenvolver: ${categoriasAMelhorar}
 
-Categorias: ${JSON.stringify(progressoPorCategoria, null, 2)}
+FORMATO OBRIGATÓRIO DO COMENTÁRIO:
 
-O comentário deve:
-- Ser encorajador e específico
-- Mencionar pontos fortes
-- Sugerir próximos passos se necessário
-- Ser escrito em português brasileiro
-- Ter tom profissional mas acolhedor`;
+1. SAUDAÇÃO: Comece com uma saudação personalizada usando o primeiro nome do aluno.
+
+2. PARÁGRAFO 1 - RESUMO DO MÊS: Uma frase curta e acolhedora explicando como foi o mês de estudos do aluno.
+
+3. PARÁGRAFO 2 - PONTOS FORTES: Destaque as categorias em que o aluno teve melhor desempenho. Use **negrito** (formato markdown) para os nomes das categorias. Exemplo: "Você teve um ótimo desempenho em **Grammar** e **Vocabulary**..."
+
+4. PARÁGRAFO 3 - PONTOS A DESENVOLVER: Com tom encorajador, cite uma ou duas categorias com desempenho mais baixo, dando sugestões simples de como melhorar. Exemplo: "Para o próximo mês, vamos dar atenção especial a **Listening**..."
+
+5. PARÁGRAFO 4 - PRÓXIMOS PASSOS: Uma frase sobre o foco principal do próximo mês (revisar conteúdo ou avançar para novos tópicos).
+
+6. ENCERRAMENTO: Frase curta e motivadora. Exemplo: "Parabéns pelo seu esforço, vamos continuar juntos nessa jornada!"
+
+REGRAS IMPORTANTES:
+- Use linguagem em português brasileiro
+- Tom amigável e profissional, como professora particular falando com o aluno
+- NÃO use porcentagens exatas no texto, fale de forma qualitativa (ótimo desempenho, ainda em desenvolvimento, etc.)
+- NÃO mencione nomes de tabelas ou termos técnicos
+- O texto deve ter 4-5 parágrafos curtos
+- Use os nomes das categorias em negrito (markdown **categoria**)
+- Seja específica e personalizada com base nos dados fornecidos`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -236,7 +285,7 @@ O comentário deve:
         messages: [
           {
             role: 'system',
-            content: 'Você é um professor de inglês experiente e motivador.'
+            content: 'Você é uma professora de inglês experiente, acolhedora e motivadora. Você escreve comentários personalizados para seus alunos seguindo um formato estruturado específico.'
           },
           {
             role: 'user',
@@ -244,7 +293,7 @@ O comentário deve:
           }
         ],
         temperature: 0.7,
-        max_tokens: 200
+        max_tokens: 800
       }),
     });
 
