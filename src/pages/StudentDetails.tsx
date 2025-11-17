@@ -81,63 +81,128 @@ const StudentDetails = () => {
   const formatDateTime = (d: string | null) =>
     d ? new Date(d).toLocaleString("pt-BR") : "—";
 
+  const formatDate = (dateString: string | null) =>
+    dateString ? new Date(dateString).toLocaleDateString("pt-BR") : "—";
+
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Button
           variant="outline"
           onClick={() => navigate("/admin")}
-          className="mb-2"
+          className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar
         </Button>
 
+        {/* Cabeçalho com nome do aluno */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Detalhes do Aluno</h1>
+          <Badge variant="default" className="text-base px-4 py-1">
+            {dashboard.nome_aluno}
+          </Badge>
+        </div>
+
+        {/* Card de Resumo de Aulas */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Detalhes do Aluno</span>
-              <Badge>{dashboard.nome_aluno}</Badge>
-            </CardTitle>
+            <CardTitle>Resumo de Aulas</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <p>
-              <span className="text-muted-foreground">Total de aulas: </span>
-              <span className="font-medium">{dashboard.total_aulas}</span>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Realizadas: </span>
-              <span className="font-medium text-green-600">
-                {dashboard.total_concluidas}
-              </span>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Agendadas: </span>
-              <span className="font-medium text-blue-600">
-                {dashboard.total_agendadas}
-              </span>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Canceladas: </span>
-              <span className="font-medium text-red-600">
-                {dashboard.total_canceladas}
-              </span>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Remarcadas: </span>
-              <span className="font-medium text-orange-600">
-                {dashboard.total_remarcadas}
-              </span>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Próxima aula: </span>
-              <span className="font-medium">
-                {formatDateTime(dashboard.proxima_aula_data ?? null)}
-              </span>
-            </p>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Total de aulas</p>
+                <p className="text-2xl font-bold">{dashboard.total_aulas}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Realizadas</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {dashboard.total_concluidas}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Agendadas</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {dashboard.total_agendadas}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Canceladas</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {dashboard.total_canceladas}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Remarcadas</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {dashboard.total_remarcadas}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Próxima aula</p>
+                <p className="text-lg font-medium">
+                  {formatDateTime(dashboard.proxima_aula_data ?? null)}
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
+        {/* Card de Informações Básicas do Aluno */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações Básicas do Aluno</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Nome completo</p>
+                <p className="font-medium">{dashboard.nome_aluno}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Nome de usuário</p>
+                <p className="font-medium">{dashboard.nome_de_usuario ?? "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Nível CEFR</p>
+                <p className="font-medium">{dashboard.nivel_cefr ?? "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Modalidade</p>
+                <p className="font-medium">{dashboard.modalidade ?? "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Status do aluno</p>
+                <div>
+                  <Badge
+                    variant={
+                      dashboard.status_aluno === "Ativo" ? "default" : "secondary"
+                    }
+                  >
+                    {dashboard.status_aluno ?? "—"}
+                  </Badge>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Frequência mensal</p>
+                <p className="font-medium">
+                  {dashboard.frequencia_mensal
+                    ? `${dashboard.frequencia_mensal} aulas/mês`
+                    : "—"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Início das aulas</p>
+                <p className="font-medium">
+                  {formatDate(dashboard.data_inicio_aulas ?? null)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card de Debug */}
         <Card>
           <CardHeader>
             <CardTitle>JSON bruto (debug)</CardTitle>
