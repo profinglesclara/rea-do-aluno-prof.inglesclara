@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Calendar, Target, TrendingUp } from "lucide-react";
 import {
   BarChart,
@@ -17,6 +15,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
+import { useDashboardAluno } from "@/hooks/useDashboardAluno";
 
 type AlunoData = {
   aluno_id: string;
@@ -61,38 +60,9 @@ type DashboardResponse = {
 const StudentDetails = () => {
   const { aluno_id } = useParams<{ aluno_id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<DashboardResponse | null>(null);
 
-  useEffect(() => {
-    if (aluno_id) {
-      fetchStudentDetails();
-    }
-  }, [aluno_id]);
-
-  const fetchStudentDetails = async () => {
-    try {
-      const { data: result, error } = await supabase.rpc("get_dashboard_aluno", {
-        p_aluno: aluno_id,
-      });
-
-      if (error) throw error;
-
-      if (result) {
-        setData({ dashboard: result as AlunoData });
-      }
-    } catch (error) {
-      console.error("Erro ao carregar detalhes do aluno:", error);
-      toast({
-        title: "Erro ao carregar dados",
-        description: "Não foi possível carregar os detalhes do aluno.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading, error } = useDashboardAluno(aluno_id);
+  const aluno = useMemo(() => data?.dashboard ?? null, [data]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "—";
@@ -131,7 +101,7 @@ const StudentDetails = () => {
     }));
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <p className="text-muted-foreground">Carregando...</p>
