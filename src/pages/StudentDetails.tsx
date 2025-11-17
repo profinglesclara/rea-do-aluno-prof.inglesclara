@@ -54,6 +54,7 @@ const StudentDetails = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Fetch student dashboard data
   const { data, isLoading, error } = useDashboardAluno(aluno_id);
   const aluno = useMemo(() => data?.dashboard ?? null, [data]);
 
