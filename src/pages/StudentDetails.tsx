@@ -57,7 +57,7 @@ const StudentDetails = () => {
   // Fetch student dashboard data
   const { data, isLoading, error } = useDashboardAluno(aluno_id);
   const alunoData = useMemo(() => data?.dashboard ?? null, [data]);
-  const aluno = alunoData;
+  
 
   /* ------------------------ Formatadores ------------------------ */
 
@@ -84,18 +84,18 @@ const StudentDetails = () => {
   /* ------------------------ Preparadores de dados ------------------------ */
 
   const prepareProgressByCategoryData = () => {
-    if (!aluno || !aluno.progresso_por_categoria) return [];
+    if (!alunoData || !alunoData.progresso_por_categoria) return [];
 
-    return Object.entries(aluno.progresso_por_categoria).map(([key, value]) => ({
+    return Object.entries(alunoData.progresso_por_categoria as Record<string, any>).map(([key, value]) => ({
       categoria: key,
-      concluido: value.percentual_concluido || 0,
-      em_desenvolvimento: value.percentual_em_desenvolvimento || 0,
+      concluido: (value as any).percentual_concluido || 0,
+      em_desenvolvimento: (value as any).percentual_em_desenvolvimento || 0,
     }));
   };
 
   const prepareHistoricoData = () => {
-    if (!aluno || !aluno.historico_progresso) return [];
-    return aluno.historico_progresso.map((item) => ({
+    if (!alunoData || !alunoData.historico_progresso) return [];
+    return alunoData.historico_progresso.map((item) => ({
       data: new Date(item.data).toLocaleDateString("pt-BR", {
         day: "2-digit",
         month: "2-digit",
@@ -143,6 +143,8 @@ const StudentDetails = () => {
   }
 
   /* ------------------------ Página principal ------------------------ */
+
+  const aluno = alunoData;
 
   return (
     <div className="min-h-screen bg-background p-6">
