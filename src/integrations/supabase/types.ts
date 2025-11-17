@@ -532,6 +532,8 @@ export type Database = {
         | "Atividades"
         | "Nível CEFR"
         | "Extra"
+        | "Comportamento"
+        | "Engajamento"
       tipo_usuario: "Aluno" | "Responsável" | "Adulto" | "Admin"
     }
     CompositeTypes: {
@@ -683,6 +685,8 @@ export const Constants = {
         "Atividades",
         "Nível CEFR",
         "Extra",
+        "Comportamento",
+        "Engajamento",
       ],
       tipo_usuario: ["Aluno", "Responsável", "Adulto", "Admin"],
     },
