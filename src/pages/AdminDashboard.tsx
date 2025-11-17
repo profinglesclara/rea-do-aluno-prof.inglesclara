@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, Calendar, FileText } from "lucide-react";
 
 type DashboardAluno = {
   aluno_id: string;
@@ -126,9 +126,29 @@ const AdminDashboard = () => {
       <div className="mx-auto max-w-7xl">
         <Card>
           <CardHeader>
-            <CardTitle className="text-3xl font-bold">
-              Painel Geral de Alunos
-            </CardTitle>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="text-3xl font-bold">
+                Painel Geral de Alunos
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/admin/aulas")}
+                  className="gap-2"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Gerenciar Aulas
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/admin/relatorios")}
+                  className="gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Relatórios Mensais
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
