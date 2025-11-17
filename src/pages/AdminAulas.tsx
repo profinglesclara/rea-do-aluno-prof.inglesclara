@@ -84,17 +84,20 @@ const AdminAulas = () => {
       .order("data_aula", { ascending: false });
     
     if (aulasError) {
-      console.error(aulasError);
+      console.error("Erro ao carregar aulas:", aulasError);
     }
     
     // Carregar alunos
     const { data: alunosData, error: alunosError } = await supabase
       .from("usuarios")
       .select("user_id, nome_completo")
-      .eq("tipo_usuario", "Aluno");
+      .eq("tipo_usuario", "Aluno")
+      .order("nome_completo", { ascending: true });
     
     if (alunosError) {
-      console.error(alunosError);
+      console.error("Erro ao carregar alunos:", alunosError);
+    } else {
+      console.log("Alunos carregados:", alunosData);
     }
     
     // Mapear nomes de alunos
