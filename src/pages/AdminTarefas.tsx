@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ArrowLeft, Loader2, CheckCircle, FileCheck } from "lucide-react";
+import { Plus, ArrowLeft, Loader2, CheckCircle, FileCheck, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -13,6 +13,7 @@ import { ptBR } from "date-fns/locale";
 import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
 import { MarcarEntregueDialog } from "@/components/tarefas/MarcarEntregueDialog";
 import { MarcarCorrigidaDialog } from "@/components/tarefas/MarcarCorrigidaDialog";
+import { VerEntregaDialog } from "@/components/tarefas/VerEntregaDialog";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Tarefa = Tables<"tarefas">;
@@ -28,7 +29,9 @@ export default function AdminTarefas() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [entregueDialogOpen, setEntregueDialogOpen] = useState(false);
   const [corrigidaDialogOpen, setCorrigidaDialogOpen] = useState(false);
+  const [verEntregaDialogOpen, setVerEntregaDialogOpen] = useState(false);
   const [tarefaSelecionada, setTarefaSelecionada] = useState<TarefaComAluno | null>(null);
+  const [entregaSelecionada, setEntregaSelecionada] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -48,6 +51,23 @@ export default function AdminTarefas() {
       return data as TarefaComAluno[];
     },
   });
+
+  // Buscar entregas
+  const { data: entregas } = useQuery({
+    queryKey: ["entregas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("entregas_tarefas")
+        .select("*");
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const getEntregaPorTarefa = (tarefaId: string) => {
+    return entregas?.find((e) => e.tarefa_id === tarefaId);
+  };
 
   const criarTarefaMutation = useMutation({
     mutationFn: async (novaTarefa: {
@@ -167,6 +187,15 @@ export default function AdminTarefas() {
   const marcarCorrigida = (tarefa: TarefaComAluno) => {
     setTarefaSelecionada(tarefa);
     setCorrigidaDialogOpen(true);
+  };
+
+  const verEntrega = (tarefa: TarefaComAluno) => {
+    const entrega = getEntregaPorTarefa(tarefa.id);
+    if (entrega) {
+      setTarefaSelecionada(tarefa);
+      setEntregaSelecionada(entrega);
+      setVerEntregaDialogOpen(true);
+    }
   };
 
   const marcarEntregueAction = useMutation({
@@ -409,81 +438,99 @@ export default function AdminTarefas() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Aluno</TableHead>
-                      <TableHead>Título</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Data Limite</TableHead>
-                      <TableHead>Criada em</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tarefas.map((tarefa) => (
-                      <TableRow key={tarefa.id}>
-                        <TableCell className="font-medium">
-                          {tarefa.aluno?.nome_completo || "N/A"}
-                        </TableCell>
-                        <TableCell>{tarefa.titulo}</TableCell>
-                        <TableCell>{getTipoBadge(tarefa.tipo)}</TableCell>
-                        <TableCell>{getStatusBadge(tarefa.status)}</TableCell>
-                        <TableCell>
-                          {tarefa.data_limite
-                            ? format(
-                                new Date(tarefa.data_limite),
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Aluno</TableHead>
+                        <TableHead>Título</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Entrega</TableHead>
+                        <TableHead>Data Limite</TableHead>
+                        <TableHead>Criada em</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tarefas.map((tarefa) => {
+                        const entrega = getEntregaPorTarefa(tarefa.id);
+                        return (
+                          <TableRow key={tarefa.id}>
+                            <TableCell className="font-medium">
+                              {tarefa.aluno?.nome_completo || "N/A"}
+                            </TableCell>
+                            <TableCell>{tarefa.titulo}</TableCell>
+                            <TableCell>{getTipoBadge(tarefa.tipo)}</TableCell>
+                            <TableCell>{getStatusBadge(tarefa.status)}</TableCell>
+                            <TableCell>
+                              {entrega ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => verEntrega(tarefa)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Ver envio
+                                </Button>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {tarefa.data_limite
+                                ? format(
+                                    new Date(tarefa.data_limite),
+                                    "dd/MM/yyyy HH:mm",
+                                    { locale: ptBR }
+                                  )
+                                : "-"}
+                            </TableCell>
+                            <TableCell>
+                              {format(
+                                new Date(tarefa.criada_em),
                                 "dd/MM/yyyy HH:mm",
                                 { locale: ptBR }
-                              )
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {format(
-                            new Date(tarefa.criada_em),
-                            "dd/MM/yyyy HH:mm",
-                            { locale: ptBR }
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {tarefa.status === "Pendente" && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => marcarEntregue(tarefa)}
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Marcar Entregue
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => marcarCorrigida(tarefa)}
-                                >
-                                  <FileCheck className="h-4 w-4 mr-1" />
-                                  Marcar Corrigida
-                                </Button>
-                              </>
-                            )}
-                            {tarefa.status === "Entregue" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => marcarCorrigida(tarefa)}
-                              >
-                                <FileCheck className="h-4 w-4 mr-1" />
-                                Marcar Corrigida
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                {tarefa.status === "Pendente" && (
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => marcarEntregue(tarefa)}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                      Marcar Entregue
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => marcarCorrigida(tarefa)}
+                                    >
+                                      <FileCheck className="h-4 w-4 mr-1" />
+                                      Marcar Corrigida
+                                    </Button>
+                                  </>
+                                )}
+                                {tarefa.status === "Entregue" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => marcarCorrigida(tarefa)}
+                                  >
+                                    <FileCheck className="h-4 w-4 mr-1" />
+                                    Marcar Corrigida
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
               </div>
             )}
           </CardContent>
@@ -525,6 +572,13 @@ export default function AdminTarefas() {
               })
             }
             isSubmitting={marcarCorrigidaAction.isPending}
+          />
+
+          <VerEntregaDialog
+            open={verEntregaDialogOpen}
+            onOpenChange={setVerEntregaDialogOpen}
+            tarefa={tarefaSelecionada}
+            entrega={entregaSelecionada}
           />
         </>
       )}

@@ -12,6 +12,7 @@ import StudentDetails from "./pages/StudentDetails";
 import AlunoDashboard from "./pages/AlunoDashboard";
 import AlunoProgresso from "./pages/AlunoProgresso";
 import AlunoTarefas from "./pages/AlunoTarefas";
+import AlunoTarefaDetalhes from "./pages/AlunoTarefaDetalhes";
 import AlunoConquistas from "./pages/AlunoConquistas";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/aluno/dashboard" element={<AlunoDashboard />} />
           <Route path="/aluno/progresso" element={<AlunoProgresso />} />
           <Route path="/aluno/tarefas" element={<AlunoTarefas />} />
+          <Route path="/aluno/tarefas/:tarefa_id" element={<AlunoTarefaDetalhes />} />
           <Route path="/aluno/conquistas" element={<AlunoConquistas />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
