@@ -38,7 +38,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Filter, X, Trash2 } from "lucide-react";
+import { Plus, Filter, X, Trash2, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type Aula = {
   aula_id: string;
@@ -56,6 +57,7 @@ type Aluno = {
 };
 
 const AdminAulas = () => {
+  const navigate = useNavigate();
   const [aulas, setAulas] = useState<Aula[]>([]);
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [loading, setLoading] = useState(true);
@@ -310,6 +312,14 @@ const AdminAulas = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-7xl space-y-6">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate("/admin")}
+          className="mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar para painel
+        </Button>
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Gerenciar Aulas</h1>
           <Button onClick={abrirModalNova}>
