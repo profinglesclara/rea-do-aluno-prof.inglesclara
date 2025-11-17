@@ -402,12 +402,18 @@ const AdminAulas = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um aluno" />
                 </SelectTrigger>
-                <SelectContent>
-                  {alunos.map((aluno) => (
-                    <SelectItem key={aluno.user_id} value={aluno.user_id}>
-                      {aluno.nome_completo}
-                    </SelectItem>
-                  ))}
+                <SelectContent className="bg-background border-border">
+                  {alunos.length === 0 ? (
+                    <div className="px-4 py-2 text-sm text-muted-foreground">
+                      Nenhum aluno encontrado
+                    </div>
+                  ) : (
+                    alunos.map((aluno) => (
+                      <SelectItem key={aluno.user_id} value={aluno.user_id}>
+                        {aluno.nome_completo}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
