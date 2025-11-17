@@ -110,7 +110,7 @@ const AdminDashboard = () => {
   };
 
   const handleVerDetalhes = (alunoId: string) => {
-    navigate(`/aluno/${alunoId}`);
+    navigate(`/admin/aluno/${alunoId}`);
   };
 
   if (loading) {

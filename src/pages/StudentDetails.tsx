@@ -1,0 +1,423 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Calendar, Target, TrendingUp } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from "recharts";
+
+type DashboardData = {
+  aluno_id: string;
+  nome_completo: string;
+  nome_de_usuario: string;
+  tipo_usuario: string;
+  nivel_cefr: string | null;
+  modalidade: string | null;
+  data_inicio_aulas: string | null;
+  frequencia_mensal: number | null;
+  objetivo_principal: string | null;
+  status_aluno: string | null;
+  progresso_geral: number | null;
+  progresso_por_categoria: Record<string, any>;
+  historico_progresso: Array<{ data: string; progresso_geral: number }>;
+  resumo_aulas: {
+    total_aulas: number;
+    total_concluidas: number;
+    total_agendadas: number;
+    total_canceladas: number;
+    total_remarcadas: number;
+    proxima_aula_data: string | null;
+  };
+  ultimo_relatorio: {
+    mes_referencia: string;
+    data_geracao: string;
+    porcentagem_concluida: number;
+    porcentagem_em_desenvolvimento: number;
+    comentario_automatico: string;
+  } | null;
+  resumo_atividades: {
+    total_conquistas: number;
+    atividades_sugeridas_pendentes: number;
+    atividades_tarefas_pendentes: number;
+  };
+};
+
+const StudentDetails = () => {
+  const { aluno_id } = useParams<{ aluno_id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashboardData | null>(null);
+
+  useEffect(() => {
+    if (aluno_id) {
+      fetchStudentDetails();
+    }
+  }, [aluno_id]);
+
+  const fetchStudentDetails = async () => {
+    try {
+      const { data: result, error } = await supabase.rpc("get_dashboard_aluno", {
+        p_aluno: aluno_id,
+      });
+
+      if (error) throw error;
+
+      setData(result as DashboardData);
+    } catch (error) {
+      console.error("Erro ao carregar detalhes do aluno:", error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar os detalhes do aluno.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "—";
+    return new Date(dateString).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return "—";
+    return new Date(dateString).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const prepareProgressByCategoryData = () => {
+    if (!data?.progresso_por_categoria) return [];
+    return Object.entries(data.progresso_por_categoria).map(([key, value]: [string, any]) => ({
+      categoria: key,
+      concluido: value.percentual_concluido || 0,
+      em_desenvolvimento: value.percentual_em_desenvolvimento || 0,
+    }));
+  };
+
+  const prepareHistoricoData = () => {
+    if (!data?.historico_progresso || data.historico_progresso.length === 0) return [];
+    return data.historico_progresso.map((item) => ({
+      data: new Date(item.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+      progresso: item.progresso_geral,
+    }));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Aluno não encontrado.</p>
+          <Button onClick={() => navigate("/admin")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-7xl">
+        <Button
+          variant="outline"
+          onClick={() => navigate("/admin")}
+          className="mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar
+        </Button>
+
+        <div className="mb-6">
+          <h1 className="text-4xl font-bold">Detalhes do Aluno</h1>
+          <div className="mt-2 flex items-center gap-3">
+            <p className="text-xl text-muted-foreground">
+              {data.nome_completo} ({data.nivel_cefr} – {data.modalidade})
+            </p>
+            <Badge variant={data.status_aluno === "Ativo" ? "default" : "secondary"}>
+              {data.status_aluno}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Bloco 1 - Informações Básicas */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações Básicas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Nome completo:</span>
+                <span className="font-medium">{data.nome_completo}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Nome de usuário:</span>
+                <span className="font-medium">{data.nome_de_usuario}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Nível CEFR:</span>
+                <span className="font-medium">{data.nivel_cefr || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Modalidade:</span>
+                <span className="font-medium">{data.modalidade || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Frequência mensal:</span>
+                <span className="font-medium">
+                  {data.frequencia_mensal ? `${data.frequencia_mensal} aulas/mês` : "—"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Início das aulas:</span>
+                <span className="font-medium">{formatDate(data.data_inicio_aulas)}</span>
+              </div>
+              <div className="flex flex-col gap-1 pt-2">
+                <span className="text-muted-foreground">Objetivo principal:</span>
+                <span className="font-medium">{data.objetivo_principal || "—"}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bloco 3 - Resumo de Aulas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Resumo de Aulas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total de aulas:</span>
+                <span className="font-medium">{data.resumo_aulas.total_aulas}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Realizadas:</span>
+                <span className="font-medium text-green-600">
+                  {data.resumo_aulas.total_concluidas}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Agendadas:</span>
+                <span className="font-medium text-blue-600">
+                  {data.resumo_aulas.total_agendadas}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Canceladas:</span>
+                <span className="font-medium text-red-600">
+                  {data.resumo_aulas.total_canceladas}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Remarcadas:</span>
+                <span className="font-medium text-orange-600">
+                  {data.resumo_aulas.total_remarcadas}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1 border-t pt-2 mt-2">
+                <span className="text-muted-foreground">Próxima aula:</span>
+                <span className="font-medium">
+                  {formatDateTime(data.resumo_aulas.proxima_aula_data)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Bloco 2 - Progresso */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Progresso do Aluno
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-6">
+              <p className="text-sm text-muted-foreground mb-2">Progresso Geral</p>
+              <div className="flex items-center gap-4">
+                <div className="text-4xl font-bold text-primary">
+                  {data.progresso_geral?.toFixed(1) || 0}%
+                </div>
+                <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${data.progresso_geral || 0}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {prepareProgressByCategoryData().length > 0 && (
+              <div className="mb-6">
+                <p className="text-sm text-muted-foreground mb-4">Progresso por Categoria</p>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={prepareProgressByCategoryData()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="categoria" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="concluido" fill="hsl(var(--primary))" name="Concluído" />
+                    <Bar
+                      dataKey="em_desenvolvimento"
+                      fill="hsl(var(--secondary))"
+                      name="Em Desenvolvimento"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {prepareHistoricoData().length > 0 && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-4">Histórico de Progresso</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={prepareHistoricoData()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="data" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="progresso"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Bloco 4 - Último Relatório Mensal */}
+        {data.ultimo_relatorio ? (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Último Relatório Mensal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Mês de referência:</span>
+                  <Badge variant="outline">{data.ultimo_relatorio.mes_referencia}</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Data de geração:</span>
+                  <span className="font-medium">
+                    {formatDateTime(data.ultimo_relatorio.data_geracao)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Conteúdo concluído:</span>
+                  <span className="font-medium text-green-600">
+                    {data.ultimo_relatorio.porcentagem_concluida.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Em desenvolvimento:</span>
+                  <span className="font-medium text-blue-600">
+                    {data.ultimo_relatorio.porcentagem_em_desenvolvimento.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="border-t pt-4 mt-4">
+                  <p className="text-sm text-muted-foreground mb-2">Comentário da professora:</p>
+                  <p className="text-sm italic bg-muted p-4 rounded-md">
+                    "{data.ultimo_relatorio.comentario_automatico}"
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Último Relatório Mensal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Ainda não há relatório mensal gerado.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Bloco 5 - Resumo de Atividades e Conquistas */}
+        <div className="grid gap-6 md:grid-cols-3 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Conquistas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-primary">
+                {data.resumo_atividades.total_conquistas}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">Conquistas desbloqueadas</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Atividades Sugeridas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-orange-600">
+                {data.resumo_atividades.atividades_sugeridas_pendentes}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">Pendentes</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Tarefas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-blue-600">
+                {data.resumo_atividades.atividades_tarefas_pendentes}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">Disponíveis</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StudentDetails;
