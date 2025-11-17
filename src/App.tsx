@@ -14,6 +14,8 @@ import AlunoProgresso from "./pages/AlunoProgresso";
 import AlunoTarefas from "./pages/AlunoTarefas";
 import AlunoTarefaDetalhes from "./pages/AlunoTarefaDetalhes";
 import AlunoConquistas from "./pages/AlunoConquistas";
+import AlunoNotificacoes from "./pages/AlunoNotificacoes";
+import AdminNotificacoes from "./pages/AdminNotificacoes";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -39,6 +41,8 @@ const App = () => (
           <Route path="/aluno/tarefas" element={<AlunoTarefas />} />
           <Route path="/aluno/tarefas/:tarefa_id" element={<AlunoTarefaDetalhes />} />
           <Route path="/aluno/conquistas" element={<AlunoConquistas />} />
+          <Route path="/aluno/notificacoes" element={<AlunoNotificacoes />} />
+          <Route path="/admin/notificacoes" element={<ProtectedRoute><AdminNotificacoes /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
