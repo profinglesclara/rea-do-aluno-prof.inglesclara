@@ -30,6 +30,10 @@ const StudentDetails = () => {
   const [aulas, setAulas] = useState<any[]>([]);
   const [aulasLoading, setAulasLoading] = useState(false);
   const [aulasError, setAulasError] = useState<string | null>(null);
+  
+  const [relatorios, setRelatorios] = useState<any[]>([]);
+  const [relatoriosLoading, setRelatoriosLoading] = useState(false);
+  const [relatoriosError, setRelatoriosError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -85,6 +89,33 @@ const StudentDetails = () => {
     };
 
     loadAulas();
+  }, [aluno_id]);
+
+  useEffect(() => {
+    const loadRelatorios = async () => {
+      if (!aluno_id) return;
+      
+      setRelatoriosLoading(true);
+      setRelatoriosError(null);
+
+      const { data, error } = await supabase
+        .from("relatorios_mensais")
+        .select("mes_referencia, data_geracao, porcentagem_concluida, porcentagem_em_desenvolvimento")
+        .eq("aluno", aluno_id)
+        .order("data_geracao", { ascending: false })
+        .limit(3);
+
+      if (error) {
+        console.error(error);
+        setRelatoriosError("Não foi possível carregar os relatórios.");
+      } else {
+        setRelatorios(data || []);
+      }
+
+      setRelatoriosLoading(false);
+    };
+
+    loadRelatorios();
   }, [aluno_id]);
 
   if (loading) {
@@ -315,8 +346,67 @@ const StudentDetails = () => {
                 {dashboard.atividades_tarefas_pendentes ?? 0}
               </p>
               <p className="text-sm text-muted-foreground mt-1">Disponíveis</p>
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
+
+        {/* Card de Relatórios Recentes */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Relatórios recentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {relatoriosLoading ? (
+              <p className="text-muted-foreground">Carregando relatórios…</p>
+            ) : relatoriosError ? (
+              <p className="text-destructive">{relatoriosError}</p>
+            ) : relatorios.length === 0 ? (
+              <p className="text-muted-foreground">
+                Ainda não há relatórios mensais gerados para este aluno.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mês de referência</TableHead>
+                        <TableHead>Data de geração</TableHead>
+                        <TableHead className="text-right">% Concluída</TableHead>
+                        <TableHead className="text-right">% Em desenvolvimento</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {relatorios.map((rel, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>
+                            <Badge variant="secondary">{rel.mes_referencia}</Badge>
+                          </TableCell>
+                          <TableCell>{formatDate(rel.data_geracao)}</TableCell>
+                          <TableCell className="text-right font-semibold text-green-600">
+                            {rel.porcentagem_concluida ?? 0}%
+                          </TableCell>
+                          <TableCell className="text-right font-semibold text-blue-600">
+                            {rel.porcentagem_em_desenvolvimento ?? 0}%
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="flex justify-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate("/admin/relatorios")}
+                  >
+                    Ver todos os relatórios
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         </div>
 
         {/* Card de Aulas do Aluno */}
