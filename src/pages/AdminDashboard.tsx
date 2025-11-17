@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { NotificationBell } from "@/components/NotificationBell";
+import { useQuery } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -46,6 +48,31 @@ const AdminDashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Buscar admin user
+  const { data: session } = useQuery({
+    queryKey: ["session"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getSession();
+      return data.session;
+    },
+  });
+
+  const { data: admin } = useQuery({
+    queryKey: ["adminUser", session?.user?.id],
+    enabled: !!session?.user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("user_id", session!.user.id)
+        .eq("tipo_usuario", "Admin")
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   useEffect(() => {
     fetchAlunos();
@@ -127,9 +154,12 @@ const AdminDashboard = () => {
         <Card>
           <CardHeader>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle className="text-3xl font-bold">
-                Painel Geral de Alunos
-              </CardTitle>
+              <div className="flex items-center gap-4">
+                <CardTitle className="text-3xl font-bold">
+                  Painel Geral de Alunos
+                </CardTitle>
+                {admin && <NotificationBell userId={admin.user_id} isAdmin />}
+              </div>
               <div className="flex gap-2">
                 <Button
                   variant="outline"

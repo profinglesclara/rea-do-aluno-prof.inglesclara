@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar, BookOpen, Trophy, ListTodo } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export default function AlunoDashboard() {
   const navigate = useNavigate();
@@ -98,14 +99,17 @@ export default function AlunoDashboard() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarFallback className="text-lg">{iniciais}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-3xl font-bold">{aluno.nome_completo}</h1>
-            <p className="text-muted-foreground">Bem-vindo ao seu painel</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarFallback className="text-lg">{iniciais}</AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-bold">{aluno.nome_completo}</h1>
+              <p className="text-muted-foreground">Bem-vindo ao seu painel</p>
+            </div>
           </div>
+          <NotificationBell userId={aluno.user_id} />
         </div>
 
         {/* Cards Grid */}
