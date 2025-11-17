@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { ArrowLeft } from "lucide-react";
 
 type Relatorio = {
@@ -181,6 +182,18 @@ const AdminRelatorios = () => {
     });
   };
 
+  const formatDateWithTime = (dateStr: string) => {
+    if (!dateStr) return "—";
+    const d = new Date(dateStr);
+    return d.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const meses = [
     { value: "01", label: "Janeiro" },
     { value: "02", label: "Fevereiro" },
@@ -333,71 +346,81 @@ const AdminRelatorios = () => {
       </div>
 
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Detalhes do Relatório</DialogTitle>
+            <DialogTitle>
+              {selectedRelatorio && `Relatório Mensal - ${selectedRelatorio.nome_aluno} (${selectedRelatorio.mes_referencia})`}
+            </DialogTitle>
           </DialogHeader>
           {selectedRelatorio && (
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Aluno</p>
-                <p className="text-base">{selectedRelatorio.nome_aluno}</p>
-              </div>
+            <div className="space-y-6">
+              {/* Bloco 1 - Informações Gerais */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Informações Gerais</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Nome do Aluno</p>
+                    <p className="text-base">{selectedRelatorio.nome_aluno}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Nível CEFR</p>
+                    <p className="text-base">
+                      {selectedRelatorio.nivel_cefr ? (
+                        <Badge variant="outline">{selectedRelatorio.nivel_cefr}</Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Mês de Referência</p>
+                    <p className="text-base">{selectedRelatorio.mes_referencia}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Data de Geração</p>
+                    <p className="text-base">{formatDateWithTime(selectedRelatorio.data_geracao)}</p>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Nível CEFR</p>
-                <p className="text-base">
-                  {selectedRelatorio.nivel_cefr ? (
-                    <Badge variant="outline">{selectedRelatorio.nivel_cefr}</Badge>
-                  ) : (
-                    "—"
-                  )}
-                </p>
-              </div>
+              {/* Bloco 2 - Progresso */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Progresso</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium">% Concluída</p>
+                      <p className="text-sm font-medium">{selectedRelatorio.porcentagem_concluida ?? 0}%</p>
+                    </div>
+                    <Progress value={selectedRelatorio.porcentagem_concluida ?? 0} />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium">% Em Desenvolvimento</p>
+                      <p className="text-sm font-medium">{selectedRelatorio.porcentagem_em_desenvolvimento ?? 0}%</p>
+                    </div>
+                    <Progress value={selectedRelatorio.porcentagem_em_desenvolvimento ?? 0} />
+                  </div>
+                </CardContent>
+              </Card>
 
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Mês de Referência
-                </p>
-                <p className="text-base">{selectedRelatorio.mes_referencia}</p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Data de Geração</p>
-                <p className="text-base">{formatDate(selectedRelatorio.data_geracao)}</p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Porcentagem Concluída
-                </p>
-                <p className="text-base">{selectedRelatorio.porcentagem_concluida ?? 0}%</p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Porcentagem Em Desenvolvimento
-                </p>
-                <p className="text-base">
-                  {selectedRelatorio.porcentagem_em_desenvolvimento ?? 0}%
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Comentário Automático
-                </p>
-                <p className="text-base whitespace-pre-wrap">
-                  {selectedRelatorio.comentario_automatico || "—"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Conteúdo Gerado</p>
-                <p className="text-base whitespace-pre-wrap">
-                  {selectedRelatorio.conteudo_gerado || "—"}
-                </p>
-              </div>
+              {/* Bloco 3 - Comentário Automático */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Comentário Automático</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 rounded-md bg-muted/50">
+                    <p className="text-sm whitespace-pre-wrap">
+                      {selectedRelatorio.comentario_automatico || "Nenhum comentário automático gerado para este relatório."}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </DialogContent>
