@@ -69,20 +69,31 @@ export default function AlunoTarefas() {
     >
       <div className="flex justify-between items-start mb-2">
         <h3 className="font-semibold">{tarefa.titulo}</h3>
-        {getStatusBadge(tarefa.status)}
+        <div className="flex items-center gap-2">
+          {getStatusBadge(tarefa.status)}
+        </div>
       </div>
       {tarefa.descricao && (
         <p className="text-sm text-muted-foreground mb-2">{tarefa.descricao}</p>
       )}
-      <div className="flex gap-4 text-xs text-muted-foreground">
-        <span>
-          {tarefa.data_limite
-            ? `Data limite: ${format(parseISO(tarefa.data_limite), "dd/MM/yyyy", { locale: ptBR })}`
-            : "Sem data limite"}
-        </span>
-        {isAtrasada(tarefa.data_limite, tarefa.status) && (
-          <span className="text-red-600 font-medium">ATRASADA</span>
-        )}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-4 text-xs text-muted-foreground">
+          <span>
+            {tarefa.data_limite
+              ? `Data limite: ${format(parseISO(tarefa.data_limite), "dd/MM/yyyy", { locale: ptBR })}`
+              : "Sem data limite"}
+          </span>
+          {isAtrasada(tarefa.data_limite, tarefa.status) && (
+            <span className="text-red-600 font-medium">ATRASADA</span>
+          )}
+        </div>
+        <Button 
+          size="sm" 
+          variant="outline"
+          onClick={() => navigate(`/aluno/tarefas/${tarefa.id}`)}
+        >
+          Ver detalhes
+        </Button>
       </div>
     </div>
   );
