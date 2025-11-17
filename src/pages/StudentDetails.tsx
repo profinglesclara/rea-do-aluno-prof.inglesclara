@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,16 +47,7 @@ const StudentDetails = () => {
   const navigate = useNavigate();
 
   const { data, isLoading, error } = useDashboardAluno(aluno_id);
-
-  // Normaliza o retorno do hook:
-  // - se vier { dashboard: {...} }, usa dashboard
-  // - se vier o objeto direto, usa data
-  const aluno: AlunoData | null = useMemo(() => {
-    if (!data) return null;
-    const anyData = data as any;
-    if (anyData.dashboard) return anyData.dashboard as AlunoData;
-    return anyData as AlunoData;
-  }, [data]);
+  const aluno = (data as any)?.dashboard as AlunoData | undefined;
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "—";
@@ -297,7 +287,7 @@ const StudentDetails = () => {
                   <span className="text-muted-foreground">Mês de referência:</span>
                   <Badge variant="outline">{aluno.ultimo_relatorio.mes_referencia}</Badge>
                 </div>
-                <div className="flex justify_between">
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Data de geração:</span>
                   <span className="font-medium">{formatDateTime(aluno.ultimo_relatorio.data_geracao)}</span>
                 </div>
