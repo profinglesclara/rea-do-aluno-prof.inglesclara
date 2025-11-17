@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Calendar, FileText } from "lucide-react";
+import { Search, Eye, Calendar, FileText, ClipboardList } from "lucide-react";
 
 type DashboardAluno = {
   aluno_id: string;
@@ -138,6 +138,14 @@ const AdminDashboard = () => {
                 >
                   <Calendar className="h-4 w-4" />
                   Gerenciar Aulas
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/admin/tarefas")}
+                  className="gap-2"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Gerenciar Tarefas
                 </Button>
                 <Button
                   variant="outline"

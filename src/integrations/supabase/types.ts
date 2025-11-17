@@ -216,6 +216,111 @@ export type Database = {
           },
         ]
       }
+      entregas_tarefas: {
+        Row: {
+          aluno_id: string
+          data_envio: string
+          id: string
+          tarefa_id: string
+          url_pdf: string
+        }
+        Insert: {
+          aluno_id: string
+          data_envio?: string
+          id?: string
+          tarefa_id: string
+          url_pdf: string
+        }
+        Update: {
+          aluno_id?: string
+          data_envio?: string
+          id?: string
+          tarefa_id?: string
+          url_pdf?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entregas_tarefas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "entregas_tarefas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "entregas_tarefas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "entregas_tarefas_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "tarefas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notificacoes: {
+        Row: {
+          criada_em: string
+          id: string
+          lida: boolean
+          mensagem: string
+          tipo: Database["public"]["Enums"]["tipo_notificacao"]
+          titulo: string
+          usuario_id: string
+        }
+        Insert: {
+          criada_em?: string
+          id?: string
+          lida?: boolean
+          mensagem: string
+          tipo: Database["public"]["Enums"]["tipo_notificacao"]
+          titulo: string
+          usuario_id: string
+        }
+        Update: {
+          criada_em?: string
+          id?: string
+          lida?: boolean
+          mensagem?: string
+          tipo?: Database["public"]["Enums"]["tipo_notificacao"]
+          titulo?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "notificacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "notificacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       relatorios_mensais: {
         Row: {
           aluno: string
@@ -268,6 +373,64 @@ export type Database = {
           {
             foreignKeyName: "relatorios_mensais_aluno_fkey"
             columns: ["aluno"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      tarefas: {
+        Row: {
+          aluno_id: string
+          atualizada_em: string
+          criada_em: string
+          data_limite: string | null
+          descricao: string | null
+          id: string
+          status: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          aluno_id: string
+          atualizada_em?: string
+          criada_em?: string
+          data_limite?: string | null
+          descricao?: string | null
+          id?: string
+          status?: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          aluno_id?: string
+          atualizada_em?: string
+          criada_em?: string
+          data_limite?: string | null
+          descricao?: string | null
+          id?: string
+          status?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarefas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "tarefas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "tarefas_aluno_id_fkey"
+            columns: ["aluno_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["user_id"]
@@ -534,6 +697,12 @@ export type Database = {
         | "Extra"
         | "Comportamento"
         | "Engajamento"
+      tipo_notificacao:
+        | "TAREFA_NOVA"
+        | "TAREFA_ENTREGUE"
+        | "TAREFA_CORRIGIDA"
+        | "AULA_ATUALIZADA"
+        | "CONQUISTA_DESBLOQUEADA"
       tipo_usuario: "Aluno" | "Responsável" | "Adulto" | "Admin"
     }
     CompositeTypes: {
@@ -687,6 +856,13 @@ export const Constants = {
         "Extra",
         "Comportamento",
         "Engajamento",
+      ],
+      tipo_notificacao: [
+        "TAREFA_NOVA",
+        "TAREFA_ENTREGUE",
+        "TAREFA_CORRIGIDA",
+        "AULA_ATUALIZADA",
+        "CONQUISTA_DESBLOQUEADA",
       ],
       tipo_usuario: ["Aluno", "Responsável", "Adulto", "Admin"],
     },
