@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 
 type DashboardRow = {
   aluno_id: string;
@@ -202,16 +203,107 @@ const StudentDetails = () => {
           </CardContent>
         </Card>
 
-        {/* Card de Debug */}
+        {/* Card de Último Relatório Mensal */}
         <Card>
           <CardHeader>
-            <CardTitle>JSON bruto (debug)</CardTitle>
+            <CardTitle>Último Relatório Mensal</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto">
-              {JSON.stringify(dashboard, null, 2)}
-            </pre>
+            {dashboard.ultimo_mes_referencia ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Mês de referência</p>
+                  <p className="font-medium">{dashboard.ultimo_mes_referencia}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Data de geração</p>
+                  <p className="font-medium">
+                    {formatDate(dashboard.ultimo_relatorio_data ?? null)}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Percentual concluído</p>
+                  <p className="text-xl font-bold text-green-600">
+                    {dashboard.ultimo_relatorio_concluida
+                      ? `${dashboard.ultimo_relatorio_concluida}%`
+                      : "—"}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">
+                    Percentual em desenvolvimento
+                  </p>
+                  <p className="text-xl font-bold text-blue-600">
+                    {dashboard.ultimo_relatorio_em_desenvolvimento
+                      ? `${dashboard.ultimo_relatorio_em_desenvolvimento}%`
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                Ainda não há relatório mensal gerado.
+              </p>
+            )}
           </CardContent>
+        </Card>
+
+        {/* Resumo de Atividades e Conquistas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Conquistas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-4xl font-bold text-primary">
+                {dashboard.total_conquistas ?? 0}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">Total desbloqueadas</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Atividades Sugeridas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-4xl font-bold text-primary">
+                {dashboard.atividades_sugeridas_pendentes ?? 0}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">Pendentes</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Tarefas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-4xl font-bold text-primary">
+                {dashboard.atividades_tarefas_pendentes ?? 0}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">Disponíveis</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Card de Debug (collapsible) */}
+        <Card>
+          <Collapsible>
+            <CardHeader className="pb-3">
+              <CollapsibleTrigger className="flex items-center justify-between w-full hover:opacity-80 transition-opacity">
+                <CardTitle>JSON bruto (debug)</CardTitle>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200 ui-expanded:rotate-180" />
+              </CollapsibleTrigger>
+            </CardHeader>
+            <CollapsibleContent>
+              <CardContent>
+                <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto">
+                  {JSON.stringify(dashboard, null, 2)}
+                </pre>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
       </div>
     </div>
