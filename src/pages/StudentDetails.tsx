@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 
 type DashboardRow = {
@@ -25,6 +26,10 @@ const StudentDetails = () => {
   const [dashboard, setDashboard] = useState<DashboardRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [aulas, setAulas] = useState<any[]>([]);
+  const [aulasLoading, setAulasLoading] = useState(false);
+  const [aulasError, setAulasError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -53,6 +58,33 @@ const StudentDetails = () => {
     };
 
     load();
+  }, [aluno_id]);
+
+  useEffect(() => {
+    const loadAulas = async () => {
+      if (!aluno_id) return;
+      
+      setAulasLoading(true);
+      setAulasError(null);
+
+      const { data, error } = await supabase
+        .from("aulas")
+        .select("aula_id, data_aula, status, conteudo, observacoes")
+        .eq("aluno", aluno_id)
+        .order("data_aula", { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error(error);
+        setAulasError("Não foi possível carregar as aulas.");
+      } else {
+        setAulas(data || []);
+      }
+
+      setAulasLoading(false);
+    };
+
+    loadAulas();
   }, [aluno_id]);
 
   if (loading) {
@@ -286,6 +318,53 @@ const StudentDetails = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Card de Aulas do Aluno */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Aulas do Aluno</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {aulasLoading ? (
+              <p className="text-muted-foreground">Carregando aulas…</p>
+            ) : aulasError ? (
+              <p className="text-destructive">{aulasError}</p>
+            ) : aulas.length === 0 ? (
+              <p className="text-muted-foreground">Nenhuma aula registrada.</p>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data e Hora</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Tipo/Conteúdo</TableHead>
+                      <TableHead>Observações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {aulas.map((aula) => (
+                      <TableRow key={aula.aula_id}>
+                        <TableCell>{formatDateTime(aula.data_aula)}</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            aula.status === "Realizada" ? "default" : 
+                            aula.status === "Agendada" ? "secondary" : 
+                            "outline"
+                          }>
+                            {aula.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{aula.conteudo || "—"}</TableCell>
+                        <TableCell className="max-w-xs truncate">{aula.observacoes || "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Card de Debug (collapsible) */}
         <Card>
