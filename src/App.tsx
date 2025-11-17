@@ -8,6 +8,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminAulas from "./pages/AdminAulas";
 import StudentDetails from "./pages/StudentDetails";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -19,9 +21,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/aulas" element={<AdminAulas />} />
-          <Route path="/admin/aluno/:aluno_id" element={<StudentDetails />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/aulas" element={<ProtectedRoute><AdminAulas /></ProtectedRoute>} />
+          <Route path="/admin/aluno/:aluno_id" element={<ProtectedRoute><StudentDetails /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
