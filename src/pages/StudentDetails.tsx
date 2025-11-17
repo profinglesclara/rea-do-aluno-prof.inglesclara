@@ -4,17 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, Target, TrendingUp } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { useDashboardAluno } from "@/hooks/useDashboardAluno";
 
 type AlunoData = {
@@ -123,16 +113,10 @@ const StudentDetails = () => {
     );
   }
 
-  const aluno = data.dashboard;
-
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-7xl">
-        <Button
-          variant="outline"
-          onClick={() => navigate("/admin")}
-          className="mb-4"
-        >
+        <Button variant="outline" onClick={() => navigate("/admin")} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar
         </Button>
@@ -143,9 +127,7 @@ const StudentDetails = () => {
             <p className="text-xl text-muted-foreground">
               {aluno.nome_completo} ({aluno.nivel_cefr} – {aluno.modalidade})
             </p>
-            <Badge variant={aluno.status_aluno === "Ativo" ? "default" : "secondary"}>
-              {aluno.status_aluno}
-            </Badge>
+            <Badge variant={aluno.status_aluno === "Ativo" ? "default" : "secondary"}>{aluno.status_aluno}</Badge>
           </div>
         </div>
 
@@ -204,33 +186,23 @@ const StudentDetails = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Realizadas:</span>
-                <span className="font-medium text-green-600">
-                  {aluno.resumo_aulas.total_concluidas}
-                </span>
+                <span className="font-medium text-green-600">{aluno.resumo_aulas.total_concluidas}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Agendadas:</span>
-                <span className="font-medium text-blue-600">
-                  {aluno.resumo_aulas.total_agendadas}
-                </span>
+                <span className="font-medium text-blue-600">{aluno.resumo_aulas.total_agendadas}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Canceladas:</span>
-                <span className="font-medium text-red-600">
-                  {aluno.resumo_aulas.total_canceladas}
-                </span>
+                <span className="font-medium text-red-600">{aluno.resumo_aulas.total_canceladas}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Remarcadas:</span>
-                <span className="font-medium text-orange-600">
-                  {aluno.resumo_aulas.total_remarcadas}
-                </span>
+                <span className="font-medium text-orange-600">{aluno.resumo_aulas.total_remarcadas}</span>
               </div>
               <div className="flex flex-col gap-1 border-t pt-2 mt-2">
                 <span className="text-muted-foreground">Próxima aula:</span>
-                <span className="font-medium">
-                  {formatDateTime(aluno.resumo_aulas.proxima_aula_data)}
-                </span>
+                <span className="font-medium">{formatDateTime(aluno.resumo_aulas.proxima_aula_data)}</span>
               </div>
             </CardContent>
           </Card>
@@ -248,9 +220,7 @@ const StudentDetails = () => {
             <div className="mb-6">
               <p className="text-sm text-muted-foreground mb-2">Progresso Geral</p>
               <div className="flex items-center gap-4">
-                <div className="text-4xl font-bold text-primary">
-                  {aluno.progresso_geral?.toFixed(1) || 0}%
-                </div>
+                <div className="text-4xl font-bold text-primary">{aluno.progresso_geral?.toFixed(1) || 0}%</div>
                 <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary transition-all"
@@ -270,11 +240,7 @@ const StudentDetails = () => {
                     <YAxis />
                     <Tooltip />
                     <Bar dataKey="concluido" fill="hsl(var(--primary))" name="Concluído" />
-                    <Bar
-                      dataKey="em_desenvolvimento"
-                      fill="hsl(var(--secondary))"
-                      name="Em Desenvolvimento"
-                    />
+                    <Bar dataKey="em_desenvolvimento" fill="hsl(var(--secondary))" name="Em Desenvolvimento" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -289,12 +255,7 @@ const StudentDetails = () => {
                     <XAxis dataKey="data" />
                     <YAxis />
                     <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="progresso"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                    />
+                    <Line type="monotone" dataKey="progresso" stroke="hsl(var(--primary))" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -316,9 +277,7 @@ const StudentDetails = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Data de geração:</span>
-                  <span className="font-medium">
-                    {formatDateTime(aluno.ultimo_relatorio.data_geracao)}
-                  </span>
+                  <span className="font-medium">{formatDateTime(aluno.ultimo_relatorio.data_geracao)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Conteúdo concluído:</span>
@@ -362,9 +321,7 @@ const StudentDetails = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-primary">
-                {aluno.resumo_atividades.total_conquistas}
-              </div>
+              <div className="text-4xl font-bold text-primary">{aluno.resumo_atividades.total_conquistas}</div>
               <p className="text-sm text-muted-foreground mt-2">Conquistas desbloqueadas</p>
             </CardContent>
           </Card>
