@@ -9,6 +9,10 @@ import AdminAulas from "./pages/AdminAulas";
 import AdminRelatorios from "./pages/AdminRelatorios";
 import AdminTarefas from "./pages/AdminTarefas";
 import StudentDetails from "./pages/StudentDetails";
+import AlunoDashboard from "./pages/AlunoDashboard";
+import AlunoProgresso from "./pages/AlunoProgresso";
+import AlunoTarefas from "./pages/AlunoTarefas";
+import AlunoConquistas from "./pages/AlunoConquistas";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -29,6 +33,10 @@ const App = () => (
           <Route path="/admin/relatorios" element={<ProtectedRoute><AdminRelatorios /></ProtectedRoute>} />
           <Route path="/admin/tarefas" element={<ProtectedRoute><AdminTarefas /></ProtectedRoute>} />
           <Route path="/admin/aluno/:aluno_id" element={<ProtectedRoute><StudentDetails /></ProtectedRoute>} />
+          <Route path="/aluno/dashboard" element={<AlunoDashboard />} />
+          <Route path="/aluno/progresso" element={<AlunoProgresso />} />
+          <Route path="/aluno/tarefas" element={<AlunoTarefas />} />
+          <Route path="/aluno/conquistas" element={<AlunoConquistas />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
