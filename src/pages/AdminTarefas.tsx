@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ArrowLeft, Loader2 } from "lucide-react";
+import { Plus, ArrowLeft, Loader2, CheckCircle, FileCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
+import { MarcarEntregueDialog } from "@/components/tarefas/MarcarEntregueDialog";
+import { MarcarCorrigidaDialog } from "@/components/tarefas/MarcarCorrigidaDialog";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Tarefa = Tables<"tarefas">;
@@ -24,6 +26,9 @@ interface TarefaComAluno extends Tarefa {
 
 export default function AdminTarefas() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [entregueDialogOpen, setEntregueDialogOpen] = useState(false);
+  const [corrigidaDialogOpen, setCorrigidaDialogOpen] = useState(false);
+  const [tarefaSelecionada, setTarefaSelecionada] = useState<TarefaComAluno | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -154,6 +159,215 @@ export default function AdminTarefas() {
     );
   };
 
+  const marcarEntregue = (tarefa: TarefaComAluno) => {
+    setTarefaSelecionada(tarefa);
+    setEntregueDialogOpen(true);
+  };
+
+  const marcarCorrigida = (tarefa: TarefaComAluno) => {
+    setTarefaSelecionada(tarefa);
+    setCorrigidaDialogOpen(true);
+  };
+
+  const marcarEntregueAction = useMutation({
+    mutationFn: async (data: { tarefaId: string; alunoId: string; urlPdf: string }) => {
+      // Criar entrega
+      const { error: entregaError } = await supabase
+        .from("entregas_tarefas")
+        .insert({
+          tarefa_id: data.tarefaId,
+          aluno_id: data.alunoId,
+          url_pdf: data.urlPdf,
+        });
+
+      if (entregaError) throw entregaError;
+
+      // Atualizar status da tarefa
+      const { error: tarefaError } = await supabase
+        .from("tarefas")
+        .update({ status: "Entregue" })
+        .eq("id", data.tarefaId);
+
+      if (tarefaError) throw tarefaError;
+
+      // Buscar dados do aluno para notificação
+      const { data: aluno, error: alunoError } = await supabase
+        .from("usuarios")
+        .select("nome_completo, email")
+        .eq("user_id", data.alunoId)
+        .single();
+
+      if (alunoError) throw alunoError;
+
+      // Criar notificação
+      const { error: notifError } = await supabase
+        .from("notificacoes")
+        .insert({
+          usuario_id: data.alunoId,
+          tipo: "TAREFA_ENTREGUE",
+          titulo: "Tarefa entregue",
+          mensagem: `Sua entrega da tarefa foi registrada no sistema.`,
+        });
+
+      if (notifError) {
+        console.error("Erro ao criar notificação:", notifError);
+      }
+
+      // Enviar email
+      try {
+        const emailHtml = `
+          <h1>Tarefa Entregue</h1>
+          <p>Olá ${aluno.nome_completo},</p>
+          <p>Sua entrega foi registrada no Portal do Aluno.</p>
+          <p>Em breve o professor fará a correção e você será notificado.</p>
+        `;
+
+        const { error: emailError } = await supabase.functions.invoke(
+          "enviar-email-notificacao",
+          {
+            body: {
+              to: aluno.email,
+              subject: "Tarefa Entregue - Portal do Aluno",
+              html: emailHtml,
+            },
+          }
+        );
+
+        if (emailError) {
+          console.error("Erro ao enviar email:", emailError);
+        }
+      } catch (error) {
+        console.error("Erro ao enviar email:", error);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tarefas"] });
+      setEntregueDialogOpen(false);
+      setTarefaSelecionada(null);
+      toast({
+        title: "Tarefa marcada como entregue",
+        description: "A entrega foi registrada e o aluno foi notificado.",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Erro ao marcar tarefa como entregue:", error);
+      toast({
+        title: "Erro",
+        description: error.message || "Ocorreu um erro ao marcar a tarefa como entregue.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const marcarCorrigidaAction = useMutation({
+    mutationFn: async (data: { tarefaId: string; alunoId: string; urlPdfCorrigido?: string }) => {
+      // Atualizar status da tarefa
+      const { error: tarefaError } = await supabase
+        .from("tarefas")
+        .update({ status: "Corrigida" })
+        .eq("id", data.tarefaId);
+
+      if (tarefaError) throw tarefaError;
+
+      // Se houver URL do PDF corrigido, atualizar ou criar entrega
+      if (data.urlPdfCorrigido) {
+        const { data: entregaExistente } = await supabase
+          .from("entregas_tarefas")
+          .select("id")
+          .eq("tarefa_id", data.tarefaId)
+          .single();
+
+        if (entregaExistente) {
+          // Atualizar entrega existente
+          const { error: updateError } = await supabase
+            .from("entregas_tarefas")
+            .update({ url_pdf: data.urlPdfCorrigido })
+            .eq("id", entregaExistente.id);
+
+          if (updateError) throw updateError;
+        } else {
+          // Criar nova entrega
+          const { error: insertError } = await supabase
+            .from("entregas_tarefas")
+            .insert({
+              tarefa_id: data.tarefaId,
+              aluno_id: data.alunoId,
+              url_pdf: data.urlPdfCorrigido,
+            });
+
+          if (insertError) throw insertError;
+        }
+      }
+
+      // Buscar dados do aluno para notificação
+      const { data: aluno, error: alunoError } = await supabase
+        .from("usuarios")
+        .select("nome_completo, email")
+        .eq("user_id", data.alunoId)
+        .single();
+
+      if (alunoError) throw alunoError;
+
+      // Criar notificação
+      const { error: notifError } = await supabase
+        .from("notificacoes")
+        .insert({
+          usuario_id: data.alunoId,
+          tipo: "TAREFA_CORRIGIDA",
+          titulo: "Tarefa corrigida",
+          mensagem: `Sua tarefa foi corrigida e está disponível para consulta.`,
+        });
+
+      if (notifError) {
+        console.error("Erro ao criar notificação:", notifError);
+      }
+
+      // Enviar email
+      try {
+        const emailHtml = `
+          <h1>Tarefa Corrigida</h1>
+          <p>Olá ${aluno.nome_completo},</p>
+          <p>Sua tarefa foi corrigida pelo professor e está disponível para consulta no Portal do Aluno.</p>
+          ${data.urlPdfCorrigido ? `<p>Você pode acessar a correção através do link disponibilizado no portal.</p>` : ""}
+        `;
+
+        const { error: emailError } = await supabase.functions.invoke(
+          "enviar-email-notificacao",
+          {
+            body: {
+              to: aluno.email,
+              subject: "Tarefa Corrigida - Portal do Aluno",
+              html: emailHtml,
+            },
+          }
+        );
+
+        if (emailError) {
+          console.error("Erro ao enviar email:", emailError);
+        }
+      } catch (error) {
+        console.error("Erro ao enviar email:", error);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tarefas"] });
+      setCorrigidaDialogOpen(false);
+      setTarefaSelecionada(null);
+      toast({
+        title: "Tarefa marcada como corrigida",
+        description: "A correção foi registrada e o aluno foi notificado.",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Erro ao marcar tarefa como corrigida:", error);
+      toast({
+        title: "Erro",
+        description: error.message || "Ocorreu um erro ao marcar a tarefa como corrigida.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -204,6 +418,7 @@ export default function AdminTarefas() {
                       <TableHead>Status</TableHead>
                       <TableHead>Data Limite</TableHead>
                       <TableHead>Criada em</TableHead>
+                      <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -231,6 +446,40 @@ export default function AdminTarefas() {
                             { locale: ptBR }
                           )}
                         </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {tarefa.status === "Pendente" && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => marcarEntregue(tarefa)}
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Marcar Entregue
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => marcarCorrigida(tarefa)}
+                                >
+                                  <FileCheck className="h-4 w-4 mr-1" />
+                                  Marcar Corrigida
+                                </Button>
+                              </>
+                            )}
+                            {tarefa.status === "Entregue" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => marcarCorrigida(tarefa)}
+                              >
+                                <FileCheck className="h-4 w-4 mr-1" />
+                                Marcar Corrigida
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -247,6 +496,38 @@ export default function AdminTarefas() {
         onSubmit={(data) => criarTarefaMutation.mutate(data)}
         isSubmitting={criarTarefaMutation.isPending}
       />
+
+      {tarefaSelecionada && (
+        <>
+          <MarcarEntregueDialog
+            open={entregueDialogOpen}
+            onOpenChange={setEntregueDialogOpen}
+            tarefa={tarefaSelecionada}
+            onSubmit={(urlPdf) =>
+              marcarEntregueAction.mutate({
+                tarefaId: tarefaSelecionada.id,
+                alunoId: tarefaSelecionada.aluno_id,
+                urlPdf,
+              })
+            }
+            isSubmitting={marcarEntregueAction.isPending}
+          />
+
+          <MarcarCorrigidaDialog
+            open={corrigidaDialogOpen}
+            onOpenChange={setCorrigidaDialogOpen}
+            tarefa={tarefaSelecionada}
+            onSubmit={(urlPdfCorrigido) =>
+              marcarCorrigidaAction.mutate({
+                tarefaId: tarefaSelecionada.id,
+                alunoId: tarefaSelecionada.aluno_id,
+                urlPdfCorrigido,
+              })
+            }
+            isSubmitting={marcarCorrigidaAction.isPending}
+          />
+        </>
+      )}
     </div>
   );
 }
