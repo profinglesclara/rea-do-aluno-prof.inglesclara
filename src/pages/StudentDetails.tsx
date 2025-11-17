@@ -1,34 +1,60 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Target, TrendingUp } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from "recharts";
-import { useDashboardAluno } from "@/hooks/useDashboardAluno";
-import type { AlunoData } from "@/hooks/useDashboardAluno";
+import { ArrowLeft } from "lucide-react";
+
+type DashboardRow = {
+  aluno_id: string;
+  nome_aluno: string;
+  total_aulas: number;
+  total_concluidas: number;
+  total_agendadas: number;
+  total_canceladas: number;
+  total_remarcadas: number;
+  proxima_aula_data: string | null;
+} & Record<string, any>;
 
 const StudentDetails = () => {
   const { aluno_id } = useParams<{ aluno_id: string }>();
   const navigate = useNavigate();
 
-  const { data, isLoading, error } = useDashboardAluno(aluno_id);
-  const aluno: AlunoData | null = useMemo(
-    () => (data?.dashboard ?? null),
-    [data]
-  );
+  const [dashboard, setDashboard] = useState<DashboardRow | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (isLoading) {
+  useEffect(() => {
+    const load = async () => {
+      if (!aluno_id) {
+        setError("ID do aluno não informado.");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("dashboard_resumo_alunos")
+        .select("*")
+        .eq("aluno_id", aluno_id)
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        setError("Erro ao buscar dados do aluno.");
+      } else if (!data) {
+        setError("Aluno não encontrado.");
+      } else {
+        setDashboard(data as DashboardRow);
+      }
+
+      setLoading(false);
+    };
+
+    load();
+  }, [aluno_id]);
+
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <p className="text-muted-foreground">Carregando...</p>
@@ -36,12 +62,12 @@ const StudentDetails = () => {
     );
   }
 
-  if (error || !aluno) {
+  if (error || !dashboard) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">
-            {error ? "Erro ao carregar o aluno." : "Aluno não encontrado."}
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">
+            {error ?? "Aluno não encontrado."}
           </p>
           <Button onClick={() => navigate("/admin")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -52,58 +78,76 @@ const StudentDetails = () => {
     );
   }
 
-  const formatDate = (dateString: string | null) =>
-    dateString
-      ? new Date(dateString).toLocaleDateString("pt-BR")
-      : "—";
-
   const formatDateTime = (d: string | null) =>
-    d
-      ? new Date(d).toLocaleString("pt-BR")
-      : "—";
-
-  const progressByCategory = Object.entries(
-    aluno.progresso_por_categoria ?? {}
-  ).map(([categoria, v]: [string, any]) => ({
-    categoria,
-    concluido: v.percentual_concluido ?? 0,
-    em_desenvolvimento: v.percentual_em_desenvolvimento ?? 0,
-  }));
-
-  const historicoProgresso =
-    aluno.historico_progresso?.map((item) => ({
-      data: new Date(item.data).toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-      }),
-      progresso: item.progresso_geral,
-    })) ?? [];
+    d ? new Date(d).toLocaleString("pt-BR") : "—";
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-4xl space-y-6">
         <Button
           variant="outline"
           onClick={() => navigate("/admin")}
-          className="mb-4"
+          className="mb-2"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar
         </Button>
 
-        <div className="mb-6">
-          <h1 className="text-4xl font-bold">Detalhes do Aluno</h1>
-          <div className="mt-2 flex items-center gap-3">
-            <p className="text-xl text-muted-foreground">
-              {aluno.nome_completo} ({aluno.nivel_cefr} – {aluno.modalidade})
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Detalhes do Aluno</span>
+              <Badge>{dashboard.nome_aluno}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p>
+              <span className="text-muted-foreground">Total de aulas: </span>
+              <span className="font-medium">{dashboard.total_aulas}</span>
             </p>
-            <Badge
-              variant={aluno.status_aluno === "Ativo" ? "default" : "secondary"}
-            >
-              {aluno.status_aluno}
-            </Badge>
-          </div>
-        </div>
+            <p>
+              <span className="text-muted-foreground">Realizadas: </span>
+              <span className="font-medium text-green-600">
+                {dashboard.total_concluidas}
+              </span>
+            </p>
+            <p>
+              <span className="text-muted-foreground">Agendadas: </span>
+              <span className="font-medium text-blue-600">
+                {dashboard.total_agendadas}
+              </span>
+            </p>
+            <p>
+              <span className="text-muted-foreground">Canceladas: </span>
+              <span className="font-medium text-red-600">
+                {dashboard.total_canceladas}
+              </span>
+            </p>
+            <p>
+              <span className="text-muted-foreground">Remarcadas: </span>
+              <span className="font-medium text-orange-600">
+                {dashboard.total_remarcadas}
+              </span>
+            </p>
+            <p>
+              <span className="text-muted-foreground">Próxima aula: </span>
+              <span className="font-medium">
+                {formatDateTime(dashboard.proxima_aula_data ?? null)}
+              </span>
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>JSON bruto (debug)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto">
+              {JSON.stringify(dashboard, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
