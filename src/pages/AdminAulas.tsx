@@ -27,8 +27,18 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Filter, X } from "lucide-react";
+import { Plus, Filter, X, Trash2 } from "lucide-react";
 
 type Aula = {
   aula_id: string;
@@ -73,6 +83,10 @@ const AdminAulas = () => {
   const [editStatus, setEditStatus] = useState<string>("Agendada");
   const [editConteudo, setEditConteudo] = useState("");
   const [editObservacoes, setEditObservacoes] = useState("");
+  
+  // Confirmação de exclusão
+  const [showConfirmarExclusao, setShowConfirmarExclusao] = useState(false);
+  const [aulaParaExcluir, setAulaParaExcluir] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -246,6 +260,30 @@ const AdminAulas = () => {
     loadData();
   };
 
+  const abrirConfirmarExclusao = (aulaId: string) => {
+    setAulaParaExcluir(aulaId);
+    setShowConfirmarExclusao(true);
+  };
+
+  const excluirAula = async () => {
+    if (!aulaParaExcluir) return;
+    
+    const { error } = await supabase
+      .from("aulas")
+      .delete()
+      .eq("aula_id", aulaParaExcluir);
+    
+    if (error) {
+      console.error(error);
+      alert("Erro ao excluir aula.");
+      return;
+    }
+    
+    setShowConfirmarExclusao(false);
+    setAulaParaExcluir(null);
+    loadData();
+  };
+
   const getBadgeVariant = (status: string) => {
     switch (status) {
       case "Realizada":
@@ -375,13 +413,22 @@ const AdminAulas = () => {
                         {aula.observacoes || "—"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => abrirModalEditar(aula)}
-                        >
-                          Editar
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => abrirModalEditar(aula)}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => abrirConfirmarExclusao(aula.aula_id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -544,6 +591,26 @@ const AdminAulas = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmação de Exclusão */}
+      <AlertDialog open={showConfirmarExclusao} onOpenChange={setShowConfirmarExclusao}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A aula será excluída permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setAulaParaExcluir(null)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={excluirAula}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
