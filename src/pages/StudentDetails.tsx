@@ -56,7 +56,8 @@ const StudentDetails = () => {
 
   // Fetch student dashboard data
   const { data, isLoading, error } = useDashboardAluno(aluno_id);
-  const aluno = useMemo(() => data?.dashboard ?? null, [data]);
+  const alunoData = useMemo(() => data?.dashboard ?? null, [data]);
+  const aluno = alunoData;
 
   /* ------------------------ Formatadores ------------------------ */
 
@@ -113,7 +114,21 @@ const StudentDetails = () => {
     );
   }
 
-  if (!aluno) {
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Erro ao carregar dados.</p>
+          <Button onClick={() => navigate("/admin")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || !data.dashboard) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
