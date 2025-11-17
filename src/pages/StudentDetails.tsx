@@ -43,16 +43,21 @@ type AlunoData = {
   };
 };
 
-type DashboardResponse = {
-  dashboard: AlunoData;
-};
-
 const StudentDetails = () => {
   const { aluno_id } = useParams<{ aluno_id: string }>();
   const navigate = useNavigate();
 
   const { data, isLoading, error } = useDashboardAluno(aluno_id);
-  const aluno = useMemo(() => data?.dashboard ?? null, [data]);
+
+  // Normaliza o retorno do hook:
+  // - se vier { dashboard: {...} }, usa dashboard
+  // - se vier o objeto direto, usa data
+  const aluno: AlunoData | null = useMemo(() => {
+    if (!data) return null;
+    const anyData = data as any;
+    if (anyData.dashboard) return anyData.dashboard as AlunoData;
+    return anyData as AlunoData;
+  }, [data]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "—";
@@ -75,8 +80,8 @@ const StudentDetails = () => {
   };
 
   const prepareProgressByCategoryData = () => {
-    if (!data?.dashboard?.progresso_por_categoria) return [];
-    return Object.entries(data.dashboard.progresso_por_categoria).map(([key, value]: [string, any]) => ({
+    if (!aluno || !aluno.progresso_por_categoria) return [];
+    return Object.entries(aluno.progresso_por_categoria).map(([key, value]: [string, any]) => ({
       categoria: key,
       concluido: value.percentual_concluido || 0,
       em_desenvolvimento: value.percentual_em_desenvolvimento || 0,
@@ -84,9 +89,12 @@ const StudentDetails = () => {
   };
 
   const prepareHistoricoData = () => {
-    if (!data?.dashboard?.historico_progresso || data.dashboard.historico_progresso.length === 0) return [];
-    return data.dashboard.historico_progresso.map((item) => ({
-      data: new Date(item.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+    if (!aluno || !aluno.historico_progresso || aluno.historico_progresso.length === 0) return [];
+    return aluno.historico_progresso.map((item) => ({
+      data: new Date(item.data).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+      }),
       progresso: item.progresso_geral,
     }));
   };
@@ -99,7 +107,21 @@ const StudentDetails = () => {
     );
   }
 
-  if (!data || !data.dashboard) {
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Ocorreu um erro ao carregar os dados do aluno.</p>
+          <Button onClick={() => navigate("/admin")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!aluno) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
@@ -239,8 +261,8 @@ const StudentDetails = () => {
                     <XAxis dataKey="categoria" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="concluido" fill="hsl(var(--primary))" name="Concluído" />
-                    <Bar dataKey="em_desenvolvimento" fill="hsl(var(--secondary))" name="Em Desenvolvimento" />
+                    <Bar dataKey="concluido" name="Concluído" />
+                    <Bar dataKey="em_desenvolvimento" name="Em Desenvolvimento" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -255,7 +277,7 @@ const StudentDetails = () => {
                     <XAxis dataKey="data" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="progresso" stroke="hsl(var(--primary))" strokeWidth={2} />
+                    <Line type="monotone" dataKey="progresso" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -275,7 +297,7 @@ const StudentDetails = () => {
                   <span className="text-muted-foreground">Mês de referência:</span>
                   <Badge variant="outline">{aluno.ultimo_relatorio.mes_referencia}</Badge>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify_between">
                   <span className="text-muted-foreground">Data de geração:</span>
                   <span className="font-medium">{formatDateTime(aluno.ultimo_relatorio.data_geracao)}</span>
                 </div>
