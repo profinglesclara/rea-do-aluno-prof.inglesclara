@@ -216,6 +216,95 @@ export type Database = {
           },
         ]
       }
+      conquistas_alunos: {
+        Row: {
+          aluno_id: string
+          conquista_id: string
+          data_desbloqueio: string | null
+          id: string
+          observacao: string | null
+          origem: string
+        }
+        Insert: {
+          aluno_id: string
+          conquista_id: string
+          data_desbloqueio?: string | null
+          id?: string
+          observacao?: string | null
+          origem?: string
+        }
+        Update: {
+          aluno_id?: string
+          conquista_id?: string
+          data_desbloqueio?: string | null
+          id?: string
+          observacao?: string | null
+          origem?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conquistas_alunos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "conquistas_alunos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "conquistas_alunos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "conquistas_alunos_conquista_id_fkey"
+            columns: ["conquista_id"]
+            isOneToOne: false
+            referencedRelation: "conquistas_mestre"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conquistas_mestre: {
+        Row: {
+          ativa: boolean
+          criada_em: string | null
+          descricao: string
+          icone: string
+          id: string
+          nome: string
+          ordem_exibicao: number
+          slug: string
+        }
+        Insert: {
+          ativa?: boolean
+          criada_em?: string | null
+          descricao: string
+          icone: string
+          id?: string
+          nome: string
+          ordem_exibicao: number
+          slug: string
+        }
+        Update: {
+          ativa?: boolean
+          criada_em?: string | null
+          descricao?: string
+          icone?: string
+          id?: string
+          nome?: string
+          ordem_exibicao?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       entregas_tarefas: {
         Row: {
           aluno_id: string

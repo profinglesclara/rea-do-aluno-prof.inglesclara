@@ -1,111 +1,89 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trophy, Star, Target, Award, Zap, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-// Mock de conquistas
-const conquistasMock = [
-  {
-    id: 1,
-    nome: "Primeira Aula",
-    descricao: "Complete sua primeira aula",
-    desbloqueada: true,
-    icon: Star,
-  },
-  {
-    id: 2,
-    nome: "Assiduidade",
-    descricao: "Compareça a 5 aulas consecutivas",
-    desbloqueada: true,
-    icon: Trophy,
-  },
-  {
-    id: 3,
-    nome: "Dedicado",
-    descricao: "Complete 10 tarefas obrigatórias",
-    desbloqueada: true,
-    icon: Target,
-  },
-  {
-    id: 4,
-    nome: "Progresso Rápido",
-    descricao: "Atinja 50% de progresso geral",
-    desbloqueada: true,
-    icon: Zap,
-  },
-  {
-    id: 5,
-    nome: "Estudante Modelo",
-    descricao: "Complete todas as tarefas de um mês",
-    desbloqueada: true,
-    icon: Award,
-  },
-  {
-    id: 6,
-    nome: "Persistente",
-    descricao: "Estude por 3 meses consecutivos",
-    desbloqueada: false,
-    icon: Heart,
-  },
-  {
-    id: 7,
-    nome: "Mestre B1",
-    descricao: "Complete todos os tópicos do nível B1",
-    desbloqueada: false,
-    icon: Trophy,
-  },
-  {
-    id: 8,
-    nome: "Comunicador",
-    descricao: "Complete todas as atividades de Speaking",
-    desbloqueada: false,
-    icon: Star,
-  },
-  {
-    id: 9,
-    nome: "Escritor",
-    descricao: "Complete todas as atividades de Writing",
-    desbloqueada: false,
-    icon: Target,
-  },
-  {
-    id: 10,
-    nome: "Leitor Ávido",
-    descricao: "Complete todas as atividades de Reading",
-    desbloqueada: false,
-    icon: Award,
-  },
-  {
-    id: 11,
-    nome: "Ouvinte Atento",
-    descricao: "Complete todas as atividades de Listening",
-    desbloqueada: false,
-    icon: Zap,
-  },
-  {
-    id: 12,
-    nome: "Expert em Gramática",
-    descricao: "Complete todos os tópicos de Grammar",
-    desbloqueada: false,
-    icon: Trophy,
-  },
-  {
-    id: 13,
-    nome: "Vocabulário Rico",
-    descricao: "Complete todos os tópicos de Vocabulary",
-    desbloqueada: false,
-    icon: Star,
-  },
-];
+const iconMap: Record<string, any> = {
+  Star,
+  Trophy,
+  Target,
+  Award,
+  Zap,
+  Heart,
+};
 
 export default function AlunoConquistas() {
   const navigate = useNavigate();
 
-  const conquistasDesbloqueadas = conquistasMock.filter((c) => c.desbloqueada);
-  const conquistasBloqueadas = conquistasMock.filter((c) => !c.desbloqueada);
+  // Buscar aluno logado
+  const { data: currentUser } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const { data: usuario } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+      
+      return usuario;
+    },
+  });
+
+  // Buscar todas as conquistas disponíveis
+  const { data: conquistasMestre = [] } = useQuery({
+    queryKey: ["conquistasMestre"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("conquistas_mestre")
+        .select("*")
+        .eq("ativa", true)
+        .order("ordem_exibicao");
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Buscar conquistas desbloqueadas do aluno
+  const { data: conquistasDesbloqueadas = [] } = useQuery({
+    queryKey: ["conquistasAluno", currentUser?.user_id],
+    enabled: !!currentUser?.user_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("conquistas_alunos")
+        .select("*, conquistas_mestre(*)")
+        .eq("aluno_id", currentUser!.user_id);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Mapear conquistas com status de desbloqueio
+  const conquistasComStatus = conquistasMestre.map((conquista) => {
+    const desbloqueada = conquistasDesbloqueadas.find(
+      (ca) => ca.conquista_id === conquista.id
+    );
+    
+    return {
+      ...conquista,
+      desbloqueada: !!desbloqueada,
+      dataDesbloqueio: desbloqueada?.data_desbloqueio,
+    };
+  });
+
+  const conquistasDesbloqueadasList = conquistasComStatus.filter((c) => c.desbloqueada);
+  const conquistasBloqueadasList = conquistasComStatus.filter((c) => !c.desbloqueada);
 
   const renderConquista = (conquista: any) => {
-    const Icon = conquista.icon;
+    const Icon = iconMap[conquista.icone] || Trophy;
     return (
       <Card
         key={conquista.id}
@@ -120,7 +98,17 @@ export default function AlunoConquistas() {
             conquista.desbloqueada ? "text-yellow-500" : "text-muted-foreground"
           }`} />
           <h3 className="font-semibold mb-1">{conquista.nome}</h3>
-          <p className="text-sm text-muted-foreground">{conquista.descricao}</p>
+          <p className="text-sm text-muted-foreground mb-2">{conquista.descricao}</p>
+          {conquista.desbloqueada && conquista.dataDesbloqueio && (
+            <p className="text-xs text-yellow-600 dark:text-yellow-400">
+              Conquistada em {format(new Date(conquista.dataDesbloqueio), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            </p>
+          )}
+          {!conquista.desbloqueada && (
+            <p className="text-xs text-muted-foreground">
+              Ainda não desbloqueada
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -137,7 +125,7 @@ export default function AlunoConquistas() {
           <div>
             <h1 className="text-3xl font-bold">Minhas Conquistas</h1>
             <p className="text-muted-foreground">
-              {conquistasDesbloqueadas.length} de {conquistasMock.length} conquistas desbloqueadas
+              {conquistasDesbloqueadasList.length} de {conquistasMestre.length} conquistas desbloqueadas
             </p>
           </div>
         </div>
@@ -146,10 +134,10 @@ export default function AlunoConquistas() {
         <div>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-500" />
-            Desbloqueadas ({conquistasDesbloqueadas.length})
+            Desbloqueadas ({conquistasDesbloqueadasList.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {conquistasDesbloqueadas.map(renderConquista)}
+            {conquistasDesbloqueadasList.map(renderConquista)}
           </div>
         </div>
 
@@ -157,10 +145,10 @@ export default function AlunoConquistas() {
         <div>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <Trophy className="h-5 w-5 text-muted-foreground" />
-            Bloqueadas ({conquistasBloqueadas.length})
+            Bloqueadas ({conquistasBloqueadasList.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {conquistasBloqueadas.map(renderConquista)}
+            {conquistasBloqueadasList.map(renderConquista)}
           </div>
         </div>
       </div>

@@ -6,7 +6,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, ChevronDown } from "lucide-react";
+import { ArrowLeft, ChevronDown, Trophy, Star, Target, Award, Zap, Heart } from "lucide-react";
+import { GerenciarConquistasDialog } from "@/components/conquistas/GerenciarConquistasDialog";
+import { useQuery } from "@tanstack/react-query";
 
 type DashboardRow = {
   aluno_id: string;
@@ -34,6 +36,38 @@ const StudentDetails = () => {
   const [relatorios, setRelatorios] = useState<any[]>([]);
   const [relatoriosLoading, setRelatoriosLoading] = useState(false);
   const [relatoriosError, setRelatoriosError] = useState<string | null>(null);
+
+  const [conquistasDialogOpen, setConquistasDialogOpen] = useState(false);
+
+  // Buscar conquistas do aluno
+  const { data: conquistasData } = useQuery({
+    queryKey: ["conquistasAlunoDetalhes", aluno_id],
+    enabled: !!aluno_id,
+    queryFn: async () => {
+      const [mestreResult, alunoResult] = await Promise.all([
+        supabase.from("conquistas_mestre").select("*").eq("ativa", true),
+        supabase.from("conquistas_alunos").select("*").eq("aluno_id", aluno_id!),
+      ]);
+
+      if (mestreResult.error) throw mestreResult.error;
+      if (alunoResult.error) throw alunoResult.error;
+
+      return {
+        total: mestreResult.data?.length || 0,
+        desbloqueadas: alunoResult.data?.length || 0,
+        conquistas: alunoResult.data || [],
+      };
+    },
+  });
+
+  const iconMap: Record<string, any> = {
+    Star,
+    Trophy,
+    Target,
+    Award,
+    Zap,
+    Heart,
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -336,14 +370,49 @@ const StudentDetails = () => {
         {/* Resumo de Atividades e Conquistas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-lg">Conquistas</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold text-primary">
-                {dashboard.total_conquistas ?? 0}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">Total desbloqueadas</p>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-4xl font-bold text-primary">
+                    {conquistasData?.desbloqueadas ?? 0}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    de {conquistasData?.total ?? 0} desbloqueadas
+                  </p>
+                </div>
+                
+                {/* Ícones de conquistas recentes */}
+                {conquistasData && conquistasData.conquistas.length > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {conquistasData.conquistas.slice(0, 5).map((conquista: any) => {
+                      const Icon = iconMap[conquista.conquistas_mestre?.icone] || Trophy;
+                      return (
+                        <Icon
+                          key={conquista.id}
+                          className="h-6 w-6 text-yellow-500"
+                        />
+                      );
+                    })}
+                    {conquistasData.conquistas.length > 5 && (
+                      <span className="text-sm text-muted-foreground">
+                        +{conquistasData.conquistas.length - 5}
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setConquistasDialogOpen(true)}
+                >
+                  Gerenciar conquistas
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -493,6 +562,14 @@ const StudentDetails = () => {
           </Collapsible>
         </Card>
       </div>
+
+      {/* Dialog de gerenciamento de conquistas */}
+      <GerenciarConquistasDialog
+        open={conquistasDialogOpen}
+        onOpenChange={setConquistasDialogOpen}
+        alunoId={aluno_id!}
+        alunoNome={dashboard.nome_aluno || "Aluno"}
+      />
     </div>
   );
 };

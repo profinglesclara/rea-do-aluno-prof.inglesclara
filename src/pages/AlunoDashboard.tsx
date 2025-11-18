@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Calendar, BookOpen, Trophy, ListTodo } from "lucide-react";
+import { Calendar, BookOpen, Trophy, ListTodo, Star, Target, Award, Zap, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -57,6 +57,28 @@ export default function AlunoDashboard() {
     },
   });
 
+  // Buscar conquistas do aluno
+  const { data: conquistasData } = useQuery({
+    queryKey: ["conquistasAlunoDashboard", aluno?.user_id],
+    enabled: !!aluno?.user_id,
+    queryFn: async () => {
+      const [mestreResult, alunoResult] = await Promise.all([
+        supabase.from("conquistas_mestre").select("*").eq("ativa", true),
+        supabase.from("conquistas_alunos").select("*, conquistas_mestre(*)").eq("aluno_id", aluno!.user_id),
+      ]);
+
+      if (mestreResult.error) throw mestreResult.error;
+      if (alunoResult.error) throw alunoResult.error;
+
+      return {
+        total: mestreResult.data?.length || 0,
+        desbloqueadas: alunoResult.data?.length || 0,
+        bloqueadas: (mestreResult.data?.length || 0) - (alunoResult.data?.length || 0),
+        conquistas: alunoResult.data || [],
+      };
+    },
+  });
+
   // Calcular estatísticas
   const tarefasObrigatoriasPendentes = tarefas?.filter(
     (t) => t.tipo === "Obrigatoria" && t.status === "Pendente"
@@ -68,9 +90,14 @@ export default function AlunoDashboard() {
 
   const progressoGeral = aluno?.progresso_geral || 0;
 
-  // Mock de conquistas
-  const conquistasDesbloqueadas = 5;
-  const conquistasBloqueadas = 8;
+  const iconMap: Record<string, any> = {
+    Star,
+    Trophy,
+    Target,
+    Award,
+    Zap,
+    Heart,
+  };
 
   if (alunoLoading) {
     return (
@@ -232,20 +259,35 @@ export default function AlunoDashboard() {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Desbloqueadas:</span>
-                  <span className="text-xl font-bold">{conquistasDesbloqueadas}</span>
+                  <span className="text-xl font-bold">{conquistasData?.desbloqueadas ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Bloqueadas:</span>
-                  <span className="text-xl font-bold text-muted-foreground">{conquistasBloqueadas}</span>
+                  <span className="text-xl font-bold text-muted-foreground">{conquistasData?.bloqueadas ?? 0}</span>
                 </div>
-                <div className="flex gap-2 mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Trophy key={i} className="h-6 w-6 text-yellow-500" />
-                  ))}
-                  {[...Array(3)].map((_, i) => (
-                    <Trophy key={i} className="h-6 w-6 text-muted-foreground opacity-30" />
-                  ))}
-                </div>
+                {conquistasData && conquistasData.conquistas.length > 0 && (
+                  <div className="flex gap-2 mt-4 flex-wrap">
+                    {conquistasData.conquistas.slice(0, 5).map((conquista: any) => {
+                      const Icon = iconMap[conquista.conquistas_mestre?.icone] || Trophy;
+                      return (
+                        <Icon
+                          key={conquista.id}
+                          className="h-6 w-6 text-yellow-500"
+                        />
+                      );
+                    })}
+                    {conquistasData.conquistas.length > 5 && (
+                      <Trophy className="h-6 w-6 text-yellow-500 opacity-50" />
+                    )}
+                  </div>
+                )}
+                {(!conquistasData || conquistasData.conquistas.length === 0) && (
+                  <div className="flex gap-2 mt-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Trophy key={i} className="h-6 w-6 text-muted-foreground opacity-20" />
+                    ))}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
