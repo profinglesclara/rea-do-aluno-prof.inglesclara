@@ -286,18 +286,25 @@ const AdminAulas = () => {
     loadData();
   };
 
-  const getBadgeVariant = (status: string) => {
+  // Mapeia o status do banco para o texto exibido na UI
+  const getStatusDisplay = (status: string): string => {
+    if (status === "Cancelada") return "Faltou";
+    return status;
+  };
+
+  // Retorna classes de cor personalizadas para cada status
+  const getStatusColorClasses = (status: string): string => {
     switch (status) {
       case "Realizada":
-        return "default";
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800";
       case "Agendada":
-        return "secondary";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800";
       case "Cancelada":
-        return "destructive";
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800";
       case "Remarcada":
-        return "outline";
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800";
       default:
-        return "outline";
+        return "bg-muted text-muted-foreground border-border";
     }
   };
 
@@ -355,7 +362,7 @@ const AdminAulas = () => {
                     <SelectItem value="Todos">Todos</SelectItem>
                     <SelectItem value="Agendada">Agendada</SelectItem>
                     <SelectItem value="Realizada">Realizada</SelectItem>
-                    <SelectItem value="Cancelada">Cancelada</SelectItem>
+                    <SelectItem value="Cancelada">Faltou</SelectItem>
                     <SelectItem value="Remarcada">Remarcada</SelectItem>
                   </SelectContent>
                 </Select>
@@ -412,8 +419,8 @@ const AdminAulas = () => {
                       <TableCell>{formatDateTime(aula.data_aula)}</TableCell>
                       <TableCell>{aula.nome_aluno}</TableCell>
                       <TableCell>
-                        <Badge variant={getBadgeVariant(aula.status)}>
-                          {aula.status}
+                        <Badge className={getStatusColorClasses(aula.status)}>
+                          {getStatusDisplay(aula.status)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -504,7 +511,7 @@ const AdminAulas = () => {
                 <SelectContent>
                   <SelectItem value="Agendada">Agendada</SelectItem>
                   <SelectItem value="Realizada">Realizada</SelectItem>
-                  <SelectItem value="Cancelada">Cancelada</SelectItem>
+                  <SelectItem value="Cancelada">Faltou</SelectItem>
                   <SelectItem value="Remarcada">Remarcada</SelectItem>
                 </SelectContent>
               </Select>
@@ -570,7 +577,7 @@ const AdminAulas = () => {
                 <SelectContent>
                   <SelectItem value="Agendada">Agendada</SelectItem>
                   <SelectItem value="Realizada">Realizada</SelectItem>
-                  <SelectItem value="Cancelada">Cancelada</SelectItem>
+                  <SelectItem value="Cancelada">Faltou</SelectItem>
                   <SelectItem value="Remarcada">Remarcada</SelectItem>
                 </SelectContent>
               </Select>

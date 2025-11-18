@@ -141,7 +141,7 @@ export default function AlunoDashboard() {
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <span>Cancelada</span>
+                    <span>Faltou</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded-full bg-yellow-500" />
