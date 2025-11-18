@@ -16,6 +16,8 @@ import AlunoTarefaDetalhes from "./pages/AlunoTarefaDetalhes";
 import AlunoConquistas from "./pages/AlunoConquistas";
 import AlunoNotificacoes from "./pages/AlunoNotificacoes";
 import AdminNotificacoes from "./pages/AdminNotificacoes";
+import AlunoCalendario from "./pages/AlunoCalendario";
+import AdminCalendarioAulas from "./pages/AdminCalendarioAulas";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -42,7 +44,9 @@ const App = () => (
           <Route path="/aluno/tarefas/:tarefa_id" element={<AlunoTarefaDetalhes />} />
           <Route path="/aluno/conquistas" element={<AlunoConquistas />} />
           <Route path="/aluno/notificacoes" element={<AlunoNotificacoes />} />
+          <Route path="/aluno/calendario" element={<AlunoCalendario />} />
           <Route path="/admin/notificacoes" element={<ProtectedRoute><AdminNotificacoes /></ProtectedRoute>} />
+          <Route path="/admin/calendario-aulas" element={<ProtectedRoute><AdminCalendarioAulas /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
