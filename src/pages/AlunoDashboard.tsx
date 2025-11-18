@@ -115,10 +115,7 @@ export default function AlunoDashboard() {
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Card 1 - Calendário de aulas */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate("/aluno/calendario")}
-          >
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
@@ -147,6 +144,22 @@ export default function AlunoDashboard() {
                     <div className="w-3 h-3 rounded-full bg-yellow-500" />
                     <span>Remarcada</span>
                   </div>
+                </div>
+                <div className="flex flex-col gap-2 pt-2">
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto justify-start"
+                    onClick={() => navigate("/aluno/calendario")}
+                  >
+                    Ver calendário →
+                  </Button>
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto justify-start text-muted-foreground"
+                    onClick={() => navigate("/aluno/aulas")}
+                  >
+                    Ver histórico completo →
+                  </Button>
                 </div>
               </div>
             </CardContent>
