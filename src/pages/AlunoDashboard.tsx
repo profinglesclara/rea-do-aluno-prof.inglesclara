@@ -117,7 +117,7 @@ export default function AlunoDashboard() {
           {/* Card 1 - Calendário de aulas */}
           <Card 
             className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate("/aluno/dashboard")}
+            onClick={() => navigate("/aluno/calendario")}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
