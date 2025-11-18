@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 type Relatorio = {
   relatorio_id: string;
@@ -41,6 +43,8 @@ const AdminRelatorios = () => {
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedRelatorio, setSelectedRelatorio] = useState<Relatorio | null>(null);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("Geral");
 
   useEffect(() => {
     loadAlunos();
@@ -167,9 +171,22 @@ const AdminRelatorios = () => {
     loadRelatorios();
   };
 
-  const handleVerDetalhes = (relatorio: Relatorio) => {
+  const handleVerDetalhes = async (relatorio: Relatorio) => {
     setSelectedRelatorio(relatorio);
+    setSelectedCategory("Geral");
     setDetailsOpen(true);
+    
+    // Buscar dados do dashboard do aluno para os gráficos
+    const { data, error } = await supabase.rpc("get_dashboard_aluno", {
+      p_aluno: relatorio.aluno,
+    });
+    
+    if (error) {
+      console.error("Erro ao buscar dashboard do aluno:", error);
+      setDashboardData(null);
+    } else {
+      setDashboardData(data);
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -210,6 +227,50 @@ const AdminRelatorios = () => {
   ];
 
   const anos = ["2024", "2025", "2026"];
+
+  // Filtrar histórico do mês do relatório
+  const historicoMesDoRelatorio = useMemo(() => {
+    if (!dashboardData?.historico_progresso || !selectedRelatorio) return [];
+    
+    // Extrair mês e ano do mes_referencia (formato: "MM/YYYY")
+    const [mesRef, anoRef] = selectedRelatorio.mes_referencia.split("/");
+    const mesNum = parseInt(mesRef) - 1; // 0-indexed
+    const anoNum = parseInt(anoRef);
+    
+    return (dashboardData.historico_progresso as Array<{ data: string; progresso_geral: number }>)
+      .filter((item) => {
+        const dataItem = new Date(item.data);
+        return dataItem.getMonth() === mesNum && dataItem.getFullYear() === anoNum;
+      })
+      .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+  }, [dashboardData?.historico_progresso, selectedRelatorio]);
+
+  // Preparar dados para o gráfico
+  const chartData = useMemo(() => {
+    if (selectedCategory === "Geral") {
+      return historicoMesDoRelatorio.map((item) => ({
+        data: new Date(item.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+        valor: item.progresso_geral || 0,
+      }));
+    } else {
+      // Para categorias específicas, usar progresso_por_categoria
+      const progressoPorCategoria = dashboardData?.progresso_por_categoria || {};
+      const categoriaData = progressoPorCategoria[selectedCategory];
+      
+      if (!categoriaData) return [];
+      
+      // Como não temos histórico por categoria, mostrar apenas o valor atual
+      return [{
+        data: new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+        valor: categoriaData.percentual_concluido || 0,
+      }];
+    }
+  }, [selectedCategory, historicoMesDoRelatorio, dashboardData?.progresso_por_categoria]);
+
+  const categorias = useMemo(() => {
+    const progressoPorCategoria = dashboardData?.progresso_por_categoria || {};
+    return ["Geral", ...Object.keys(progressoPorCategoria)];
+  }, [dashboardData?.progresso_por_categoria]);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -408,7 +469,80 @@ const AdminRelatorios = () => {
                 </CardContent>
               </Card>
 
-              {/* Bloco 3 - Comentário Automático */}
+              {/* Bloco 3 - Gráfico de Evolução Mensal */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Evolução no mês do relatório</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Acompanhe como o progresso evoluiu a cada atualização neste mês
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Filtros de categoria */}
+                  <div className="flex flex-wrap gap-2">
+                    {categorias.map((cat) => (
+                      <Button
+                        key={cat}
+                        variant={selectedCategory === cat ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedCategory(cat)}
+                      >
+                        {cat}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Gráfico */}
+                  {chartData.length === 0 ? (
+                    <div className="flex items-center justify-center h-64 text-muted-foreground">
+                      <p>Ainda não há dados suficientes neste mês para montar o gráfico.</p>
+                    </div>
+                  ) : (
+                    <ChartContainer
+                      config={{
+                        valor: {
+                          label: "Progresso (%)",
+                          color: "hsl(var(--primary))",
+                        },
+                      }}
+                      className="h-64"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData}>
+                          <defs>
+                            <linearGradient id="colorValorRelatorio" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis 
+                            dataKey="data" 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <YAxis 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                            domain={[0, 100]}
+                          />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Area
+                            type="monotone"
+                            dataKey="valor"
+                            stroke="hsl(var(--primary))"
+                            fillOpacity={1}
+                            fill="url(#colorValorRelatorio)"
+                            strokeWidth={2}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Bloco 4 - Comentário Automático */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Comentário Automático</CardTitle>
