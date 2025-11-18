@@ -148,6 +148,28 @@ const StudentDetails = () => {
   const formatDate = (dateString: string | null) =>
     dateString ? new Date(dateString).toLocaleDateString("pt-BR") : "—";
 
+  // Mapeia o status do banco para o texto exibido na UI
+  const getStatusDisplay = (status: string): string => {
+    if (status === "Cancelada") return "Faltou";
+    return status;
+  };
+
+  // Retorna classes de cor personalizadas para cada status
+  const getStatusColorClasses = (status: string): string => {
+    switch (status) {
+      case "Realizada":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800";
+      case "Agendada":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800";
+      case "Cancelada":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800";
+      case "Remarcada":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800";
+      default:
+        return "bg-muted text-muted-foreground border-border";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -192,7 +214,7 @@ const StudentDetails = () => {
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Canceladas</p>
+                <p className="text-sm text-muted-foreground">Faltou</p>
                 <p className="text-2xl font-bold text-red-600">
                   {dashboard.total_canceladas}
                 </p>
@@ -437,12 +459,8 @@ const StudentDetails = () => {
                       <TableRow key={aula.aula_id}>
                         <TableCell>{formatDateTime(aula.data_aula)}</TableCell>
                         <TableCell>
-                          <Badge variant={
-                            aula.status === "Realizada" ? "default" : 
-                            aula.status === "Agendada" ? "secondary" : 
-                            "outline"
-                          }>
-                            {aula.status}
+                          <Badge className={getStatusColorClasses(aula.status)}>
+                            {getStatusDisplay(aula.status)}
                           </Badge>
                         </TableCell>
                         <TableCell>{aula.conteudo || "—"}</TableCell>

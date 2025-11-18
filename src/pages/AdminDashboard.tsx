@@ -238,7 +238,7 @@ const AdminDashboard = () => {
                     <TableHead className="text-center">Total Aulas</TableHead>
                     <TableHead className="text-center">Realizadas</TableHead>
                     <TableHead className="text-center">Agendadas</TableHead>
-                    <TableHead className="text-center">Canceladas</TableHead>
+                    <TableHead className="text-center">Faltou</TableHead>
                     <TableHead className="text-center">Remarcadas</TableHead>
                     <TableHead>Próxima Aula</TableHead>
                     <TableHead className="text-center">Ações</TableHead>
