@@ -44,12 +44,12 @@ const Login = () => {
       // Redirecionar baseado no tipo de usuário
       if (userData.tipo_usuario === "Admin") {
         navigate("/admin");
-      } else if (userData.tipo_usuario === "Aluno") {
-        navigate("/aluno/dashboard");
-      } else if (userData.tipo_usuario === "Adulto") {
-        navigate("/responsavel/dashboard");
       } else if (userData.tipo_usuario === "Responsável") {
         navigate("/responsavel/dashboard");
+      } else if (userData.tipo_usuario === "Adulto") {
+        navigate("/adulto/dashboard");
+      } else if (userData.tipo_usuario === "Aluno") {
+        navigate("/aluno/dashboard");
       } else {
         navigate("/");
       }
