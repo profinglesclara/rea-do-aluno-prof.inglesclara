@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 const Login = () => {
-  const [email, setEmail] = useState("admin@teste.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -46,7 +46,9 @@ const Login = () => {
         navigate("/admin");
       } else if (userData.tipo_usuario === "Aluno") {
         navigate("/aluno/dashboard");
-      } else if (userData.tipo_usuario === "Responsável" || userData.tipo_usuario === "Adulto") {
+      } else if (userData.tipo_usuario === "Adulto") {
+        navigate("/responsavel/dashboard");
+      } else if (userData.tipo_usuario === "Responsável") {
         navigate("/responsavel/dashboard");
       } else {
         navigate("/");
@@ -58,7 +60,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Login Admin</CardTitle>
+          <CardTitle className="text-2xl text-center">Login</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
