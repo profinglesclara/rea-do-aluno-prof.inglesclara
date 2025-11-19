@@ -27,6 +27,9 @@ Deno.serve(async (req) => {
     // Listar todos os usuários para verificar se já existem
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     
+    // Primeiro, precisamos obter os IDs dos usuários que serão criados
+    let responsavelId: string | null = null;
+    
     const usuarios = [
       {
         email: 'admin@teste.com',
@@ -42,7 +45,8 @@ Deno.serve(async (req) => {
         nome_completo: 'Responsável Teste',
         nome_de_usuario: 'responsavel_teste',
         tipo_usuario: 'Responsável',
-        dados_adicionais: {}
+        dados_adicionais: {},
+        isResponsavel: true
       },
       {
         email: 'aluno.adulto@teste.com',
@@ -56,6 +60,20 @@ Deno.serve(async (req) => {
           status_aluno: 'Ativo',
           frequencia_mensal: 4
         }
+      },
+      {
+        email: 'aluno.teste@teste.com',
+        senha: '123456',
+        nome_completo: 'Aluno Teste',
+        nome_de_usuario: 'aluno_teste',
+        tipo_usuario: 'Aluno',
+        dados_adicionais: {
+          nivel_cefr: 'A2',
+          modalidade: 'Online',
+          status_aluno: 'Ativo',
+          frequencia_mensal: 8
+        },
+        needsResponsavel: true
       }
     ];
 
@@ -100,6 +118,27 @@ Deno.serve(async (req) => {
         userId = newAuthUser.user.id;
       }
 
+      // Salvar responsavel_id para vincular aluno depois
+      if (usuario.isResponsavel) {
+        responsavelId = userId;
+      }
+
+      // Preparar dados do usuário
+      const usuarioData: any = {
+        nome_completo: usuario.nome_completo,
+        nome_de_usuario: usuario.nome_de_usuario,
+        email: usuario.email,
+        senha: usuario.senha,
+        tipo_usuario: usuario.tipo_usuario,
+        email_confirmado: true,
+        ...usuario.dados_adicionais
+      };
+
+      // Se for aluno que precisa de responsável e já temos o ID do responsável
+      if (usuario.needsResponsavel && responsavelId) {
+        usuarioData.responsavel_por = responsavelId;
+      }
+
       // Verificar se já existe na tabela usuarios
       const { data: existingUsuario } = await supabaseAdmin
         .from('usuarios')
@@ -113,15 +152,7 @@ Deno.serve(async (req) => {
         // Atualizar dados do usuário
         const { error: updateError } = await supabaseAdmin
           .from('usuarios')
-          .update({
-            nome_completo: usuario.nome_completo,
-            nome_de_usuario: usuario.nome_de_usuario,
-            email: usuario.email,
-            senha: usuario.senha,
-            tipo_usuario: usuario.tipo_usuario,
-            email_confirmado: true,
-            ...usuario.dados_adicionais
-          })
+          .update(usuarioData)
           .eq('user_id', userId);
 
         if (updateError) {
@@ -138,13 +169,7 @@ Deno.serve(async (req) => {
           .from('usuarios')
           .insert({
             user_id: userId,
-            nome_completo: usuario.nome_completo,
-            nome_de_usuario: usuario.nome_de_usuario,
-            email: usuario.email,
-            senha: usuario.senha,
-            tipo_usuario: usuario.tipo_usuario,
-            email_confirmado: true,
-            ...usuario.dados_adicionais
+            ...usuarioData
           });
 
         if (insertError) {
