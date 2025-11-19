@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Download, Mail } from "lucide-react";
+import jsPDF from "jspdf";
+import { toast } from "@/hooks/use-toast";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
@@ -47,6 +49,8 @@ const AdminRelatorios = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("Geral");
   const [mesComparadoRelatorio, setMesComparadoRelatorio] = useState<string>("");
   const [relatoriosDoAluno, setRelatoriosDoAluno] = useState<Relatorio[]>([]);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [showEmailConfirm, setShowEmailConfirm] = useState(false);
 
   useEffect(() => {
     loadAlunos();
@@ -229,6 +233,176 @@ const AdminRelatorios = () => {
       } else {
         setMesComparadoRelatorio("");
       }
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    if (!selectedRelatorio) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const lineHeight = 7;
+    let yPos = margin;
+
+    // Função auxiliar para adicionar texto com quebra de linha
+    const addText = (text: string, fontSize: number = 11, isBold: boolean = false) => {
+      doc.setFontSize(fontSize);
+      if (isBold) {
+        doc.setFont("helvetica", "bold");
+      } else {
+        doc.setFont("helvetica", "normal");
+      }
+      
+      const lines = doc.splitTextToSize(text, pageWidth - 2 * margin);
+      lines.forEach((line: string) => {
+        if (yPos > doc.internal.pageSize.getHeight() - margin) {
+          doc.addPage();
+          yPos = margin;
+        }
+        doc.text(line, margin, yPos);
+        yPos += lineHeight;
+      });
+    };
+
+    // Cabeçalho
+    addText("RELATÓRIO MENSAL", 16, true);
+    yPos += 3;
+    addText(`Aluno: ${selectedRelatorio.nome_aluno}`, 12, true);
+    addText(`Nível CEFR: ${selectedRelatorio.nivel_cefr || "—"}`, 11);
+    addText(`Mês de Referência: ${selectedRelatorio.mes_referencia}`, 11);
+    addText(`Data de Geração: ${formatDateWithTime(selectedRelatorio.data_geracao)}`, 11);
+    yPos += 5;
+
+    // Resumo de progresso
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 8;
+    
+    addText("RESUMO DE PROGRESSO", 13, true);
+    yPos += 2;
+    addText(`Progresso Concluído: ${selectedRelatorio.porcentagem_concluida ?? 0}%`, 11);
+    addText(`Em Desenvolvimento: ${selectedRelatorio.porcentagem_em_desenvolvimento ?? 0}%`, 11);
+    yPos += 5;
+
+    // Progresso por categoria (se disponível)
+    if (dashboardData?.progresso_por_categoria) {
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 8;
+      addText("PROGRESSO POR CATEGORIA", 13, true);
+      yPos += 2;
+
+      const categorias = Object.keys(dashboardData.progresso_por_categoria);
+      categorias.forEach((cat) => {
+        const dados = dashboardData.progresso_por_categoria[cat];
+        addText(
+          `${cat}: ${dados.percentual_concluido?.toFixed(1) || 0}% concluído, ${dados.percentual_em_desenvolvimento?.toFixed(1) || 0}% em desenvolvimento`,
+          10
+        );
+      });
+      yPos += 3;
+    }
+
+    // Comentário automático
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 8;
+    addText("COMENTÁRIO DA PROFESSORA", 13, true);
+    yPos += 2;
+    addText(
+      selectedRelatorio.comentario_automatico || "Nenhum comentário disponível.",
+      10
+    );
+
+    // Salvar PDF
+    const fileName = `relatorio_${selectedRelatorio.nome_aluno.replace(/\s+/g, "_")}_${selectedRelatorio.mes_referencia.replace(/\//g, "-")}.pdf`;
+    doc.save(fileName);
+
+    toast({
+      title: "PDF gerado com sucesso",
+      description: "O arquivo foi baixado para o seu computador.",
+    });
+  };
+
+  const handleSendEmail = async () => {
+    if (!selectedRelatorio) return;
+
+    setSendingEmail(true);
+    
+    try {
+      // Montar conteúdo HTML do e-mail
+      let categoriasHTML = "";
+      if (dashboardData?.progresso_por_categoria) {
+        const categorias = Object.keys(dashboardData.progresso_por_categoria);
+        categoriasHTML = categorias.map((cat) => {
+          const dados = dashboardData.progresso_por_categoria[cat];
+          return `<li><strong>${cat}:</strong> ${dados.percentual_concluido?.toFixed(1) || 0}% concluído, ${dados.percentual_em_desenvolvimento?.toFixed(1) || 0}% em desenvolvimento</li>`;
+        }).join("");
+      }
+
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
+            Relatório Mensal - ${selectedRelatorio.mes_referencia}
+          </h1>
+          
+          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="color: #555; font-size: 18px; margin-top: 0;">Informações do Aluno</h2>
+            <p><strong>Nome:</strong> ${selectedRelatorio.nome_aluno}</p>
+            <p><strong>Nível CEFR:</strong> ${selectedRelatorio.nivel_cefr || "—"}</p>
+            <p><strong>Mês de Referência:</strong> ${selectedRelatorio.mes_referencia}</p>
+          </div>
+
+          <div style="margin: 20px 0;">
+            <h2 style="color: #555; font-size: 18px;">Resumo de Progresso</h2>
+            <p><strong>Progresso Concluído:</strong> ${selectedRelatorio.porcentagem_concluida ?? 0}%</p>
+            <p><strong>Em Desenvolvimento:</strong> ${selectedRelatorio.porcentagem_em_desenvolvimento ?? 0}%</p>
+          </div>
+
+          ${categoriasHTML ? `
+            <div style="margin: 20px 0;">
+              <h2 style="color: #555; font-size: 18px;">Progresso por Categoria</h2>
+              <ul style="line-height: 1.8;">
+                ${categoriasHTML}
+              </ul>
+            </div>
+          ` : ""}
+
+          <div style="background-color: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="color: #555; font-size: 18px; margin-top: 0;">Comentário da Professora</h2>
+            <p style="white-space: pre-wrap;">${selectedRelatorio.comentario_automatico || "Nenhum comentário disponível."}</p>
+          </div>
+
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #777; font-size: 12px;">
+            <p>Este é um e-mail automático. Por favor, não responda.</p>
+          </div>
+        </div>
+      `;
+
+      const { data, error } = await supabase.functions.invoke("enviar-email-notificacao", {
+        body: {
+          to: "responsavel@teste.com", // Email de teste - idealmente buscar do perfil do responsável
+          subject: `Relatório mensal de ${selectedRelatorio.nome_aluno} – ${selectedRelatorio.mes_referencia}`,
+          html: htmlContent,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "E-mail enviado com sucesso",
+        description: "O relatório foi enviado para o responsável.",
+      });
+      
+      setShowEmailConfirm(false);
+    } catch (error) {
+      console.error("Erro ao enviar e-mail:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao enviar e-mail",
+        description: "Não foi possível enviar o relatório. Tente novamente.",
+      });
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -783,8 +957,56 @@ const AdminRelatorios = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Botões de ação */}
+              <div className="flex gap-3 justify-end pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={handleDownloadPDF}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Baixar PDF
+                </Button>
+                <Button
+                  onClick={() => setShowEmailConfirm(true)}
+                  className="gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  Enviar por e-mail
+                </Button>
+              </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmação de envio de e-mail */}
+      <Dialog open={showEmailConfirm} onOpenChange={setShowEmailConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar relatório por e-mail</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Enviar este relatório mensal por e-mail para o responsável do aluno?
+            </p>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowEmailConfirm(false)}
+              disabled={sendingEmail}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSendEmail}
+              disabled={sendingEmail}
+            >
+              {sendingEmail ? "Enviando..." : "Enviar"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
