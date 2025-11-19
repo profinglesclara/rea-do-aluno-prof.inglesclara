@@ -6,25 +6,55 @@ import { Calendar, BookOpen, Trophy, ListTodo, Star, Target, Award, Zap, Heart }
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useEffect, useState } from "react";
 
 export default function AlunoDashboard() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Buscar o primeiro aluno teste
-  const { data: aluno, isLoading: alunoLoading } = useQuery({
-    queryKey: ["alunoTeste"],
-    queryFn: async () => {
+  // Buscar usuário logado
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        navigate("/login");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("usuarios")
         .select("*")
-        .eq("tipo_usuario", "Aluno")
-        .limit(1)
+        .eq("user_id", session.user.id)
         .single();
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+
+      if (error || !data) {
+        console.error("Erro ao buscar usuário:", error);
+        navigate("/login");
+        return;
+      }
+
+      // Verificar se é Aluno
+      if (data.tipo_usuario !== "Aluno") {
+        if (data.tipo_usuario === "Admin") {
+          navigate("/admin");
+        } else if (data.tipo_usuario === "Adulto") {
+          navigate("/adulto/dashboard");
+        } else if (data.tipo_usuario === "Responsável") {
+          navigate("/responsavel/dashboard");
+        }
+        return;
+      }
+
+      setCurrentUser(data);
+      setLoading(false);
+    };
+
+    fetchCurrentUser();
+  }, [navigate]);
+
+  const aluno = currentUser;
+  const alunoLoading = loading;
 
   // Buscar aulas do aluno
   const { data: aulas } = useQuery({

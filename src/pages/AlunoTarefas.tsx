@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format, isPast, parseISO } from "date-fns";
@@ -11,26 +11,46 @@ import { ptBR } from "date-fns/locale";
 
 export default function AlunoTarefas() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   
   // Filtros
   const [filterTipo, setFilterTipo] = useState<"Todas" | "Obrigatoria" | "Sugerida">("Todas");
   const [filterStatus, setFilterStatus] = useState<"Todos" | "Pendente" | "Entregue" | "Corrigida">("Todos");
 
-  // Buscar o primeiro aluno teste
-  const { data: aluno } = useQuery({
-    queryKey: ["alunoTeste"],
-    queryFn: async () => {
+  // Buscar usuário logado
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        navigate("/login");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("usuarios")
         .select("*")
-        .eq("tipo_usuario", "Aluno")
-        .limit(1)
+        .eq("user_id", session.user.id)
         .single();
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+
+      if (error || !data) {
+        navigate("/login");
+        return;
+      }
+
+      if (data.tipo_usuario !== "Aluno") {
+        navigate("/login");
+        return;
+      }
+
+      setCurrentUser(data);
+      setLoading(false);
+    };
+
+    fetchCurrentUser();
+  }, [navigate]);
+
+  const aluno = currentUser;
 
   // Buscar tarefas do aluno
   const { data: tarefas } = useQuery({
