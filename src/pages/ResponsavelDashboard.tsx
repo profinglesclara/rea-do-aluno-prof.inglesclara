@@ -148,10 +148,8 @@ export default function ResponsavelDashboard() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {alunosVinculados.map((aluno) => {
-              const dashboard = dashboardData?.find(d => d.aluno_id === aluno.user_id);
-              
               return (
-                <Card key={aluno.user_id} className="hover:shadow-lg transition-shadow">
+                <Card key={aluno.aluno_id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -159,7 +157,7 @@ export default function ResponsavelDashboard() {
                           <User className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                          <CardTitle className="text-lg">{aluno.nome_completo}</CardTitle>
+                          <CardTitle className="text-lg">{aluno.nome_aluno}</CardTitle>
                           <div className="flex gap-2 mt-1">
                             {aluno.nivel_cefr && (
                               <Badge variant="secondary">{aluno.nivel_cefr}</Badge>
@@ -185,22 +183,20 @@ export default function ResponsavelDashboard() {
                     </div>
 
                     {/* Resumo de aulas */}
-                    {dashboard && (
-                      <div className="text-sm space-y-1">
-                        <p className="font-medium">Aulas no mês:</p>
-                        <div className="grid grid-cols-2 gap-2 text-muted-foreground">
-                          <span>✓ {dashboard.total_concluidas || 0} realizadas</span>
-                          <span>📅 {dashboard.total_agendadas || 0} agendadas</span>
-                          <span>❌ {dashboard.total_canceladas || 0} faltou</span>
-                          <span>📊 {dashboard.total_aulas || 0} total</span>
-                        </div>
+                    <div className="text-sm space-y-1">
+                      <p className="font-medium">Aulas no mês:</p>
+                      <div className="grid grid-cols-2 gap-2 text-muted-foreground">
+                        <span>✓ {aluno.total_concluidas || 0} realizadas</span>
+                        <span>📅 {aluno.total_agendadas || 0} agendadas</span>
+                        <span>❌ {aluno.total_canceladas || 0} faltou</span>
+                        <span>📊 {aluno.total_aulas || 0} total</span>
                       </div>
-                    )}
+                    </div>
 
                     {/* Botão Ver detalhes */}
                     <Button
                       className="w-full"
-                      onClick={() => navigate(`/responsavel/aluno/${aluno.user_id}`)}
+                      onClick={() => navigate(`/responsavel/aluno/${aluno.aluno_id}`)}
                     >
                       Ver detalhes
                     </Button>
