@@ -48,7 +48,7 @@ export default function AdminTarefas() {
   // Filtros
   const [filterAluno, setFilterAluno] = useState<string>("todos");
   const [filterTipo, setFilterTipo] = useState<string>("todas");
-  const [filterMes, setFilterMes] = useState<string>("");
+  const [filterMes, setFilterMes] = useState<string>("todos");
   const [filterAno, setFilterAno] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [showAguardandoCorrecao, setShowAguardandoCorrecao] = useState(false);
@@ -113,10 +113,10 @@ export default function AdminTarefas() {
     if (filterStatus !== "todos" && tarefa.status !== filterStatus) return false;
     
     // Filtro de mês/ano
-    if (filterMes || filterAno) {
+    if ((filterMes && filterMes !== "todos") || filterAno) {
       const dataRef = tarefa.data_limite || tarefa.criada_em;
       const data = new Date(dataRef);
-      if (filterMes && (data.getMonth() + 1).toString() !== filterMes) return false;
+      if (filterMes && filterMes !== "todos" && (data.getMonth() + 1).toString() !== filterMes) return false;
       if (filterAno && data.getFullYear().toString() !== filterAno) return false;
     }
     
@@ -526,7 +526,7 @@ export default function AdminTarefas() {
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="1">Janeiro</SelectItem>
                     <SelectItem value="2">Fevereiro</SelectItem>
                     <SelectItem value="3">Março</SelectItem>
