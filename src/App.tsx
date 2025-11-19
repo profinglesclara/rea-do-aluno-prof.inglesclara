@@ -22,6 +22,11 @@ import AdminCalendarioAulas from "./pages/AdminCalendarioAulas";
 import ResponsavelDashboard from "./pages/ResponsavelDashboard";
 import ResponsavelAlunoDetalhes from "./pages/ResponsavelAlunoDetalhes";
 import AdultoDashboard from "./pages/AdultoDashboard";
+import AdultoCalendario from "./pages/AdultoCalendario";
+import AdultoProgresso from "./pages/AdultoProgresso";
+import AdultoTarefas from "./pages/AdultoTarefas";
+import AdultoTarefaDetalhes from "./pages/AdultoTarefaDetalhes";
+import AdultoConquistas from "./pages/AdultoConquistas";
 import AdminCriarUsuariosTeste from "./pages/AdminCriarUsuariosTeste";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -60,6 +65,11 @@ const App = () => (
           <Route path="/responsavel/dashboard" element={<ResponsavelProtectedRoute><ResponsavelDashboard /></ResponsavelProtectedRoute>} />
           <Route path="/responsavel/aluno/:aluno_id" element={<ResponsavelProtectedRoute><ResponsavelAlunoDetalhes /></ResponsavelProtectedRoute>} />
           <Route path="/adulto/dashboard" element={<AdultoProtectedRoute><AdultoDashboard /></AdultoProtectedRoute>} />
+          <Route path="/adulto/calendario" element={<AdultoProtectedRoute><AdultoCalendario /></AdultoProtectedRoute>} />
+          <Route path="/adulto/progresso" element={<AdultoProtectedRoute><AdultoProgresso /></AdultoProtectedRoute>} />
+          <Route path="/adulto/tarefas" element={<AdultoProtectedRoute><AdultoTarefas /></AdultoProtectedRoute>} />
+          <Route path="/adulto/tarefas/:tarefa_id" element={<AdultoProtectedRoute><AdultoTarefaDetalhes /></AdultoProtectedRoute>} />
+          <Route path="/adulto/conquistas" element={<AdultoProtectedRoute><AdultoConquistas /></AdultoProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

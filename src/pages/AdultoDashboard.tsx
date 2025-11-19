@@ -2,24 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft, Calendar, TrendingUp, BookOpen, Award } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useEffect, useState } from "react";
-
-type DashboardData = {
-  aluno_id: string;
-  nome_aluno: string;
-  nivel_cefr: string | null;
-  modalidade: string | null;
-  progresso_geral: number | null;
-  total_aulas: number;
-  total_concluidas: number;
-  total_agendadas: number;
-  total_canceladas: number;
-};
 
 export default function AdultoDashboard() {
   const navigate = useNavigate();
@@ -76,10 +62,10 @@ export default function AdultoDashboard() {
         .from("dashboard_resumo_alunos")
         .select("*")
         .eq("aluno_id", currentUser.user_id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data as DashboardData;
+      return data;
     },
   });
 
@@ -93,7 +79,7 @@ export default function AdultoDashboard() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -104,82 +90,123 @@ export default function AdultoDashboard() {
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-3xl font-bold">Meu Progresso</h1>
+            <div>
+              <h1 className="text-3xl font-bold">Meu Portal</h1>
+              <p className="text-muted-foreground">{currentUser?.nome_completo}</p>
+            </div>
           </div>
           <NotificationBell userId={currentUser?.user_id || ""} />
         </div>
 
-        {/* Dados do aluno adulto */}
+        {/* Cards principais */}
         {!dashboardData ? (
           <Card>
             <CardContent className="p-6">
-              <p className="text-muted-foreground">Carregando seus dados...</p>
+              <p className="text-muted-foreground">Perfil de aluno adulto não encontrado.</p>
             </CardContent>
           </Card>
         ) : (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Calendário de Aulas */}
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-6 w-6 text-primary" />
+                  <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <Calendar className="h-6 w-6 text-blue-500" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl">{currentUser?.nome_completo}</CardTitle>
-                    <div className="flex gap-2 mt-1">
-                      {dashboardData.nivel_cefr && (
-                        <Badge variant="outline">{dashboardData.nivel_cefr}</Badge>
-                      )}
-                      {dashboardData.modalidade && (
-                        <Badge variant="outline">{dashboardData.modalidade}</Badge>
-                      )}
-                    </div>
+                    <CardTitle>Calendário de Aulas</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {dashboardData.total_agendadas || 0} aulas agendadas
+                    </p>
                   </div>
                 </div>
-                <Button onClick={() => navigate(`/responsavel/aluno/${currentUser?.user_id}`)}>
-                  Ver detalhes
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate("/adulto/calendario")}
+                  className="w-full"
+                >
+                  Ver calendário
                 </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Progresso Geral */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">Progresso Geral</span>
-                  <span className="text-sm text-muted-foreground">
-                    {dashboardData.progresso_geral || 0}%
-                  </span>
-                </div>
-                <Progress value={dashboardData.progresso_geral || 0} />
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Resumo de aulas */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{dashboardData.total_aulas || 0}</div>
-                  <div className="text-xs text-muted-foreground">Total de aulas</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {dashboardData.total_concluidas || 0}
+            {/* Progressos */}
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <TrendingUp className="h-6 w-6 text-green-500" />
                   </div>
-                  <div className="text-xs text-muted-foreground">Realizadas</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {dashboardData.total_agendadas || 0}
+                  <div>
+                    <CardTitle>Meu Progresso</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {dashboardData.progresso_geral || 0}% concluído
+                    </p>
                   </div>
-                  <div className="text-xs text-muted-foreground">Agendadas</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">
-                    {dashboardData.total_canceladas || 0}
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate("/adulto/progresso")}
+                  className="w-full"
+                >
+                  Ver progresso
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Tarefas */}
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-purple-500/10 flex items-center justify-center">
+                    <BookOpen className="h-6 w-6 text-purple-500" />
                   </div>
-                  <div className="text-xs text-muted-foreground">Faltou</div>
+                  <div>
+                    <CardTitle>Minhas Tarefas</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {dashboardData.atividades_tarefas_pendentes || 0} tarefas pendentes
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate("/adulto/tarefas")}
+                  className="w-full"
+                >
+                  Ver tarefas
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Conquistas */}
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                    <Award className="h-6 w-6 text-yellow-500" />
+                  </div>
+                  <div>
+                    <CardTitle>Minhas Conquistas</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {dashboardData.total_conquistas || 0} conquistas desbloqueadas
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate("/adulto/conquistas")}
+                  className="w-full"
+                >
+                  Ver conquistas
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

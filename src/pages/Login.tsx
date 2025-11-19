@@ -33,10 +33,16 @@ const Login = () => {
         .from("usuarios")
         .select("tipo_usuario")
         .eq("user_id", data.user.id)
-        .single();
+        .maybeSingle();
 
-      if (userError || !userData) {
-        alert("Erro ao identificar tipo de usuário");
+      if (userError) {
+        alert("Erro ao buscar dados do usuário: " + userError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!userData) {
+        alert("Usuário não encontrado na base de dados. Entre em contato com o administrador.");
         setLoading(false);
         return;
       }
@@ -51,7 +57,8 @@ const Login = () => {
       } else if (userData.tipo_usuario === "Aluno") {
         navigate("/aluno/dashboard");
       } else {
-        navigate("/");
+        alert("Tipo de usuário não reconhecido.");
+        setLoading(false);
       }
     }
   };

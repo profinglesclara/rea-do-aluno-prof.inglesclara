@@ -29,6 +29,14 @@ Deno.serve(async (req) => {
     
     const usuarios = [
       {
+        email: 'admin@teste.com',
+        senha: 'admin123',
+        nome_completo: 'Admin Sistema',
+        nome_de_usuario: 'admin',
+        tipo_usuario: 'Admin',
+        dados_adicionais: {}
+      },
+      {
         email: 'responsavel.teste@teste.com',
         senha: '123456',
         nome_completo: 'Responsável Teste',
@@ -60,8 +68,18 @@ Deno.serve(async (req) => {
       let userId: string;
       
       if (existingUser) {
-        console.log(`Usuário ${usuario.email} já existe no Auth, usando ID existente:`, existingUser.id);
+        console.log(`Usuário ${usuario.email} já existe no Auth, atualizando senha...`);
         userId = existingUser.id;
+        
+        // Atualizar senha do usuário existente
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+          existingUser.id,
+          { password: usuario.senha }
+        );
+        
+        if (updateError) {
+          console.error(`Erro ao atualizar senha de ${usuario.email}:`, updateError);
+        }
       } else {
         // Criar novo usuário no Auth
         const { data: newAuthUser, error: authError } = await supabaseAdmin.auth.admin.createUser({

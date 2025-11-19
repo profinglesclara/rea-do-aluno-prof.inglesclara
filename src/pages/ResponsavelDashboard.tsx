@@ -10,15 +10,6 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { useEffect, useState } from "react";
 
 type AlunoVinculado = {
-  user_id: string;
-  nome_completo: string;
-  nivel_cefr: string | null;
-  modalidade: string | null;
-  progresso_geral: number | null;
-  tipo_usuario: string;
-};
-
-type DashboardData = {
   aluno_id: string;
   nome_aluno: string;
   nivel_cefr: string | null;
@@ -48,21 +39,28 @@ export default function ResponsavelDashboard() {
         .from("usuarios")
         .select("*")
         .eq("user_id", session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
+      if (error) {
         console.error("Erro ao buscar usuário:", error);
         navigate("/login");
         return;
       }
 
-      // Verificar se é Responsável ou Adulto
-      if (data.tipo_usuario !== "Responsável" && data.tipo_usuario !== "Adulto") {
-        // Redirecionar para painel correto
+      if (!data) {
+        console.error("Usuário não encontrado");
+        navigate("/login");
+        return;
+      }
+
+      // Verificar se é Responsável
+      if (data.tipo_usuario !== "Responsável") {
         if (data.tipo_usuario === "Admin") {
           navigate("/admin");
         } else if (data.tipo_usuario === "Aluno") {
           navigate("/aluno/dashboard");
+        } else if (data.tipo_usuario === "Adulto") {
+          navigate("/adulto/dashboard");
         }
         return;
       }
@@ -74,53 +72,30 @@ export default function ResponsavelDashboard() {
     fetchCurrentUser();
   }, [navigate]);
 
-  // Buscar alunos vinculados
-  const { data: alunosVinculados, isLoading: alunosLoading } = useQuery({
+  // Buscar alunos vinculados ao responsável
+  const { data: alunosVinculados, isLoading: loadingAlunos } = useQuery({
     queryKey: ["alunosVinculados", currentUser?.user_id],
     enabled: !!currentUser,
     queryFn: async () => {
-      if (currentUser.tipo_usuario === "Adulto") {
-        // Para Adulto, retorna ele mesmo como único aluno
-        const alunos: AlunoVinculado[] = [{
-          user_id: currentUser.user_id,
-          nome_completo: currentUser.nome_completo,
-          nivel_cefr: currentUser.nivel_cefr,
-          modalidade: currentUser.modalidade,
-          progresso_geral: currentUser.progresso_geral,
-          tipo_usuario: currentUser.tipo_usuario,
-        }];
-        return alunos;
-      } else {
-        // Para Responsavel, busca alunos onde responsavel_por = user_id do responsavel
-        const { data, error } = await supabase
-          .from("usuarios")
-          .select("user_id, nome_completo, nivel_cefr, modalidade, progresso_geral, tipo_usuario")
-          .eq("tipo_usuario", "Aluno")
-          .eq("responsavel_por", currentUser.user_id);
+      const { data: alunosIds } = await supabase
+        .from("usuarios")
+        .select("user_id")
+        .eq("tipo_usuario", "Aluno")
+        .eq("responsavel_por", currentUser.user_id);
 
-        if (error) throw error;
-        return data as AlunoVinculado[];
-      }
-    },
-  });
+      if (!alunosIds || alunosIds.length === 0) return [];
 
-  // Buscar dados detalhados de cada aluno via dashboard_resumo_alunos
-  const { data: dashboardData } = useQuery({
-    queryKey: ["dashboardAlunos", alunosVinculados?.map(a => a.user_id)],
-    enabled: !!alunosVinculados && alunosVinculados.length > 0,
-    queryFn: async () => {
-      const ids = alunosVinculados!.map(a => a.user_id);
       const { data, error } = await supabase
         .from("dashboard_resumo_alunos")
         .select("*")
-        .in("aluno_id", ids);
+        .in("aluno_id", alunosIds.map(a => a.user_id));
 
       if (error) throw error;
-      return data as DashboardData[];
+      return data as AlunoVinculado[];
     },
   });
 
-  if (loading || alunosLoading) {
+  if (loading || loadingAlunos) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Carregando...</p>
