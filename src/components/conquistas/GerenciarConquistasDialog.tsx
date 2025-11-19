@@ -169,7 +169,7 @@ export function GerenciarConquistasDialog({
   });
 
   const isConquistaDesbloqueada = (conquistaId: string) => {
-    return conquistasDesbloqueadas.some((ca) => ca.conquista_id === conquistaId);
+    return Array.isArray(conquistasDesbloqueadas) && conquistasDesbloqueadas.some((ca) => ca.conquista_id === conquistaId);
   };
 
   return (
