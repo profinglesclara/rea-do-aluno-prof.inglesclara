@@ -16,7 +16,7 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -27,7 +27,31 @@ const Login = () => {
       return;
     }
 
-    navigate("/admin");
+    // Buscar tipo de usuário para redirecionar corretamente
+    if (data.user) {
+      const { data: userData, error: userError } = await supabase
+        .from("usuarios")
+        .select("tipo_usuario")
+        .eq("user_id", data.user.id)
+        .single();
+
+      if (userError || !userData) {
+        alert("Erro ao identificar tipo de usuário");
+        setLoading(false);
+        return;
+      }
+
+      // Redirecionar baseado no tipo de usuário
+      if (userData.tipo_usuario === "Admin") {
+        navigate("/admin");
+      } else if (userData.tipo_usuario === "Aluno") {
+        navigate("/aluno/dashboard");
+      } else if (userData.tipo_usuario === "Responsável" || userData.tipo_usuario === "Adulto") {
+        navigate("/responsavel/dashboard");
+      } else {
+        navigate("/");
+      }
+    }
   };
 
   return (
