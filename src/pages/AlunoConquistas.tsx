@@ -19,20 +19,19 @@ const iconMap: Record<string, any> = {
 export default function AlunoConquistas() {
   const navigate = useNavigate();
 
-  // Buscar aluno logado
+  // Buscar o primeiro aluno teste
   const { data: currentUser } = useQuery({
-    queryKey: ["currentUser"],
+    queryKey: ["alunoTeste"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuário não autenticado");
-      
-      const { data: usuario } = await supabase
+      const { data, error } = await supabase
         .from("usuarios")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("tipo_usuario", "Aluno")
+        .limit(1)
         .single();
       
-      return usuario;
+      if (error) throw error;
+      return data;
     },
   });
 
