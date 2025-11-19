@@ -35,6 +35,29 @@ export default function AdminTarefas() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Filtros
+  const [filterAluno, setFilterAluno] = useState<string>("todos");
+  const [filterTipo, setFilterTipo] = useState<string>("todas");
+  const [filterMes, setFilterMes] = useState<string>("");
+  const [filterAno, setFilterAno] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("todos");
+  const [showAguardandoCorrecao, setShowAguardandoCorrecao] = useState(false);
+
+  // Buscar alunos para filtro
+  const { data: alunos } = useQuery({
+    queryKey: ["alunos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("user_id, nome_completo")
+        .eq("tipo_usuario", "Aluno")
+        .order("nome_completo", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: tarefas, isLoading } = useQuery({
     queryKey: ["tarefas"],
@@ -68,6 +91,36 @@ export default function AdminTarefas() {
   const getEntregaPorTarefa = (tarefaId: string) => {
     return entregas?.find((e) => e.tarefa_id === tarefaId);
   };
+
+  // Filtrar tarefas
+  const tarefasFiltradas = tarefas?.filter((tarefa) => {
+    // Filtro de aluno
+    if (filterAluno !== "todos" && tarefa.aluno_id !== filterAluno) return false;
+    
+    // Filtro de tipo
+    if (filterTipo !== "todas" && tarefa.tipo !== filterTipo) return false;
+    
+    // Filtro de status
+    if (filterStatus !== "todos" && tarefa.status !== filterStatus) return false;
+    
+    // Filtro de mês/ano
+    if (filterMes || filterAno) {
+      const dataRef = tarefa.data_limite || tarefa.criada_em;
+      const data = new Date(dataRef);
+      if (filterMes && (data.getMonth() + 1).toString() !== filterMes) return false;
+      if (filterAno && data.getFullYear().toString() !== filterAno) return false;
+    }
+    
+    // Filtro "aguardando correção"
+    if (showAguardandoCorrecao) {
+      const entrega = getEntregaPorTarefa(tarefa.id);
+      if (tarefa.tipo !== "Obrigatoria" || !entrega || tarefa.status === "Corrigida") {
+        return false;
+      }
+    }
+    
+    return true;
+  }) || [];
 
   const criarTarefaMutation = useMutation({
     mutationFn: async (novaTarefa: {

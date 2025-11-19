@@ -38,8 +38,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Filter, X, Trash2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { CalendarioAulas } from "@/components/CalendarioAulas";
 
 type Aula = {
   aula_id: string;
@@ -89,6 +91,9 @@ const AdminAulas = () => {
   // Confirmação de exclusão
   const [showConfirmarExclusao, setShowConfirmarExclusao] = useState(false);
   const [aulaParaExcluir, setAulaParaExcluir] = useState<string | null>(null);
+  
+  // Calendário
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const loadData = async () => {
     setLoading(true);
@@ -184,6 +189,12 @@ const AdminAulas = () => {
     
     return true;
   });
+  
+  // Preparar aulas para o calendário com nome do aluno
+  const aulasParaCalendario = aulasFiltradas.map(aula => ({
+    ...aula,
+    aluno_nome: aula.nome_aluno
+  }));
 
   const abrirModalNova = () => {
     setNovaAlunoId("");
@@ -393,67 +404,93 @@ const AdminAulas = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data e Hora</TableHead>
-                  <TableHead>Aluno</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Tipo/Conteúdo</TableHead>
-                  <TableHead>Observações</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {aulasFiltradas.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
-                      Nenhuma aula encontrada.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  aulasFiltradas.map((aula) => (
-                    <TableRow key={aula.aula_id}>
-                      <TableCell>{formatDateTime(aula.data_aula)}</TableCell>
-                      <TableCell>{aula.nome_aluno}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColorClasses(aula.status)}>
-                          {getStatusDisplay(aula.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {aula.conteudo || "—"}
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {aula.observacoes || "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => abrirModalEditar(aula)}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => abrirConfirmarExclusao(aula.aula_id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+        {/* Tabs: Calendário e Lista */}
+        <Tabs defaultValue="lista" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="calendario">Calendário</TabsTrigger>
+            <TabsTrigger value="lista">Lista</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="calendario">
+            <Card>
+              <CardHeader>
+                <CardTitle>Calendário de Aulas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CalendarioAulas
+                  aulas={aulasParaCalendario}
+                  showAlunoName={true}
+                  currentMonth={currentMonth}
+                  onMonthChange={setCurrentMonth}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="lista">
+            <Card>
+              <CardContent className="pt-6">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data e Hora</TableHead>
+                      <TableHead>Aluno</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Tipo/Conteúdo</TableHead>
+                      <TableHead>Observações</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {aulasFiltradas.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          Nenhuma aula encontrada.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      aulasFiltradas.map((aula) => (
+                        <TableRow key={aula.aula_id}>
+                          <TableCell>{formatDateTime(aula.data_aula)}</TableCell>
+                          <TableCell>{aula.nome_aluno}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColorClasses(aula.status)}>
+                              {getStatusDisplay(aula.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {aula.conteudo || "—"}
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {aula.observacoes || "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => abrirModalEditar(aula)}
+                              >
+                                Editar
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => abrirConfirmarExclusao(aula.aula_id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Modal Nova Aula */}
