@@ -3,6 +3,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, ArrowLeft, Loader2, CheckCircle, FileCheck, Eye } from "lucide-react";
@@ -227,7 +236,7 @@ export default function AdminTarefas() {
   const getTipoBadge = (tipo: string) => {
     return (
       <Badge variant={tipo === "Obrigatoria" ? "destructive" : "secondary"}>
-        {tipo}
+        {tipo === "Obrigatoria" ? "Obrigatória" : "Sugerida"}
       </Badge>
     );
   };
@@ -451,43 +460,146 @@ export default function AdminTarefas() {
   });
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate("/admin")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">Gerenciar Tarefas</h1>
-            <p className="text-muted-foreground">
-              Crie e gerencie tarefas para os alunos
-            </p>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Gerenciar Tarefas</h1>
+              <p className="text-muted-foreground">
+                Crie e gerencie tarefas para seus alunos
+              </p>
+            </div>
           </div>
           <Button onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Nova Tarefa
+            Nova tarefa
           </Button>
         </div>
+        
+        {/* Filtros */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Filtros</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="space-y-2">
+                <Label>Aluno</Label>
+                <Select value={filterAluno} onValueChange={setFilterAluno}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os alunos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os alunos</SelectItem>
+                    {alunos?.map((aluno) => (
+                      <SelectItem key={aluno.user_id} value={aluno.user_id}>
+                        {aluno.nome_completo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={filterTipo} onValueChange={setFilterTipo}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    <SelectItem value="Obrigatoria">Obrigatórias</SelectItem>
+                    <SelectItem value="Sugerida">Sugeridas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Mês</Label>
+                <Select value={filterMes} onValueChange={setFilterMes}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="1">Janeiro</SelectItem>
+                    <SelectItem value="2">Fevereiro</SelectItem>
+                    <SelectItem value="3">Março</SelectItem>
+                    <SelectItem value="4">Abril</SelectItem>
+                    <SelectItem value="5">Maio</SelectItem>
+                    <SelectItem value="6">Junho</SelectItem>
+                    <SelectItem value="7">Julho</SelectItem>
+                    <SelectItem value="8">Agosto</SelectItem>
+                    <SelectItem value="9">Setembro</SelectItem>
+                    <SelectItem value="10">Outubro</SelectItem>
+                    <SelectItem value="11">Novembro</SelectItem>
+                    <SelectItem value="12">Dezembro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Ano</Label>
+                <Input
+                  type="number"
+                  placeholder="2024"
+                  value={filterAno}
+                  onChange={(e) => setFilterAno(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="Pendente">Pendentes</SelectItem>
+                    <SelectItem value="Entregue">Entregues</SelectItem>
+                    <SelectItem value="Corrigida">Corrigidas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="mt-4 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="aguardando"
+                checked={showAguardandoCorrecao}
+                onChange={(e) => setShowAguardandoCorrecao(e.target.checked)}
+                className="rounded"
+              />
+              <Label htmlFor="aguardando" className="cursor-pointer">
+                Mostrar apenas aguardando correção
+              </Label>
+            </div>
+          </CardContent>
+        </Card>
 
+        {/* Lista de tarefas */}
         <Card>
           <CardHeader>
             <CardTitle>Tarefas</CardTitle>
             <CardDescription>
-              Lista de todas as tarefas cadastradas no sistema
+              {tarefasFiltradas.length} tarefa(s) encontrada(s)
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="flex justify-center items-center py-8">
+              <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
-            ) : !tarefas || tarefas.length === 0 ? (
+            ) : tarefasFiltradas.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Nenhuma tarefa cadastrada ainda.
+                Nenhuma tarefa encontrada com os filtros selecionados
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -505,10 +617,16 @@ export default function AdminTarefas() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {tarefas.map((tarefa) => {
+                      {tarefasFiltradas.map((tarefa) => {
                         const entrega = getEntregaPorTarefa(tarefa.id);
+                        const temEntrega = !!entrega;
+                        const aguardandoCorrecao = tarefa.tipo === "Obrigatoria" && temEntrega && tarefa.status !== "Corrigida";
+                        
                         return (
-                          <TableRow key={tarefa.id}>
+                          <TableRow 
+                            key={tarefa.id}
+                            className={aguardandoCorrecao ? "bg-yellow-50 dark:bg-yellow-950/20" : ""}
+                          >
                             <TableCell className="font-medium">
                               {tarefa.aluno?.nome_completo || "N/A"}
                             </TableCell>
@@ -516,34 +634,28 @@ export default function AdminTarefas() {
                             <TableCell>{getTipoBadge(tarefa.tipo)}</TableCell>
                             <TableCell>{getStatusBadge(tarefa.status)}</TableCell>
                             <TableCell>
-                              {entrega ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => verEntrega(tarefa)}
-                                >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  Ver envio
-                                </Button>
+                              {temEntrega ? (
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary">Entregue</Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => verEntrega(tarefa)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               ) : (
-                                <span className="text-muted-foreground text-sm">-</span>
+                                <span className="text-muted-foreground text-sm">—</span>
                               )}
                             </TableCell>
                             <TableCell>
                               {tarefa.data_limite
-                                ? format(
-                                    new Date(tarefa.data_limite),
-                                    "dd/MM/yyyy HH:mm",
-                                    { locale: ptBR }
-                                  )
-                                : "-"}
+                                ? format(new Date(tarefa.data_limite), "dd/MM/yyyy", { locale: ptBR })
+                                : "—"}
                             </TableCell>
                             <TableCell>
-                              {format(
-                                new Date(tarefa.criada_em),
-                                "dd/MM/yyyy HH:mm",
-                                { locale: ptBR }
-                              )}
+                              {format(new Date(tarefa.criada_em), "dd/MM/yyyy", { locale: ptBR })}
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-2">
