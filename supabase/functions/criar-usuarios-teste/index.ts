@@ -55,10 +55,11 @@ Deno.serve(async (req) => {
         nome_de_usuario: 'aluno_adulto_teste',
         tipo_usuario: 'Adulto',
         dados_adicionais: {
-          nivel_cefr: 'A1',
+          nivel_cefr: 'B1',
           modalidade: 'Online',
           status_aluno: 'Ativo',
-          frequencia_mensal: 4
+          frequencia_mensal: 4,
+          data_inicio_aulas: new Date().toISOString().split('T')[0]
         }
       },
       {
@@ -68,10 +69,11 @@ Deno.serve(async (req) => {
         nome_de_usuario: 'aluno_teste',
         tipo_usuario: 'Aluno',
         dados_adicionais: {
-          nivel_cefr: 'A2',
+          nivel_cefr: 'A1',
           modalidade: 'Online',
           status_aluno: 'Ativo',
-          frequencia_mensal: 8
+          frequencia_mensal: 4,
+          data_inicio_aulas: new Date().toISOString().split('T')[0]
         },
         needsResponsavel: true
       }
