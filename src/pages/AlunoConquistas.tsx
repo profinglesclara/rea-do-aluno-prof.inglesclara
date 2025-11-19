@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useEffect, useState } from "react";
 
 const iconMap: Record<string, any> = {
   Star,
@@ -18,22 +19,40 @@ const iconMap: Record<string, any> = {
 
 export default function AlunoConquistas() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Buscar o primeiro aluno teste
-  const { data: currentUser } = useQuery({
-    queryKey: ["alunoTeste"],
-    queryFn: async () => {
+  // Buscar usuário logado
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        navigate("/login");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("usuarios")
         .select("*")
-        .eq("tipo_usuario", "Aluno")
-        .limit(1)
+        .eq("user_id", session.user.id)
         .single();
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+
+      if (error || !data) {
+        navigate("/login");
+        return;
+      }
+
+      if (data.tipo_usuario !== "Aluno") {
+        navigate("/login");
+        return;
+      }
+
+      setCurrentUser(data);
+      setLoading(false);
+    };
+
+    fetchCurrentUser();
+  }, [navigate]);
 
   // Buscar todas as conquistas disponíveis
   const { data: conquistasMestre = [] } = useQuery({
