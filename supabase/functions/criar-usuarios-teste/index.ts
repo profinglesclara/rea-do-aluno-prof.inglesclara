@@ -24,102 +24,133 @@ Deno.serve(async (req) => {
 
     console.log('Iniciando criação dos usuários de teste...');
 
-    // Usuário 1: Responsável Teste
-    const { data: authUser1, error: authError1 } = await supabaseAdmin.auth.admin.createUser({
-      email: 'responsavel.teste@teste.com',
-      password: '123456',
-      email_confirm: true,
-      user_metadata: {
-        nome_completo: 'Responsável Teste'
-      }
-    });
-
-    if (authError1) {
-      console.error('Erro ao criar auth user 1:', authError1);
-      throw new Error(`Erro ao criar Responsável Teste na auth: ${authError1.message}`);
-    }
-
-    console.log('Auth user 1 criado:', authUser1.user.id);
-
-    // Inserir na tabela usuarios - Responsável
-    const { error: insertError1 } = await supabaseAdmin
-      .from('usuarios')
-      .insert({
-        user_id: authUser1.user.id,
-        nome_completo: 'Responsável Teste',
-        nome_de_usuario: 'responsavel_teste',
+    // Listar todos os usuários para verificar se já existem
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    
+    const usuarios = [
+      {
         email: 'responsavel.teste@teste.com',
         senha: '123456',
+        nome_completo: 'Responsável Teste',
+        nome_de_usuario: 'responsavel_teste',
         tipo_usuario: 'Responsável',
-        email_confirmado: true
-      });
-
-    if (insertError1) {
-      console.error('Erro ao inserir usuario 1:', insertError1);
-      throw new Error(`Erro ao inserir Responsável Teste: ${insertError1.message}`);
-    }
-
-    console.log('Usuario 1 inserido com sucesso');
-
-    // Usuário 2: Aluno Adulto Teste
-    const { data: authUser2, error: authError2 } = await supabaseAdmin.auth.admin.createUser({
-      email: 'aluno.adulto@teste.com',
-      password: '123456',
-      email_confirm: true,
-      user_metadata: {
-        nome_completo: 'Aluno Adulto Teste'
-      }
-    });
-
-    if (authError2) {
-      console.error('Erro ao criar auth user 2:', authError2);
-      throw new Error(`Erro ao criar Aluno Adulto na auth: ${authError2.message}`);
-    }
-
-    console.log('Auth user 2 criado:', authUser2.user.id);
-
-    // Inserir na tabela usuarios - Adulto
-    const { error: insertError2 } = await supabaseAdmin
-      .from('usuarios')
-      .insert({
-        user_id: authUser2.user.id,
-        nome_completo: 'Aluno Adulto Teste',
-        nome_de_usuario: 'aluno_adulto_teste',
+        dados_adicionais: {}
+      },
+      {
         email: 'aluno.adulto@teste.com',
         senha: '123456',
+        nome_completo: 'Aluno Adulto Teste',
+        nome_de_usuario: 'aluno_adulto_teste',
         tipo_usuario: 'Adulto',
-        nivel_cefr: 'A1',
-        modalidade: 'Online',
-        status_aluno: 'Ativo',
-        frequencia_mensal: 4,
-        email_confirmado: true
+        dados_adicionais: {
+          nivel_cefr: 'A1',
+          modalidade: 'Online',
+          status_aluno: 'Ativo',
+          frequencia_mensal: 4
+        }
+      }
+    ];
+
+    const resultados = [];
+
+    for (const usuario of usuarios) {
+      // Verificar se usuário já existe
+      const existingUser = existingUsers?.users?.find(u => u.email === usuario.email);
+      
+      let userId: string;
+      
+      if (existingUser) {
+        console.log(`Usuário ${usuario.email} já existe no Auth, usando ID existente:`, existingUser.id);
+        userId = existingUser.id;
+      } else {
+        // Criar novo usuário no Auth
+        const { data: newAuthUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email: usuario.email,
+          password: usuario.senha,
+          email_confirm: true,
+          user_metadata: {
+            nome_completo: usuario.nome_completo
+          }
+        });
+
+        if (authError) {
+          console.error(`Erro ao criar auth user ${usuario.email}:`, authError);
+          throw new Error(`Erro ao criar ${usuario.nome_completo} na auth: ${authError.message}`);
+        }
+
+        console.log(`Auth user ${usuario.email} criado:`, newAuthUser.user.id);
+        userId = newAuthUser.user.id;
+      }
+
+      // Verificar se já existe na tabela usuarios
+      const { data: existingUsuario } = await supabaseAdmin
+        .from('usuarios')
+        .select('user_id')
+        .eq('user_id', userId)
+        .single();
+
+      if (existingUsuario) {
+        console.log(`Usuário ${usuario.email} já existe na tabela usuarios, atualizando dados...`);
+        
+        // Atualizar dados do usuário
+        const { error: updateError } = await supabaseAdmin
+          .from('usuarios')
+          .update({
+            nome_completo: usuario.nome_completo,
+            nome_de_usuario: usuario.nome_de_usuario,
+            email: usuario.email,
+            senha: usuario.senha,
+            tipo_usuario: usuario.tipo_usuario,
+            email_confirmado: true,
+            ...usuario.dados_adicionais
+          })
+          .eq('user_id', userId);
+
+        if (updateError) {
+          console.error(`Erro ao atualizar usuario ${usuario.email}:`, updateError);
+          throw new Error(`Erro ao atualizar ${usuario.nome_completo}: ${updateError.message}`);
+        }
+
+        console.log(`Usuario ${usuario.email} atualizado com sucesso`);
+      } else {
+        console.log(`Inserindo usuário ${usuario.email} na tabela usuarios...`);
+        
+        // Inserir novo registro na tabela usuarios
+        const { error: insertError } = await supabaseAdmin
+          .from('usuarios')
+          .insert({
+            user_id: userId,
+            nome_completo: usuario.nome_completo,
+            nome_de_usuario: usuario.nome_de_usuario,
+            email: usuario.email,
+            senha: usuario.senha,
+            tipo_usuario: usuario.tipo_usuario,
+            email_confirmado: true,
+            ...usuario.dados_adicionais
+          });
+
+        if (insertError) {
+          console.error(`Erro ao inserir usuario ${usuario.email}:`, insertError);
+          throw new Error(`Erro ao inserir ${usuario.nome_completo}: ${insertError.message}`);
+        }
+
+        console.log(`Usuario ${usuario.email} inserido com sucesso`);
+      }
+
+      resultados.push({
+        tipo: usuario.nome_completo,
+        user_id: userId,
+        email: usuario.email,
+        senha: usuario.senha,
+        status: existingUser ? 'atualizado' : 'criado'
       });
-
-    if (insertError2) {
-      console.error('Erro ao inserir usuario 2:', insertError2);
-      throw new Error(`Erro ao inserir Aluno Adulto: ${insertError2.message}`);
     }
-
-    console.log('Usuario 2 inserido com sucesso');
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Usuários de teste criados com sucesso!',
-        usuarios: [
-          {
-            tipo: 'Responsável Teste',
-            user_id: authUser1.user.id,
-            email: 'responsavel.teste@teste.com',
-            senha: '123456'
-          },
-          {
-            tipo: 'Aluno Adulto Teste',
-            user_id: authUser2.user.id,
-            email: 'aluno.adulto@teste.com',
-            senha: '123456'
-          }
-        ]
+        message: 'Usuários de teste processados com sucesso!',
+        usuarios: resultados
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
