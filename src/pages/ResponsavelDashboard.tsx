@@ -19,6 +19,9 @@ type AlunoVinculado = {
   total_concluidas: number;
   total_agendadas: number;
   total_canceladas: number;
+  total_remarcadas: number;
+  atividades_tarefas_pendentes: number;
+  total_conquistas: number;
 };
 
 export default function ResponsavelDashboard() {
@@ -72,11 +75,12 @@ export default function ResponsavelDashboard() {
     fetchCurrentUser();
   }, [navigate]);
 
-  // Buscar alunos vinculados ao responsável
+  // Buscar alunos vinculados ao responsável usando a VIEW
   const { data: alunosVinculados, isLoading: loadingAlunos } = useQuery({
     queryKey: ["alunosVinculados", currentUser?.user_id],
     enabled: !!currentUser,
     queryFn: async () => {
+      // Buscar IDs dos alunos vinculados
       const { data: alunosIds } = await supabase
         .from("usuarios")
         .select("user_id")
@@ -85,6 +89,7 @@ export default function ResponsavelDashboard() {
 
       if (!alunosIds || alunosIds.length === 0) return [];
 
+      // Buscar dados completos da VIEW
       const { data, error } = await supabase
         .from("dashboard_resumo_alunos")
         .select("*")
@@ -139,71 +144,86 @@ export default function ResponsavelDashboard() {
         {/* Lista de alunos vinculados */}
         {!alunosVinculados || alunosVinculados.length === 0 ? (
           <Card>
-            <CardContent className="p-6">
-              <p className="text-center text-muted-foreground">
-                Nenhum aluno vinculado encontrado.
-              </p>
+            <CardContent className="p-6 text-center text-muted-foreground">
+              Nenhum aluno vinculado encontrado.
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {alunosVinculados.map((aluno) => {
-              return (
-                <Card key={aluno.aluno_id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <User className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">{aluno.nome_aluno}</CardTitle>
-                          <div className="flex gap-2 mt-1">
-                            {aluno.nivel_cefr && (
-                              <Badge variant="secondary">{aluno.nivel_cefr}</Badge>
-                            )}
-                            {aluno.modalidade && (
-                              <Badge variant="outline">{aluno.modalidade}</Badge>
-                            )}
-                          </div>
-                        </div>
+            {alunosVinculados.map((aluno) => (
+              <Card key={aluno.aluno_id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{aluno.nome_aluno}</CardTitle>
+                      <div className="flex gap-2 mt-1 flex-wrap">
+                        {aluno.nivel_cefr && (
+                          <Badge variant="secondary">{aluno.nivel_cefr}</Badge>
+                        )}
+                        {aluno.modalidade && (
+                          <Badge variant="outline">{aluno.modalidade}</Badge>
+                        )}
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Progresso geral */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Progresso geral</span>
-                        <span className="text-sm text-muted-foreground">
-                          {aluno.progresso_geral?.toFixed(0) || 0}%
-                        </span>
-                      </div>
-                      <Progress value={aluno.progresso_geral || 0} className="h-2" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Progresso Geral */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Progresso geral</span>
+                      <span className="font-medium">{aluno.progresso_geral || 0}%</span>
                     </div>
+                    <Progress value={aluno.progresso_geral || 0} className="h-2" />
+                  </div>
 
-                    {/* Resumo de aulas */}
-                    <div className="text-sm space-y-1">
-                      <p className="font-medium">Aulas no mês:</p>
-                      <div className="grid grid-cols-2 gap-2 text-muted-foreground">
-                        <span>✓ {aluno.total_concluidas || 0} realizadas</span>
-                        <span>📅 {aluno.total_agendadas || 0} agendadas</span>
-                        <span>❌ {aluno.total_canceladas || 0} faltou</span>
-                        <span>📊 {aluno.total_aulas || 0} total</span>
+                  {/* Resumo de Aulas */}
+                  <div className="text-sm space-y-1 pt-2 border-t">
+                    <p className="text-muted-foreground font-medium mb-2">Aulas:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex justify-between">
+                        <span>Total:</span>
+                        <span className="font-medium">{aluno.total_aulas}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-600">Realizadas:</span>
+                        <span className="font-medium text-green-600">{aluno.total_concluidas}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-blue-600">Agendadas:</span>
+                        <span className="font-medium text-blue-600">{aluno.total_agendadas}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-red-600">Faltou:</span>
+                        <span className="font-medium text-red-600">{aluno.total_canceladas}</span>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Botão Ver detalhes */}
-                    <Button
-                      className="w-full"
-                      onClick={() => navigate(`/responsavel/aluno/${aluno.aluno_id}`)}
-                    >
-                      Ver detalhes
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  {/* Resumo de Tarefas e Conquistas */}
+                  <div className="text-sm space-y-1 pt-2 border-t">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tarefas pendentes:</span>
+                      <span className="font-medium">{aluno.atividades_tarefas_pendentes || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Conquistas:</span>
+                      <span className="font-medium">{aluno.total_conquistas || 0}</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => navigate(`/responsavel/aluno/${aluno.aluno_id}`)}
+                    className="w-full"
+                  >
+                    Ver detalhes
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </div>
