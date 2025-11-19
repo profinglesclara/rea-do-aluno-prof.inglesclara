@@ -24,6 +24,8 @@ import ResponsavelAlunoDetalhes from "./pages/ResponsavelAlunoDetalhes";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AlunoProtectedRoute from "./components/AlunoProtectedRoute";
+import ResponsavelProtectedRoute from "./components/ResponsavelProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -41,18 +43,18 @@ const App = () => (
           <Route path="/admin/relatorios" element={<ProtectedRoute><AdminRelatorios /></ProtectedRoute>} />
           <Route path="/admin/tarefas" element={<ProtectedRoute><AdminTarefas /></ProtectedRoute>} />
           <Route path="/admin/aluno/:aluno_id" element={<ProtectedRoute><StudentDetails /></ProtectedRoute>} />
-          <Route path="/aluno/dashboard" element={<AlunoDashboard />} />
-          <Route path="/aluno/progresso" element={<AlunoProgresso />} />
-          <Route path="/aluno/tarefas" element={<AlunoTarefas />} />
-          <Route path="/aluno/tarefas/:tarefa_id" element={<AlunoTarefaDetalhes />} />
-          <Route path="/aluno/conquistas" element={<AlunoConquistas />} />
-          <Route path="/aluno/notificacoes" element={<AlunoNotificacoes />} />
-          <Route path="/aluno/calendario" element={<AlunoCalendario />} />
-          <Route path="/aluno/aulas" element={<AlunoAulas />} />
+          <Route path="/aluno/dashboard" element={<AlunoProtectedRoute><AlunoDashboard /></AlunoProtectedRoute>} />
+          <Route path="/aluno/progresso" element={<AlunoProtectedRoute><AlunoProgresso /></AlunoProtectedRoute>} />
+          <Route path="/aluno/tarefas" element={<AlunoProtectedRoute><AlunoTarefas /></AlunoProtectedRoute>} />
+          <Route path="/aluno/tarefas/:tarefa_id" element={<AlunoProtectedRoute><AlunoTarefaDetalhes /></AlunoProtectedRoute>} />
+          <Route path="/aluno/conquistas" element={<AlunoProtectedRoute><AlunoConquistas /></AlunoProtectedRoute>} />
+          <Route path="/aluno/notificacoes" element={<AlunoProtectedRoute><AlunoNotificacoes /></AlunoProtectedRoute>} />
+          <Route path="/aluno/calendario" element={<AlunoProtectedRoute><AlunoCalendario /></AlunoProtectedRoute>} />
+          <Route path="/aluno/aulas" element={<AlunoProtectedRoute><AlunoAulas /></AlunoProtectedRoute>} />
           <Route path="/admin/notificacoes" element={<ProtectedRoute><AdminNotificacoes /></ProtectedRoute>} />
           <Route path="/admin/calendario-aulas" element={<ProtectedRoute><AdminCalendarioAulas /></ProtectedRoute>} />
-          <Route path="/responsavel/dashboard" element={<ResponsavelDashboard />} />
-          <Route path="/responsavel/aluno/:aluno_id" element={<ResponsavelAlunoDetalhes />} />
+          <Route path="/responsavel/dashboard" element={<ResponsavelProtectedRoute><ResponsavelDashboard /></ResponsavelProtectedRoute>} />
+          <Route path="/responsavel/aluno/:aluno_id" element={<ResponsavelProtectedRoute><ResponsavelAlunoDetalhes /></ResponsavelProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
