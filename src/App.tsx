@@ -19,6 +19,8 @@ import AdminNotificacoes from "./pages/AdminNotificacoes";
 import AlunoCalendario from "./pages/AlunoCalendario";
 import AlunoAulas from "./pages/AlunoAulas";
 import AdminCalendarioAulas from "./pages/AdminCalendarioAulas";
+import ResponsavelDashboard from "./pages/ResponsavelDashboard";
+import ResponsavelAlunoDetalhes from "./pages/ResponsavelAlunoDetalhes";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -49,6 +51,8 @@ const App = () => (
           <Route path="/aluno/aulas" element={<AlunoAulas />} />
           <Route path="/admin/notificacoes" element={<ProtectedRoute><AdminNotificacoes /></ProtectedRoute>} />
           <Route path="/admin/calendario-aulas" element={<ProtectedRoute><AdminCalendarioAulas /></ProtectedRoute>} />
+          <Route path="/responsavel/dashboard" element={<ResponsavelDashboard />} />
+          <Route path="/responsavel/aluno/:aluno_id" element={<ResponsavelAlunoDetalhes />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
