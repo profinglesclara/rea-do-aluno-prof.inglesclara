@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Calendar, BookOpen, Trophy, ListTodo, Star, Target, Award, Zap, Heart } from "lucide-react";
+import { Calendar, BookOpen, Trophy, ListTodo, Star, Target, Award, Zap, Heart, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -37,9 +37,7 @@ export default function AlunoDashboard() {
       // Verificar se é Aluno
       if (data.tipo_usuario !== "Aluno") {
         if (data.tipo_usuario === "Admin") {
-          navigate("/admin");
-        } else if (data.tipo_usuario === "Adulto") {
-          navigate("/adulto/dashboard");
+          navigate("/admin/dashboard");
         } else if (data.tipo_usuario === "Responsável") {
           navigate("/responsavel/dashboard");
         }
@@ -171,7 +169,7 @@ export default function AlunoDashboard() {
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1 - Calendário de aulas */}
+          {/* Card 1 - Calendário de aulas (sempre visível) */}
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -184,7 +182,7 @@ export default function AlunoDashboard() {
                 <p className="text-sm text-muted-foreground">
                   {aulas?.length || 0} aulas registradas
                 </p>
-                <div className="flex gap-4 text-xs">
+                <div className="flex gap-4 text-xs flex-wrap">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded-full bg-blue-500" />
                     <span>Agendada</span>
@@ -222,7 +220,7 @@ export default function AlunoDashboard() {
             </CardContent>
           </Card>
 
-          {/* Card 2 - Progressos */}
+          {/* Card 2 - Progressos (sempre visível) */}
           <Card 
             className="cursor-pointer hover:shadow-lg transition-shadow"
             onClick={() => navigate("/aluno/progresso")}
@@ -246,35 +244,7 @@ export default function AlunoDashboard() {
             </CardContent>
           </Card>
 
-          {/* Card 3 - Tarefas */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => navigate("/aluno/tarefas")}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ListTodo className="h-5 w-5" />
-                Tarefas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Obrigatórias pendentes:</span>
-                  <span className="text-xl font-bold">{tarefasObrigatoriasPendentes}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Sugeridas:</span>
-                  <span className="text-xl font-bold">{tarefasSugeridas}</span>
-                </div>
-                <Button variant="ghost" size="sm" className="mt-2 w-full">
-                  Ver todas →
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Card 4 - Conquistas */}
+          {/* Card 3 - Conquistas (sempre visível) */}
           <Card 
             className="cursor-pointer hover:shadow-lg transition-shadow"
             onClick={() => navigate("/aluno/conquistas")}
@@ -321,6 +291,100 @@ export default function AlunoDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Card 4 - Tarefas (sempre visível) */}
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate("/aluno/tarefas")}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ListTodo className="h-5 w-5" />
+                Tarefas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Obrigatórias pendentes:</span>
+                  <span className="text-xl font-bold">{tarefasObrigatoriasPendentes}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Sugeridas:</span>
+                  <span className="text-xl font-bold">{tarefasSugeridas}</span>
+                </div>
+                <Button variant="ghost" size="sm" className="mt-2 w-full">
+                  Ver todas →
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 5 - Relatórios (condicional) */}
+          {aluno.show_relatorios && (
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Relatórios
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Acompanhe seus relatórios mensais de progresso
+                  </p>
+                  <Button variant="ghost" size="sm" className="mt-2">
+                    Ver relatórios →
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Card 6 - Pagamentos (condicional) */}
+          {aluno.show_pagamentos && (
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Pagamentos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Consulte o histórico de pagamentos
+                  </p>
+                  <Button variant="ghost" size="sm" className="mt-2">
+                    Ver pagamentos →
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Card 7 - Contratos (condicional) */}
+          {aluno.show_contratos && (
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Contratos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Acesse seus documentos e contratos
+                  </p>
+                  <Button variant="ghost" size="sm" className="mt-2">
+                    Ver contratos →
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

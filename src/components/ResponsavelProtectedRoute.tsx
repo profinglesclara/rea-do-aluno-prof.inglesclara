@@ -8,10 +8,7 @@ interface ResponsavelProtectedRouteProps {
 
 /**
  * Rota protegida para páginas de responsável
- * Permite acesso para:
- * - Usuários com tipo_usuario = 'Responsável'
- * - Usuários com tipo_usuario = 'Adulto'
- * - Usuários com tipo_usuario = 'Admin' (para visualização/acompanhamento)
+ * Permite acesso apenas para usuários com tipo_usuario = 'Responsável'
  */
 const ResponsavelProtectedRoute = ({ children }: ResponsavelProtectedRouteProps) => {
   const [loading, setLoading] = useState(true);
@@ -32,14 +29,10 @@ const ResponsavelProtectedRoute = ({ children }: ResponsavelProtectedRouteProps)
         .from("usuarios")
         .select("tipo_usuario")
         .eq("user_id", session.user.id)
-        .single();
+        .maybeSingle();
 
-      // Permitir acesso para Responsável, Adulto e Admin
-      if (
-        userData?.tipo_usuario === "Responsável" || 
-        userData?.tipo_usuario === "Adulto" || 
-        userData?.tipo_usuario === "Admin"
-      ) {
+      // Permitir acesso apenas para Responsável
+      if (userData?.tipo_usuario === "Responsável") {
         setAuthorized(true);
       } else {
         setAuthorized(false);

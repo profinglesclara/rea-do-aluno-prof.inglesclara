@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Calendar, FileText, ClipboardList } from "lucide-react";
+import { Search, Eye, Calendar, FileText, ClipboardList, User } from "lucide-react";
 
 type DashboardAluno = {
   aluno_id: string;
@@ -160,7 +160,14 @@ const AdminDashboard = () => {
                 </CardTitle>
                 {admin && <NotificationBell userId={admin.user_id} isAdmin />}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  onClick={() => navigate("/admin/criar-usuario")}
+                  className="gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  Criar Novo Usuário
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => navigate("/admin/aulas")}

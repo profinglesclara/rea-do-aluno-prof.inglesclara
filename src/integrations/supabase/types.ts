@@ -468,6 +468,67 @@ export type Database = {
           },
         ]
       }
+      responsaveis_alunos: {
+        Row: {
+          aluno_id: string
+          criado_em: string | null
+          responsavel_id: string
+        }
+        Insert: {
+          aluno_id: string
+          criado_em?: string | null
+          responsavel_id: string
+        }
+        Update: {
+          aluno_id?: string
+          criado_em?: string | null
+          responsavel_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsaveis_alunos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "responsaveis_alunos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "responsaveis_alunos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "responsaveis_alunos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_resumo_alunos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "responsaveis_alunos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "resumo_aulas_por_aluno"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "responsaveis_alunos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       tarefas: {
         Row: {
           aluno_id: string
@@ -609,6 +670,7 @@ export type Database = {
           email: string
           email_confirmado: boolean | null
           foto_perfil: string | null
+          foto_perfil_url: string | null
           frequencia_mensal: number | null
           grafico_progresso: Json | null
           historico_progresso: Json | null
@@ -616,6 +678,7 @@ export type Database = {
           nivel_cefr: Database["public"]["Enums"]["nivel_cefr"] | null
           nome_completo: string
           nome_de_usuario: string
+          notas_internas: string | null
           objetivo_principal: string | null
           observacoes_internas: string | null
           preferencia_contato: string | null
@@ -623,6 +686,9 @@ export type Database = {
           progresso_por_categoria: Json | null
           responsavel_por: string | null
           senha: string
+          show_contratos: boolean | null
+          show_pagamentos: boolean | null
+          show_relatorios: boolean | null
           status_aluno: string | null
           telefone_responsavel: string | null
           tipo_usuario: Database["public"]["Enums"]["tipo_usuario"]
@@ -634,6 +700,7 @@ export type Database = {
           email: string
           email_confirmado?: boolean | null
           foto_perfil?: string | null
+          foto_perfil_url?: string | null
           frequencia_mensal?: number | null
           grafico_progresso?: Json | null
           historico_progresso?: Json | null
@@ -641,6 +708,7 @@ export type Database = {
           nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"] | null
           nome_completo: string
           nome_de_usuario: string
+          notas_internas?: string | null
           objetivo_principal?: string | null
           observacoes_internas?: string | null
           preferencia_contato?: string | null
@@ -648,6 +716,9 @@ export type Database = {
           progresso_por_categoria?: Json | null
           responsavel_por?: string | null
           senha: string
+          show_contratos?: boolean | null
+          show_pagamentos?: boolean | null
+          show_relatorios?: boolean | null
           status_aluno?: string | null
           telefone_responsavel?: string | null
           tipo_usuario: Database["public"]["Enums"]["tipo_usuario"]
@@ -659,6 +730,7 @@ export type Database = {
           email?: string
           email_confirmado?: boolean | null
           foto_perfil?: string | null
+          foto_perfil_url?: string | null
           frequencia_mensal?: number | null
           grafico_progresso?: Json | null
           historico_progresso?: Json | null
@@ -666,6 +738,7 @@ export type Database = {
           nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"] | null
           nome_completo?: string
           nome_de_usuario?: string
+          notas_internas?: string | null
           objetivo_principal?: string | null
           observacoes_internas?: string | null
           preferencia_contato?: string | null
@@ -673,6 +746,9 @@ export type Database = {
           progresso_por_categoria?: Json | null
           responsavel_por?: string | null
           senha?: string
+          show_contratos?: boolean | null
+          show_pagamentos?: boolean | null
+          show_relatorios?: boolean | null
           status_aluno?: string | null
           telefone_responsavel?: string | null
           tipo_usuario?: Database["public"]["Enums"]["tipo_usuario"]
@@ -746,6 +822,7 @@ export type Database = {
       }
     }
     Functions: {
+      aluno_tem_responsavel: { Args: { p_aluno_id: string }; Returns: boolean }
       gerar_relatorios_mensais: { Args: never; Returns: undefined }
       get_dashboard_aluno: { Args: { p_aluno: string }; Returns: Json }
       get_user_type: {

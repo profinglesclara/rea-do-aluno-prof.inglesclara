@@ -59,11 +59,9 @@ export default function ResponsavelDashboard() {
       // Verificar se é Responsável
       if (data.tipo_usuario !== "Responsável") {
         if (data.tipo_usuario === "Admin") {
-          navigate("/admin");
+          navigate("/admin/dashboard");
         } else if (data.tipo_usuario === "Aluno") {
           navigate("/aluno/dashboard");
-        } else if (data.tipo_usuario === "Adulto") {
-          navigate("/adulto/dashboard");
         }
         return;
       }
@@ -75,25 +73,24 @@ export default function ResponsavelDashboard() {
     fetchCurrentUser();
   }, [navigate]);
 
-  // Buscar alunos vinculados ao responsável usando a VIEW
+  // Buscar alunos vinculados ao responsável
   const { data: alunosVinculados, isLoading: loadingAlunos } = useQuery({
     queryKey: ["alunosVinculados", currentUser?.user_id],
     enabled: !!currentUser,
     queryFn: async () => {
-      // Buscar IDs dos alunos vinculados
-      const { data: alunosIds } = await supabase
-        .from("usuarios")
-        .select("user_id")
-        .eq("tipo_usuario", "Aluno")
-        .eq("responsavel_por", currentUser.user_id);
+      // Buscar IDs dos alunos vinculados via tabela responsaveis_alunos
+      const { data: vinculos } = await supabase
+        .from("responsaveis_alunos")
+        .select("aluno_id")
+        .eq("responsavel_id", currentUser.user_id);
 
-      if (!alunosIds || alunosIds.length === 0) return [];
+      if (!vinculos || vinculos.length === 0) return [];
 
       // Buscar dados completos da VIEW
       const { data, error } = await supabase
         .from("dashboard_resumo_alunos")
         .select("*")
-        .in("aluno_id", alunosIds.map(a => a.user_id));
+        .in("aluno_id", vinculos.map(v => v.aluno_id));
 
       if (error) throw error;
       return data as AlunoVinculado[];
