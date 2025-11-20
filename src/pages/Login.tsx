@@ -16,7 +16,6 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    // 1) Login na Auth
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -28,74 +27,43 @@ const Login = () => {
       return;
     }
 
-    const authUser = data.user;
-
-    if (!authUser) {
+    if (!data.user) {
       alert("Erro inesperado: usuário não retornado pela autenticação.");
       setLoading(false);
       return;
     }
 
-    // 2) Tentar buscar na tabela 'usuarios' pelo user_id (fluxo normal)
-    let userRow: { tipo_usuario: string } | null = null;
+    // 🔧 REGRA ESPECIAL: Aluno Teste
+    // Se for o usuário de teste, ignora a tabela `usuarios`
+    // e manda direto para o dashboard de aluno.
+    if (data.user.email === "aluno.teste@teste.com") {
+      navigate("/aluno/dashboard");
+      setLoading(false);
+      return;
+    }
 
-    const { data: userById, error: userByIdError } = await supabase
+    // Para todos os OUTROS usuários, segue o fluxo normal:
+    // buscar tipo de usuário na tabela `usuarios`
+    const { data: userData, error: userError } = await supabase
       .from("usuarios")
-      .select("user_id, email, tipo_usuario")
-      .eq("user_id", authUser.id)
+      .select("tipo_usuario")
+      .eq("user_id", data.user.id)
       .maybeSingle();
 
-    if (userByIdError) {
-      alert("Erro ao buscar dados do usuário por ID: " + userByIdError.message);
+    if (userError) {
+      alert("Erro ao buscar dados do usuário: " + userError.message);
       setLoading(false);
       return;
     }
 
-    if (userById) {
-      userRow = userById;
-    } else {
-      // 3) Se não achou por ID (caso do Aluno Teste), tentar por e-mail
-      const { data: userByEmail, error: userByEmailError } = await supabase
-        .from("usuarios")
-        .select("user_id, email, tipo_usuario")
-        .eq("email", authUser.email)
-        .maybeSingle();
-
-      if (userByEmailError) {
-        alert("Erro ao buscar dados do usuário por e-mail: " + userByEmailError.message);
-        setLoading(false);
-        return;
-      }
-
-      if (!userByEmail) {
-        alert("Usuário autenticado, mas não encontrado na tabela de usuários. Entre em contato com o administrador.");
-        setLoading(false);
-        return;
-      }
-
-      userRow = userByEmail;
-
-      // 4) TENTATIVA OPCIONAL DE CORRIGIR O user_id ZOADO
-      // (se a política do Supabase permitir, ótimo; se não, o login já funciona mesmo assim)
-      const { error: updateError } = await supabase
-        .from("usuarios")
-        .update({ user_id: authUser.id })
-        .eq("email", authUser.email);
-
-      if (updateError) {
-        console.warn("Não foi possível atualizar o user_id na tabela usuarios:", updateError);
-      }
-    }
-
-    // 5) Se ainda assim não tiver userRow, aborta
-    if (!userRow) {
-      alert("Não foi possível localizar o cadastro do usuário. Entre em contato com o administrador.");
+    if (!userData) {
+      alert("Usuário autenticado, mas não encontrado na base de dados. Entre em contato com o administrador.");
       setLoading(false);
       return;
     }
 
-    // 6) Redirecionar de acordo com o tipo de usuário
-    switch (userRow.tipo_usuario) {
+    // Redirecionar baseado no tipo de usuário
+    switch (userData.tipo_usuario) {
       case "Admin":
         navigate("/admin");
         break;
@@ -117,7 +85,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Login</CardTitle>
