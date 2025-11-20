@@ -31,6 +31,7 @@ import AdminCriarUsuariosTeste from "./pages/AdminCriarUsuariosTeste";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import AlunoProtectedRoute from "./components/AlunoProtectedRoute";
 import ResponsavelProtectedRoute from "./components/ResponsavelProtectedRoute";
 import AdultoProtectedRoute from "./components/AdultoProtectedRoute";
@@ -46,11 +47,11 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/aulas" element={<ProtectedRoute><AdminAulas /></ProtectedRoute>} />
-          <Route path="/admin/relatorios" element={<ProtectedRoute><AdminRelatorios /></ProtectedRoute>} />
-          <Route path="/admin/tarefas" element={<ProtectedRoute><AdminTarefas /></ProtectedRoute>} />
-          <Route path="/admin/aluno/:aluno_id" element={<ProtectedRoute><StudentDetails /></ProtectedRoute>} />
+          <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+          <Route path="/admin/aulas" element={<AdminProtectedRoute><AdminAulas /></AdminProtectedRoute>} />
+          <Route path="/admin/relatorios" element={<AdminProtectedRoute><AdminRelatorios /></AdminProtectedRoute>} />
+          <Route path="/admin/tarefas" element={<AdminProtectedRoute><AdminTarefas /></AdminProtectedRoute>} />
+          <Route path="/admin/aluno/:aluno_id" element={<AdminProtectedRoute><StudentDetails /></AdminProtectedRoute>} />
           <Route path="/aluno/dashboard" element={<AlunoProtectedRoute><AlunoDashboard /></AlunoProtectedRoute>} />
           <Route path="/aluno/progresso" element={<AlunoProtectedRoute><AlunoProgresso /></AlunoProtectedRoute>} />
           <Route path="/aluno/tarefas" element={<AlunoProtectedRoute><AlunoTarefas /></AlunoProtectedRoute>} />
@@ -59,9 +60,9 @@ const App = () => (
           <Route path="/aluno/notificacoes" element={<AlunoProtectedRoute><AlunoNotificacoes /></AlunoProtectedRoute>} />
           <Route path="/aluno/calendario" element={<AlunoProtectedRoute><AlunoCalendario /></AlunoProtectedRoute>} />
           <Route path="/aluno/aulas" element={<AlunoProtectedRoute><AlunoAulas /></AlunoProtectedRoute>} />
-          <Route path="/admin/notificacoes" element={<ProtectedRoute><AdminNotificacoes /></ProtectedRoute>} />
-          <Route path="/admin/calendario-aulas" element={<ProtectedRoute><AdminCalendarioAulas /></ProtectedRoute>} />
-          <Route path="/admin/criar-usuarios-teste" element={<ProtectedRoute><AdminCriarUsuariosTeste /></ProtectedRoute>} />
+          <Route path="/admin/notificacoes" element={<AdminProtectedRoute><AdminNotificacoes /></AdminProtectedRoute>} />
+          <Route path="/admin/calendario-aulas" element={<AdminProtectedRoute><AdminCalendarioAulas /></AdminProtectedRoute>} />
+          <Route path="/admin/criar-usuarios-teste" element={<AdminProtectedRoute><AdminCriarUsuariosTeste /></AdminProtectedRoute>} />
           <Route path="/responsavel/dashboard" element={<ResponsavelProtectedRoute><ResponsavelDashboard /></ResponsavelProtectedRoute>} />
           <Route path="/responsavel/aluno/:aluno_id" element={<ResponsavelProtectedRoute><ResponsavelAlunoDetalhes /></ResponsavelProtectedRoute>} />
           <Route path="/adulto/dashboard" element={<AdultoProtectedRoute><AdultoDashboard /></AdultoProtectedRoute>} />
