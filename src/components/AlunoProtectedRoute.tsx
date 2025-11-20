@@ -8,11 +8,7 @@ interface AlunoProtectedRouteProps {
 
 /**
  * Rota protegida para páginas de aluno
- * Permite acesso para:
- * - Usuários com tipo_usuario = 'Aluno'
- * - Usuários com tipo_usuario = 'Admin' (para visualização/acompanhamento)
- * - 🔧 Exceção: usuário de teste (aluno.teste@teste.com),
- *   mesmo que a tabela `usuarios` esteja inconsistente.
+ * Permite acesso apenas para usuários com tipo_usuario = 'Aluno'
  */
 const AlunoProtectedRoute = ({ children }: AlunoProtectedRouteProps) => {
   const [loading, setLoading] = useState(true);
@@ -30,20 +26,12 @@ const AlunoProtectedRoute = ({ children }: AlunoProtectedRouteProps) => {
         return;
       }
 
-      // 🔧 EXCEÇÃO: liberar sempre o Aluno Teste,
-      // independente do que estiver na tabela `usuarios`
-      if (session.user.email === "aluno.teste@teste.com") {
-        setAuthorized(true);
-        setLoading(false);
-        return;
-      }
-
-      // Fluxo normal: buscar tipo de usuário na tabela `usuarios`
+      // Buscar tipo de usuário na tabela usuarios
       const { data: userData, error } = await supabase
         .from("usuarios")
         .select("tipo_usuario")
         .eq("user_id", session.user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Erro ao buscar tipo de usuário:", error.message);
@@ -52,7 +40,7 @@ const AlunoProtectedRoute = ({ children }: AlunoProtectedRouteProps) => {
         return;
       }
 
-      if (userData?.tipo_usuario === "Aluno" || userData?.tipo_usuario === "Admin") {
+      if (userData?.tipo_usuario === "Aluno") {
         setAuthorized(true);
       } else {
         setAuthorized(false);
