@@ -2,3 +2,9 @@ project_id = "rcywrrnqjedxrybfoocv"
 
 [functions.gerar_relatorios_mensais]
 verify_jwt = false
+
+[functions.criar-usuario-admin]
+verify_jwt = false
+
+[functions.enviar-email-notificacao]
+verify_jwt = false
