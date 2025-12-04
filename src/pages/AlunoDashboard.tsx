@@ -6,6 +6,7 @@ import { Calendar, BookOpen, Trophy, ListTodo, Star, Target, Award, Zap, Heart, 
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
+import { LogoutButton } from "@/components/LogoutButton";
 import { useEffect, useState } from "react";
 
 export default function AlunoDashboard() {
@@ -164,7 +165,10 @@ export default function AlunoDashboard() {
               <p className="text-muted-foreground">Bem-vindo ao seu painel</p>
             </div>
           </div>
-          <NotificationBell userId={aluno.user_id} />
+          <div className="flex items-center gap-2">
+            <NotificationBell userId={aluno.user_id} />
+            <LogoutButton variant="outline" />
+          </div>
         </div>
 
         {/* Cards Grid */}

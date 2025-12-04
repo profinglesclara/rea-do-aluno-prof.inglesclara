@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { LogoutButton } from "@/components/LogoutButton";
 import { format, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -172,11 +173,14 @@ export default function AlunoTarefas() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/aluno/dashboard")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-3xl font-bold">Minhas Tarefas</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/aluno/dashboard")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-3xl font-bold">Minhas Tarefas</h1>
+          </div>
+          <LogoutButton variant="outline" />
         </div>
         
         {/* Filtros */}

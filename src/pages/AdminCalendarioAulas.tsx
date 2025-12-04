@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export default function AdminCalendarioAulas() {
   const navigate = useNavigate();
@@ -85,8 +86,9 @@ export default function AdminCalendarioAulas() {
               <p className="text-muted-foreground">
                 Visualize e gerencie as aulas em formato de calendário
               </p>
-            </div>
           </div>
+          <LogoutButton variant="destructive" />
+        </div>
         </div>
 
         {/* Filters */}

@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
+import { LogoutButton } from "@/components/LogoutButton";
 
 const AdminCriarUsuario = () => {
   const navigate = useNavigate();
@@ -62,14 +63,16 @@ const AdminCriarUsuario = () => {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/admin/dashboard")}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
-        </Button>
+        <div className="flex items-center justify-between mb-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/admin/dashboard")}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <LogoutButton variant="destructive" />
+        </div>
 
         <Card>
           <CardHeader>

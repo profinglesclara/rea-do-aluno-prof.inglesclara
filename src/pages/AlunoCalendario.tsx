@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "@/components/NotificationBell";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export default function AlunoCalendario() {
   const navigate = useNavigate();
@@ -84,7 +85,10 @@ export default function AlunoCalendario() {
               </p>
             </div>
           </div>
-          {aluno && <NotificationBell userId={aluno.user_id} />}
+          <div className="flex items-center gap-2">
+            {aluno && <NotificationBell userId={aluno.user_id} />}
+            <LogoutButton variant="outline" />
+          </div>
         </div>
 
         {/* Calendar */}

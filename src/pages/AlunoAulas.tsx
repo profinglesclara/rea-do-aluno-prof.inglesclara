@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { LogoutButton } from "@/components/LogoutButton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -34,6 +36,7 @@ const getStatusColorClasses = (status: string): string => {
 };
 
 export default function AlunoAulas() {
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [mesFilter, setMesFilter] = useState<string>("Todos");
   const [anoFilter, setAnoFilter] = useState<string>("Todos");
@@ -157,11 +160,19 @@ export default function AlunoAulas() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Histórico de aulas</h1>
-          <p className="text-muted-foreground mt-1">
-            Visualize todas as suas aulas passadas e futuras
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/aluno/dashboard")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Histórico de aulas</h1>
+              <p className="text-muted-foreground mt-1">
+                Visualize todas as suas aulas passadas e futuras
+              </p>
+            </div>
+          </div>
+          <LogoutButton variant="outline" />
         </div>
 
         {/* Filtros */}

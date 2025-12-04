@@ -42,6 +42,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Filter, X, Trash2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CalendarioAulas } from "@/components/CalendarioAulas";
+import { LogoutButton } from "@/components/LogoutButton";
 
 type Aula = {
   aula_id: string;
@@ -330,20 +331,24 @@ const AdminAulas = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-7xl space-y-6">
-        <Button 
-          variant="outline" 
-          onClick={() => navigate("/admin")}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar para painel
-        </Button>
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Gerenciar Aulas</h1>
-          <Button onClick={abrirModalNova}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova aula
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/admin")}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar para painel
+            </Button>
+            <h1 className="text-3xl font-bold">Gerenciar Aulas</h1>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={abrirModalNova}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova aula
+            </Button>
+            <LogoutButton variant="destructive" />
+          </div>
         </div>
 
         <Card>
