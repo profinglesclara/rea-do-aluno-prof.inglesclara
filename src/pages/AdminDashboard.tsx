@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Eye, Calendar, FileText, ClipboardList, User } from "lucide-react";
+import { LogoutButton } from "@/components/LogoutButton";
 
 type DashboardAluno = {
   aluno_id: string;
@@ -192,6 +193,7 @@ const AdminDashboard = () => {
                   <FileText className="h-4 w-4" />
                   Relatórios Mensais
                 </Button>
+                <LogoutButton variant="destructive" />
               </div>
             </div>
           </CardHeader>

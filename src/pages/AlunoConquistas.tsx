@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trophy, Star, Target, Award, Zap, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { LogoutButton } from "@/components/LogoutButton";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -136,16 +137,19 @@ export default function AlunoConquistas() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/aluno/dashboard")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Minhas Conquistas</h1>
-            <p className="text-muted-foreground">
-              {conquistasDesbloqueadasList.length} de {conquistasMestre.length} conquistas desbloqueadas
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/aluno/dashboard")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Minhas Conquistas</h1>
+              <p className="text-muted-foreground">
+                {conquistasDesbloqueadasList.length} de {conquistasMestre.length} conquistas desbloqueadas
+              </p>
+            </div>
           </div>
+          <LogoutButton variant="outline" />
         </div>
 
         {/* Conquistas Desbloqueadas */}

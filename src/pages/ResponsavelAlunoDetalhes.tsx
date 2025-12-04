@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Calendar, BookOpen, Award } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
+import { LogoutButton } from "@/components/LogoutButton";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarioAulas } from "@/components/CalendarioAulas";
 import { format } from "date-fns";
@@ -220,7 +221,10 @@ export default function ResponsavelAlunoDetalhes() {
               </div>
             </div>
           </div>
-          <NotificationBell userId={currentUser?.user_id || ""} />
+          <div className="flex items-center gap-2">
+            <NotificationBell userId={currentUser?.user_id || ""} />
+            <LogoutButton variant="outline" />
+          </div>
         </div>
 
         {/* Grid principal */}

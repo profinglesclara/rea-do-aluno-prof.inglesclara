@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { LogoutButton } from "@/components/LogoutButton";
 import { useDashboardAluno } from "@/hooks/useDashboardAluno";
 import { useState, useMemo, useEffect } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -180,11 +181,14 @@ export default function AlunoProgresso() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/aluno/dashboard")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-3xl font-bold">Meu Progresso</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/aluno/dashboard")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-3xl font-bold">Meu Progresso</h1>
+          </div>
+          <LogoutButton variant="outline" />
         </div>
 
         {/* Gráfico de Evolução Mensal */}

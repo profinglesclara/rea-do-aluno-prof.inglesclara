@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, ArrowLeft, Loader2, CheckCircle, FileCheck, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { LogoutButton } from "@/components/LogoutButton";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -475,10 +476,13 @@ export default function AdminTarefas() {
               </p>
             </div>
           </div>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova tarefa
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova tarefa
+            </Button>
+            <LogoutButton variant="destructive" />
+          </div>
         </div>
         
         {/* Filtros */}

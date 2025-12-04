@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, Download, Mail } from "lucide-react";
+import { LogoutButton } from "@/components/LogoutButton";
 import jsPDF from "jspdf";
 import { toast } from "@/hooks/use-toast";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts";
@@ -525,11 +526,14 @@ const AdminRelatorios = () => {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-3xl font-bold">Relatórios Mensais</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-3xl font-bold">Relatórios Mensais</h1>
+          </div>
+          <LogoutButton variant="destructive" />
         </div>
 
         <Card>
