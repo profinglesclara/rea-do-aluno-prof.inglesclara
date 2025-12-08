@@ -6,9 +6,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, ChevronDown, Trophy, Star, Target, Award, Zap, Heart } from "lucide-react";
+import { ArrowLeft, ChevronDown, Trophy, Star, Target, Award, Zap, Heart, Pencil } from "lucide-react";
 import { GerenciarConquistasDialog } from "@/components/conquistas/GerenciarConquistasDialog";
-import { useQuery } from "@tanstack/react-query";
+import { EditarPerfilAlunoDialog } from "@/components/admin/EditarPerfilAlunoDialog";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 type DashboardRow = {
   aluno_id: string;
@@ -38,6 +39,9 @@ const StudentDetails = () => {
   const [relatoriosError, setRelatoriosError] = useState<string | null>(null);
 
   const [conquistasDialogOpen, setConquistasDialogOpen] = useState(false);
+  const [editarPerfilOpen, setEditarPerfilOpen] = useState(false);
+  
+  const queryClient = useQueryClient();
 
   // Buscar conquistas do aluno
   const { data: conquistasData } = useQuery({
@@ -217,11 +221,17 @@ const StudentDetails = () => {
         </Button>
 
         {/* Cabeçalho com nome do aluno */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <h1 className="text-3xl font-bold">Detalhes do Aluno</h1>
-          <Badge variant="default" className="text-base px-4 py-1">
-            {dashboard.nome_aluno}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => setEditarPerfilOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Editar Perfil
+            </Button>
+            <Badge variant="default" className="text-base px-4 py-1">
+              {dashboard.nome_aluno}
+            </Badge>
+          </div>
         </div>
 
         {/* Card de Resumo de Aulas */}
@@ -569,6 +579,26 @@ const StudentDetails = () => {
         onOpenChange={setConquistasDialogOpen}
         alunoId={aluno_id!}
         alunoNome={dashboard.nome_aluno || "Aluno"}
+      />
+
+      {/* Dialog de edição de perfil */}
+      <EditarPerfilAlunoDialog
+        open={editarPerfilOpen}
+        onOpenChange={setEditarPerfilOpen}
+        alunoId={aluno_id!}
+        dadosAtuais={{
+          nome_aluno: dashboard.nome_aluno,
+          nome_de_usuario: dashboard.nome_de_usuario,
+          nivel_cefr: dashboard.nivel_cefr,
+          modalidade: dashboard.modalidade,
+          data_inicio_aulas: dashboard.data_inicio_aulas,
+          status_aluno: dashboard.status_aluno,
+        }}
+        onSuccess={() => {
+          // Recarregar dados do dashboard
+          queryClient.invalidateQueries({ queryKey: ["conquistasAlunoDetalhes", aluno_id] });
+          window.location.reload();
+        }}
       />
     </div>
   );
