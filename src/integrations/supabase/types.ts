@@ -438,6 +438,7 @@ export type Database = {
           criada_em: string
           data_limite: string | null
           descricao: string | null
+          feedback_professor: string | null
           id: string
           status: string
           tipo: string
@@ -449,6 +450,7 @@ export type Database = {
           criada_em?: string
           data_limite?: string | null
           descricao?: string | null
+          feedback_professor?: string | null
           id?: string
           status?: string
           tipo: string
@@ -460,6 +462,7 @@ export type Database = {
           criada_em?: string
           data_limite?: string | null
           descricao?: string | null
+          feedback_professor?: string | null
           id?: string
           status?: string
           tipo?: string

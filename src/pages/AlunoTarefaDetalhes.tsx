@@ -485,7 +485,7 @@ export default function AlunoTarefaDetalhes() {
 
         {tarefa.status === "Corrigida" && (
           <Card className="border-green-500">
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 space-y-4">
               <div className="text-center space-y-2">
                 <Badge variant="outline" className="text-green-600">
                   ✓ Tarefa Corrigida
@@ -494,6 +494,18 @@ export default function AlunoTarefaDetalhes() {
                   Sua tarefa foi corrigida e está disponível para consulta.
                 </p>
               </div>
+              
+              {tarefa.feedback_professor && (
+                <div className="mt-4 pt-4 border-t">
+                  <Label className="text-muted-foreground flex items-center gap-2 mb-2">
+                    <FileText className="h-4 w-4" />
+                    Feedback do Professor
+                  </Label>
+                  <div className="bg-muted/50 rounded-md p-4">
+                    <p className="text-sm whitespace-pre-wrap">{tarefa.feedback_professor}</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
