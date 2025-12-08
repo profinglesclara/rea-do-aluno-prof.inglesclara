@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Upload, FileText, Loader2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Loader2, ExternalLink, X, Plus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
@@ -17,7 +17,7 @@ export default function AlunoTarefaDetalhes() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [arquivo, setArquivo] = useState<File | null>(null);
+  const [arquivos, setArquivos] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
 
   // Buscar aluno
@@ -87,45 +87,51 @@ export default function AlunoTarefaDetalhes() {
   });
 
   const enviarTarefaMutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async (files: File[]) => {
       if (!aluno || !tarefa || !admin) throw new Error("Dados incompletos");
 
-      // 1. Upload do arquivo
-      const fileName = `${aluno.user_id}/${tarefa.id}/${Date.now()}_${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("tarefas")
-        .upload(fileName, file, {
-          contentType: "application/pdf",
-          upsert: true,
-        });
+      const uploadedUrls: string[] = [];
 
-      if (uploadError) throw uploadError;
+      // Upload de todos os arquivos
+      for (const file of files) {
+        const fileName = `${aluno.user_id}/${tarefa.id}/${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("tarefas")
+          .upload(fileName, file, {
+            contentType: "application/pdf",
+            upsert: true,
+          });
 
-      // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from("tarefas")
-        .getPublicUrl(fileName);
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("tarefas")
+          .getPublicUrl(fileName);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      // Combinar URLs em uma string (separadas por vírgula)
+      const combinedUrl = uploadedUrls.join(",");
 
       // 2. Registrar/atualizar entrega
       if (entrega) {
-        // Atualizar entrega existente
         const { error: updateError } = await supabase
           .from("entregas_tarefas")
           .update({
-            url_pdf: publicUrl,
+            url_pdf: combinedUrl,
             data_envio: new Date().toISOString(),
           })
           .eq("id", entrega.id);
 
         if (updateError) throw updateError;
       } else {
-        // Criar nova entrega
         const { error: insertError } = await supabase
           .from("entregas_tarefas")
           .insert({
             tarefa_id: tarefa.id,
             aluno_id: aluno.user_id,
-            url_pdf: publicUrl,
+            url_pdf: combinedUrl,
           });
 
         if (insertError) throw insertError;
@@ -146,7 +152,7 @@ export default function AlunoTarefaDetalhes() {
           usuario_id: admin.user_id,
           tipo: "TAREFA_ENTREGUE",
           titulo: "Nova tarefa entregue",
-          mensagem: `O aluno ${aluno.nome_completo} enviou a tarefa "${tarefa.titulo}".`,
+          mensagem: `O aluno ${aluno.nome_completo} enviou a tarefa "${tarefa.titulo}" com ${files.length} arquivo(s).`,
         });
 
       if (notifError) {
@@ -160,6 +166,7 @@ export default function AlunoTarefaDetalhes() {
           <p>Olá,</p>
           <p>O aluno <strong>${aluno.nome_completo}</strong> enviou a tarefa:</p>
           <h2>${tarefa.titulo}</h2>
+          <p><strong>Arquivos enviados:</strong> ${files.length}</p>
           <p><strong>Data de envio:</strong> ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
           <p>Acesse o painel administrativo para visualizar e corrigir a tarefa.</p>
         `;
@@ -175,7 +182,7 @@ export default function AlunoTarefaDetalhes() {
         console.error("Erro ao enviar email:", emailError);
       }
 
-      return publicUrl;
+      return uploadedUrls;
     },
     onSuccess: () => {
       toast({
@@ -185,7 +192,7 @@ export default function AlunoTarefaDetalhes() {
       queryClient.invalidateQueries({ queryKey: ["tarefa", tarefa_id] });
       queryClient.invalidateQueries({ queryKey: ["entrega", tarefa_id] });
       queryClient.invalidateQueries({ queryKey: ["tarefasAluno"] });
-      setArquivo(null);
+      setArquivos([]);
       setUploading(false);
     },
     onError: (error) => {
@@ -200,40 +207,53 @@ export default function AlunoTarefaDetalhes() {
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type !== "application/pdf") {
-        toast({
-          title: "Arquivo inválido",
-          description: "Apenas arquivos PDF são permitidos.",
-          variant: "destructive",
-        });
-        return;
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const validFiles: File[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type !== "application/pdf") {
+          toast({
+            title: "Arquivo inválido",
+            description: `"${file.name}" não é um PDF. Apenas arquivos PDF são permitidos.`,
+            variant: "destructive",
+          });
+          continue;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          toast({
+            title: "Arquivo muito grande",
+            description: `"${file.name}" excede 10MB.`,
+            variant: "destructive",
+          });
+          continue;
+        }
+        validFiles.push(file);
       }
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "Arquivo muito grande",
-          description: "O arquivo deve ter no máximo 10MB.",
-          variant: "destructive",
-        });
-        return;
+      
+      if (validFiles.length > 0) {
+        setArquivos(prev => [...prev, ...validFiles]);
       }
-      setArquivo(file);
     }
+  };
+
+  const removeFile = (index: number) => {
+    setArquivos(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!arquivo) {
+    if (arquivos.length === 0) {
       toast({
         title: "Selecione um arquivo",
-        description: "Você precisa selecionar um PDF para enviar.",
+        description: "Você precisa selecionar pelo menos um PDF para enviar.",
         variant: "destructive",
       });
       return;
     }
     setUploading(true);
-    enviarTarefaMutation.mutate(arquivo);
+    enviarTarefaMutation.mutate(arquivos);
   };
 
   const getStatusBadge = (status: string) => {
@@ -356,39 +376,88 @@ export default function AlunoTarefaDetalhes() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="arquivo">Arquivo PDF</Label>
-                  <Input
-                    id="arquivo"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    disabled={uploading}
-                    className="mt-1"
-                  />
-                  {arquivo && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Selecionado: {arquivo.name}
-                    </p>
+                {/* Passo 1: Selecionar arquivos */}
+                <div className="space-y-3">
+                  <Label>Passo 1: Selecione os arquivos PDF</Label>
+                  
+                  <div className="flex items-center gap-2">
+                    <label 
+                      htmlFor="arquivos" 
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Adicionar arquivo(s)
+                    </label>
+                    <input
+                      id="arquivos"
+                      type="file"
+                      accept=".pdf"
+                      multiple
+                      onChange={handleFileChange}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                  </div>
+                  
+                  {/* Lista de arquivos selecionados */}
+                  {arquivos.length > 0 && (
+                    <div className="space-y-2 mt-3">
+                      <p className="text-sm text-muted-foreground">
+                        {arquivos.length} arquivo(s) selecionado(s):
+                      </p>
+                      <div className="space-y-2">
+                        {arquivos.map((file, index) => (
+                          <div 
+                            key={index} 
+                            className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => removeFile(index)}
+                              disabled={uploading}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
-                <Button 
-                  type="submit" 
-                  disabled={uploading || !arquivo}
-                  className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Enviar Tarefa
-                    </>
-                  )}
-                </Button>
+
+                {/* Passo 2: Enviar */}
+                {arquivos.length > 0 && (
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label>Passo 2: Enviar tarefa</Label>
+                    <Button 
+                      type="submit" 
+                      disabled={uploading || arquivos.length === 0}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enviando {arquivos.length} arquivo(s)...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Enviar Tarefa ({arquivos.length} arquivo{arquivos.length > 1 ? 's' : ''})
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </form>
             </CardContent>
           </Card>
