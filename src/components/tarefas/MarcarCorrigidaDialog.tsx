@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -26,7 +27,7 @@ interface MarcarCorrigidaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tarefa: TarefaComAluno;
-  onSubmit: (urlPdfCorrigido?: string) => void;
+  onSubmit: (feedbackProfessor: string, urlPdfCorrigido?: string) => void;
   isSubmitting: boolean;
 }
 
@@ -38,10 +39,19 @@ export function MarcarCorrigidaDialog({
   isSubmitting,
 }: MarcarCorrigidaDialogProps) {
   const [urlPdfCorrigido, setUrlPdfCorrigido] = useState("");
+  const [feedbackProfessor, setFeedbackProfessor] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(urlPdfCorrigido.trim() || undefined);
+    
+    if (!feedbackProfessor.trim()) {
+      setError("O campo de observações do professor é obrigatório.");
+      return;
+    }
+    
+    setError("");
+    onSubmit(feedbackProfessor.trim(), urlPdfCorrigido.trim() || undefined);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -49,6 +59,8 @@ export function MarcarCorrigidaDialog({
       onOpenChange(newOpen);
       if (!newOpen) {
         setUrlPdfCorrigido("");
+        setFeedbackProfessor("");
+        setError("");
       }
     }
   };
@@ -60,7 +72,7 @@ export function MarcarCorrigidaDialog({
           <DialogHeader>
             <DialogTitle>Marcar Tarefa como Corrigida</DialogTitle>
             <DialogDescription>
-              Registre a correção da tarefa
+              Registre a correção da tarefa e adicione suas observações
             </DialogDescription>
           </DialogHeader>
 
@@ -73,6 +85,26 @@ export function MarcarCorrigidaDialog({
             <div className="space-y-2">
               <Label>Aluno</Label>
               <Input value={tarefa.aluno?.nome_completo || "N/A"} disabled />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="feedback_professor" className="flex items-center gap-1">
+                Observações do Professor <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                id="feedback_professor"
+                placeholder="Escreva aqui suas observações sobre a tarefa corrigida..."
+                value={feedbackProfessor}
+                onChange={(e) => {
+                  setFeedbackProfessor(e.target.value);
+                  if (error) setError("");
+                }}
+                disabled={isSubmitting}
+                className="min-h-[100px]"
+              />
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -102,7 +134,7 @@ export function MarcarCorrigidaDialog({
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Marcar como Corrigida
+              Confirmar Correção
             </Button>
           </DialogFooter>
         </form>

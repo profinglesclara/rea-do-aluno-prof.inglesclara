@@ -352,11 +352,14 @@ export default function AdminTarefas() {
   });
 
   const marcarCorrigidaAction = useMutation({
-    mutationFn: async (data: { tarefaId: string; alunoId: string; urlPdfCorrigido?: string }) => {
-      // Atualizar status da tarefa
+    mutationFn: async (data: { tarefaId: string; alunoId: string; feedbackProfessor: string; urlPdfCorrigido?: string }) => {
+      // Atualizar status da tarefa e salvar feedback
       const { error: tarefaError } = await supabase
         .from("tarefas")
-        .update({ status: "Corrigida" })
+        .update({ 
+          status: "Corrigida",
+          feedback_professor: data.feedbackProfessor,
+        })
         .eq("id", data.tarefaId);
 
       if (tarefaError) throw tarefaError;
@@ -420,6 +423,8 @@ export default function AdminTarefas() {
           <h1>Tarefa Corrigida</h1>
           <p>Olá ${aluno.nome_completo},</p>
           <p>Sua tarefa foi corrigida pelo professor e está disponível para consulta no Portal do Aluno.</p>
+          <p><strong>Feedback do professor:</strong></p>
+          <blockquote style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0; color: #555;">${data.feedbackProfessor}</blockquote>
           ${data.urlPdfCorrigido ? `<p>Você pode acessar a correção através do link disponibilizado no portal.</p>` : ""}
         `;
 
@@ -732,10 +737,11 @@ export default function AdminTarefas() {
             open={corrigidaDialogOpen}
             onOpenChange={setCorrigidaDialogOpen}
             tarefa={tarefaSelecionada}
-            onSubmit={(urlPdfCorrigido) =>
+            onSubmit={(feedbackProfessor, urlPdfCorrigido) =>
               marcarCorrigidaAction.mutate({
                 tarefaId: tarefaSelecionada.id,
                 alunoId: tarefaSelecionada.aluno_id,
+                feedbackProfessor,
                 urlPdfCorrigido,
               })
             }
