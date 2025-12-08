@@ -372,7 +372,11 @@ export default function AlunoTarefaDetalhes() {
                     </p>
                   )}
                 </div>
-                <Button type="submit" disabled={uploading || !arquivo}>
+                <Button 
+                  type="submit" 
+                  disabled={uploading || !arquivo}
+                  className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                >
                   {uploading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
