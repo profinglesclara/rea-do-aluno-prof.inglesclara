@@ -639,18 +639,17 @@ export default function AdminTarefas() {
                             <TableCell>{getStatusBadge(tarefa.status)}</TableCell>
                             <TableCell>
                               {temEntrega ? (
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary">Entregue</Badge>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => verEntrega(tarefa)}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => verEntrega(tarefa)}
+                                  className="text-primary hover:text-primary"
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Visualizar
+                                </Button>
                               ) : (
-                                <span className="text-muted-foreground text-sm">—</span>
+                                <span className="text-muted-foreground text-sm">Sem entrega</span>
                               )}
                             </TableCell>
                             <TableCell>
