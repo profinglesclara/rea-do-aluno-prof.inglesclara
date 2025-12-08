@@ -17,6 +17,7 @@ interface Entrega {
   aluno_id: string;
   url_pdf: string;
   data_envio: string;
+  comentario?: string | null;
 }
 
 interface TarefaComAluno {
@@ -100,6 +101,15 @@ export function VerEntregaDialog({
               })}
             </p>
           </div>
+
+          {entrega.comentario && (
+            <div>
+              <Label className="text-muted-foreground text-sm">Comentário do aluno</Label>
+              <p className="mt-1 p-3 rounded-lg border bg-muted/30 text-sm whitespace-pre-wrap">
+                {entrega.comentario}
+              </p>
+            </div>
+          )}
 
           <div>
             <Label className="text-muted-foreground text-sm">

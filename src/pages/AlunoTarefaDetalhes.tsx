@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Upload, FileText, Loader2, ExternalLink, X, Plus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +19,7 @@ export default function AlunoTarefaDetalhes() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [arquivos, setArquivos] = useState<File[]>([]);
+  const [comentario, setComentario] = useState("");
   const [uploading, setUploading] = useState(false);
 
   // Buscar aluno
@@ -87,7 +89,7 @@ export default function AlunoTarefaDetalhes() {
   });
 
   const enviarTarefaMutation = useMutation({
-    mutationFn: async (files: File[]) => {
+    mutationFn: async ({ files, comentarioTexto }: { files: File[]; comentarioTexto: string }) => {
       if (!aluno || !tarefa || !admin) throw new Error("Dados incompletos");
 
       const uploadedUrls: string[] = [];
@@ -121,6 +123,7 @@ export default function AlunoTarefaDetalhes() {
           .update({
             url_pdf: combinedUrl,
             data_envio: new Date().toISOString(),
+            comentario: comentarioTexto || null,
           })
           .eq("id", entrega.id);
 
@@ -132,6 +135,7 @@ export default function AlunoTarefaDetalhes() {
             tarefa_id: tarefa.id,
             aluno_id: aluno.user_id,
             url_pdf: combinedUrl,
+            comentario: comentarioTexto || null,
           });
 
         if (insertError) throw insertError;
@@ -193,6 +197,7 @@ export default function AlunoTarefaDetalhes() {
       queryClient.invalidateQueries({ queryKey: ["entrega", tarefa_id] });
       queryClient.invalidateQueries({ queryKey: ["tarefasAluno"] });
       setArquivos([]);
+      setComentario("");
       setUploading(false);
     },
     onError: (error) => {
@@ -253,7 +258,7 @@ export default function AlunoTarefaDetalhes() {
       return;
     }
     setUploading(true);
-    enviarTarefaMutation.mutate(arquivos);
+    enviarTarefaMutation.mutate({ files: arquivos, comentarioTexto: comentario });
   };
 
   const getStatusBadge = (status: string) => {
@@ -435,10 +440,25 @@ export default function AlunoTarefaDetalhes() {
                   )}
                 </div>
 
-                {/* Passo 2: Enviar */}
+                {/* Passo 2: Comentário opcional */}
                 {arquivos.length > 0 && (
                   <div className="space-y-3 pt-4 border-t">
-                    <Label>Passo 2: Enviar tarefa</Label>
+                    <Label htmlFor="comentario">Passo 2: Adicionar comentário (opcional)</Label>
+                    <Textarea
+                      id="comentario"
+                      placeholder="Escreva aqui alguma observação ou comentário sobre sua entrega..."
+                      value={comentario}
+                      onChange={(e) => setComentario(e.target.value)}
+                      disabled={uploading}
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                )}
+
+                {/* Passo 3: Enviar */}
+                {arquivos.length > 0 && (
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label>Passo 3: Enviar tarefa</Label>
                     <Button 
                       type="submit" 
                       disabled={uploading || arquivos.length === 0}

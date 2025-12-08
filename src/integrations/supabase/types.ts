@@ -207,6 +207,7 @@ export type Database = {
       entregas_tarefas: {
         Row: {
           aluno_id: string
+          comentario: string | null
           data_envio: string
           id: string
           tarefa_id: string
@@ -214,6 +215,7 @@ export type Database = {
         }
         Insert: {
           aluno_id: string
+          comentario?: string | null
           data_envio?: string
           id?: string
           tarefa_id: string
@@ -221,6 +223,7 @@ export type Database = {
         }
         Update: {
           aluno_id?: string
+          comentario?: string | null
           data_envio?: string
           id?: string
           tarefa_id?: string
