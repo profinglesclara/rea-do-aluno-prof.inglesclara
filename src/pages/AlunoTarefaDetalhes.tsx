@@ -4,14 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Upload, FileText, Loader2, ExternalLink, X, Plus } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Loader2, ExternalLink, X, Plus, MessageSquare } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { VerCorrecaoDialog } from "@/components/tarefas/VerCorrecaoDialog";
 
 export default function AlunoTarefaDetalhes() {
   const { tarefa_id } = useParams();
@@ -21,6 +21,7 @@ export default function AlunoTarefaDetalhes() {
   const [arquivos, setArquivos] = useState<File[]>([]);
   const [comentario, setComentario] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [verCorrecaoOpen, setVerCorrecaoOpen] = useState(false);
 
   // Buscar aluno
   const { data: aluno } = useQuery({
@@ -486,29 +487,31 @@ export default function AlunoTarefaDetalhes() {
         {tarefa.status === "Corrigida" && (
           <Card className="border-green-500">
             <CardContent className="pt-6 space-y-4">
-              <div className="text-center space-y-2">
+              <div className="text-center space-y-4">
                 <Badge variant="outline" className="text-green-600">
                   ✓ Tarefa Corrigida
                 </Badge>
                 <p className="text-sm text-muted-foreground">
                   Sua tarefa foi corrigida e está disponível para consulta.
                 </p>
+                <Button 
+                  onClick={() => setVerCorrecaoOpen(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Ver Correção e Feedback
+                </Button>
               </div>
-              
-              {tarefa.feedback_professor && (
-                <div className="mt-4 pt-4 border-t">
-                  <Label className="text-muted-foreground flex items-center gap-2 mb-2">
-                    <FileText className="h-4 w-4" />
-                    Feedback do Professor
-                  </Label>
-                  <div className="bg-muted/50 rounded-md p-4">
-                    <p className="text-sm whitespace-pre-wrap">{tarefa.feedback_professor}</p>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
+
+        <VerCorrecaoDialog
+          open={verCorrecaoOpen}
+          onOpenChange={setVerCorrecaoOpen}
+          tarefa={tarefa}
+          entrega={entrega}
+        />
       </div>
     </div>
   );
