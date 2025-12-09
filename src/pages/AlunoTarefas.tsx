@@ -4,16 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LogoutButton } from "@/components/LogoutButton";
 import { format, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { VerCorrecaoDialog } from "@/components/tarefas/VerCorrecaoDialog";
 
 export default function AlunoTarefas() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [correcaoDialogOpen, setCorrecaoDialogOpen] = useState(false);
+  const [tarefaSelecionada, setTarefaSelecionada] = useState<any>(null);
+  const [entregaSelecionada, setEntregaSelecionada] = useState<any>(null);
   
   // Filtros
   const [filterTipo, setFilterTipo] = useState<"Todas" | "Obrigatoria" | "Sugerida">("Todas");
@@ -112,9 +116,15 @@ export default function AlunoTarefas() {
     return isPast(parseISO(dataLimite));
   };
 
+  const handleVerCorrecao = (tarefa: any, entrega: any) => {
+    setTarefaSelecionada(tarefa);
+    setEntregaSelecionada(entrega);
+    setCorrecaoDialogOpen(true);
+  };
+
   const renderTarefa = (tarefa: any) => {
     const entrega = getEntregaPorTarefa(tarefa.id);
-    const temCorrecao = entrega && entrega.url_pdf && tarefa.status === "Corrigida";
+    const temCorrecao = tarefa.status === "Corrigida";
     
     return (
       <div
@@ -151,8 +161,10 @@ export default function AlunoTarefas() {
               <Button
                 size="sm"
                 variant="default"
-                onClick={() => window.open(entrega.url_pdf, "_blank")}
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => handleVerCorrecao(tarefa, entrega)}
               >
+                <MessageSquare className="h-4 w-4 mr-1" />
                 Ver correção
               </Button>
             )}
@@ -281,6 +293,13 @@ export default function AlunoTarefas() {
             )}
           </CardContent>
         </Card>
+
+        <VerCorrecaoDialog
+          open={correcaoDialogOpen}
+          onOpenChange={setCorrecaoDialogOpen}
+          tarefa={tarefaSelecionada}
+          entrega={entregaSelecionada}
+        />
       </div>
     </div>
   );
