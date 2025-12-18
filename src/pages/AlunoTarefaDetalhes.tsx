@@ -23,15 +23,17 @@ export default function AlunoTarefaDetalhes() {
   const [uploading, setUploading] = useState(false);
   const [verCorrecaoOpen, setVerCorrecaoOpen] = useState(false);
 
-  // Buscar aluno
+  // Buscar aluno logado
   const { data: aluno } = useQuery({
-    queryKey: ["alunoTeste"],
+    queryKey: ["alunoLogado"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+      
       const { data, error } = await supabase
         .from("usuarios")
         .select("*")
-        .eq("tipo_usuario", "Aluno")
-        .limit(1)
+        .eq("user_id", user.id)
         .single();
       
       if (error) throw error;
