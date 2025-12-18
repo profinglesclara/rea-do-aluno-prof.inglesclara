@@ -121,9 +121,9 @@ export default function AdminTarefas() {
       if (filterAno && data.getFullYear().toString() !== filterAno) return false;
     }
     
-    // Filtro "aguardando correção" - tarefas obrigatórias com status "Entregue"
+    // Filtro "aguardando correção" - tarefas com status "Entregue"
     if (showAguardandoCorrecao) {
-      if (tarefa.tipo !== "Obrigatoria" || tarefa.status !== "Entregue") {
+      if (tarefa.status !== "Entregue") {
         return false;
       }
     }
