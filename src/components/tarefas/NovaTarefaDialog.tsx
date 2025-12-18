@@ -117,14 +117,17 @@ export function NovaTarefaDialog({
       arquivo_enunciado: arquivoEnunciado || undefined,
     };
     onSubmit(tarefaData);
+    // NÃO resetar aqui - o reset será feito pelo pai quando a criação for bem sucedida
+  };
+
+  const resetForm = () => {
     form.reset();
     setArquivoEnunciado(null);
   };
 
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      form.reset();
-      setArquivoEnunciado(null);
+    if (!open && !isSubmitting) {
+      resetForm();
     }
     onOpenChange(open);
   };
