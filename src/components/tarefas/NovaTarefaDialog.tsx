@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText, X, Paperclip } from "lucide-react";
 
 const formSchema = z.object({
   aluno_id: z.string().min(1, "Selecione um aluno"),
@@ -51,6 +52,7 @@ interface NovaTarefaDialogProps {
     descricao?: string;
     tipo: string;
     data_limite?: string;
+    arquivo_enunciado?: File;
   }) => void;
   isSubmitting: boolean;
 }
@@ -58,9 +60,11 @@ interface NovaTarefaDialogProps {
 export function NovaTarefaDialog({
   open,
   onOpenChange,
-  onSubmit,
   isSubmitting,
+  onSubmit,
 }: NovaTarefaDialogProps) {
+  const [arquivoEnunciado, setArquivoEnunciado] = useState<File | null>(null);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -86,21 +90,47 @@ export function NovaTarefaDialog({
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== "application/pdf") {
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        return;
+      }
+      setArquivoEnunciado(file);
+    }
+  };
+
+  const removeFile = () => {
+    setArquivoEnunciado(null);
+  };
+
   const handleSubmit = (data: FormValues) => {
-    // Garantir que todos os campos obrigatórios estão presentes
     const tarefaData = {
       aluno_id: data.aluno_id,
       titulo: data.titulo,
       tipo: data.tipo,
       descricao: data.descricao || undefined,
       data_limite: data.data_limite || undefined,
+      arquivo_enunciado: arquivoEnunciado || undefined,
     };
     onSubmit(tarefaData);
     form.reset();
+    setArquivoEnunciado(null);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      form.reset();
+      setArquivoEnunciado(null);
+    }
+    onOpenChange(open);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Nova Tarefa</DialogTitle>
@@ -173,6 +203,53 @@ export function NovaTarefaDialog({
               )}
             />
 
+            {/* Upload do PDF de enunciado */}
+            <div className="space-y-2">
+              <FormLabel>PDF do Enunciado</FormLabel>
+              {arquivoEnunciado ? (
+                <div className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm truncate max-w-[300px]">{arquivoEnunciado.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({(arquivoEnunciado.size / 1024 / 1024).toFixed(2)} MB)
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={removeFile}
+                    disabled={isSubmitting}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <label 
+                    htmlFor="arquivo-enunciado" 
+                    className="flex items-center gap-2 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer transition-colors text-sm"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                    Anexar PDF
+                  </label>
+                  <input
+                    id="arquivo-enunciado"
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                    disabled={isSubmitting}
+                    className="hidden"
+                  />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Opcional - Anexe um PDF com o enunciado da tarefa (máx. 10MB)
+              </p>
+            </div>
+
             <FormField
               control={form.control}
               name="tipo"
@@ -219,7 +296,7 @@ export function NovaTarefaDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
                 disabled={isSubmitting}
               >
                 Cancelar

@@ -313,6 +313,28 @@ export default function AlunoTarefaDetalhes() {
                 <p className="mt-1">{tarefa.descricao}</p>
               </div>
             )}
+
+            {/* Botão para baixar PDF do enunciado */}
+            {(tarefa as any).url_enunciado && (
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium text-sm">PDF do Enunciado</p>
+                      <p className="text-xs text-muted-foreground">Baixe o arquivo para fazer a atividade</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={(tarefa as any).url_enunciado} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Baixar PDF
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-muted-foreground">Tipo</Label>
