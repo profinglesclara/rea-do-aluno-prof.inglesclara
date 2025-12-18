@@ -146,7 +146,12 @@ export default function AdminTarefas() {
       // Upload do PDF de enunciado se existir
       if (novaTarefa.arquivo_enunciado) {
         const file = novaTarefa.arquivo_enunciado;
-        const fileName = `enunciados/${novaTarefa.aluno_id}/${Date.now()}_${file.name}`;
+        // Sanitizar nome do arquivo: remover acentos, espaços e caracteres especiais
+        const sanitizedFileName = file.name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+          .replace(/[^a-zA-Z0-9._-]/g, '_'); // Substitui caracteres especiais por _
+        const fileName = `enunciados/${novaTarefa.aluno_id}/${Date.now()}_${sanitizedFileName}`;
         
         const { error: uploadError } = await supabase.storage
           .from("tarefas")
