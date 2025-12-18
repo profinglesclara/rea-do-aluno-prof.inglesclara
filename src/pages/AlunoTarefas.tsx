@@ -263,36 +263,40 @@ export default function AlunoTarefas() {
         </Card>
 
         {/* Tarefas Obrigatórias */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tarefas Obrigatórias</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {tarefasObrigatorias.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Nenhuma tarefa obrigatória no momento.
-              </p>
-            ) : (
-              tarefasObrigatorias.map(renderTarefa)
-            )}
-          </CardContent>
-        </Card>
+        {(filterTipo === "Todas" || filterTipo === "Obrigatoria") && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Tarefas Obrigatórias</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {tarefasObrigatorias.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma tarefa obrigatória no momento.
+                </p>
+              ) : (
+                tarefasObrigatorias.map(renderTarefa)
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tarefas Sugeridas */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tarefas Sugeridas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {tarefasSugeridas.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Nenhuma tarefa sugerida no momento.
-              </p>
-            ) : (
-              tarefasSugeridas.map(renderTarefa)
-            )}
-          </CardContent>
-        </Card>
+        {(filterTipo === "Todas" || filterTipo === "Sugerida") && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Tarefas Sugeridas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {tarefasSugeridas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma tarefa sugerida no momento.
+                </p>
+              ) : (
+                tarefasSugeridas.map(renderTarefa)
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <VerCorrecaoDialog
           open={correcaoDialogOpen}
