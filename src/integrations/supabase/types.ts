@@ -443,6 +443,7 @@ export type Database = {
           status: string
           tipo: string
           titulo: string
+          url_enunciado: string | null
         }
         Insert: {
           aluno_id: string
@@ -455,6 +456,7 @@ export type Database = {
           status?: string
           tipo: string
           titulo: string
+          url_enunciado?: string | null
         }
         Update: {
           aluno_id?: string
@@ -467,6 +469,7 @@ export type Database = {
           status?: string
           tipo?: string
           titulo?: string
+          url_enunciado?: string | null
         }
         Relationships: [
           {

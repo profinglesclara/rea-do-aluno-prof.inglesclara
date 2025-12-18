@@ -139,11 +139,40 @@ export default function AdminTarefas() {
       descricao?: string;
       tipo: string;
       data_limite?: string;
+      arquivo_enunciado?: File;
     }) => {
-      // Criar a tarefa
+      let url_enunciado: string | undefined = undefined;
+
+      // Upload do PDF de enunciado se existir
+      if (novaTarefa.arquivo_enunciado) {
+        const file = novaTarefa.arquivo_enunciado;
+        const fileName = `enunciados/${novaTarefa.aluno_id}/${Date.now()}_${file.name}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("tarefas")
+          .upload(fileName, file, {
+            contentType: "application/pdf",
+            upsert: true,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("tarefas")
+          .getPublicUrl(fileName);
+
+        url_enunciado = publicUrl;
+      }
+
+      // Criar a tarefa (sem o arquivo_enunciado, que já foi processado)
+      const { arquivo_enunciado, ...tarefaData } = novaTarefa;
+      
       const { data: tarefa, error: tarefaError } = await supabase
         .from("tarefas")
-        .insert(novaTarefa)
+        .insert({
+          ...tarefaData,
+          url_enunciado,
+        })
         .select()
         .single();
 
