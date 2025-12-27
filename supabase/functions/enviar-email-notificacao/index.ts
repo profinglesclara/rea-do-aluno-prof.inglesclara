@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.81.1";
 
 const resend = {
   emails: {
@@ -47,13 +48,61 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log("Iniciando envio de email de notificação");
     
+    // SECURITY: Verify the caller is authenticated
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("❌ No authorization header provided");
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized: No authorization header" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        },
+      );
+    }
+
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      },
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error("❌ Invalid authentication token:", authError?.message);
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized: Invalid token" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        },
+      );
+    }
+
+    console.log("✅ User authenticated:", user.id);
+    
     const { to, subject, html }: EmailRequest = await req.json();
 
     if (!to || !subject || !html) {
       throw new Error("Parâmetros obrigatórios faltando: to, subject, html");
     }
 
-    console.log(`Enviando email para: ${to}, assunto: ${subject}`);
+    // SECURITY: Validate email format and domain
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to)) {
+      throw new Error("Formato de email inválido");
+    }
+
+    // SECURITY: Rate limiting could be added here (e.g., using a rate limit table)
+    // For now, we just log the request
+    console.log(`📧 Enviando email para: ${to}, assunto: ${subject}, solicitante: ${user.id}`);
 
     const emailResponse = await resend.emails.send({
       from: "Portal do Aluno <onboarding@resend.dev>",

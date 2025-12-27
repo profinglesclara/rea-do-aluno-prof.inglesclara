@@ -22,6 +22,63 @@ Deno.serve(async (req) => {
       },
     );
 
+    // SECURITY: Verify the caller is authenticated and is an Admin
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("❌ No authorization header provided");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Unauthorized: No authorization header",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        },
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: callerUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !callerUser) {
+      console.error("❌ Invalid authentication token:", authError?.message);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Unauthorized: Invalid token",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        },
+      );
+    }
+
+    // Check if caller has admin role using the new user_roles table
+    const { data: callerRole, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerUser.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (roleError || !callerRole) {
+      console.error("❌ Caller is not an admin:", callerUser.id);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Forbidden: Admin access required",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403,
+        },
+      );
+    }
+
+    console.log("✅ Admin authorization verified for user:", callerUser.id);
+
     const { tipo_usuario, nome_completo, nome_de_usuario, senha, nivel_atual, modalidade, frequencia_mensal } = await req.json();
 
     console.log("🚀 Criando usuário:", { tipo_usuario, nome_completo, nome_de_usuario });
@@ -65,15 +122,15 @@ Deno.serve(async (req) => {
       throw new Error(createError.message);
     }
 
-    // Preparar dados para inserir na tabela usuarios
+    // Preparar dados para inserir na tabela usuarios (WITHOUT senha - it's handled by Auth)
     const usuarioData: any = {
       user_id: newUser.user.id,
       nome_completo,
       nome_de_usuario,
       email: emailTecnico,
-      senha,
       tipo_usuario,
       email_confirmado: true,
+      // Note: senha is NOT stored here anymore - authentication is handled by Supabase Auth
     };
 
     // Adicionar campos específicos para aluno
@@ -94,6 +151,26 @@ Deno.serve(async (req) => {
       // Reverter criação no Auth
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
       throw new Error(insertError.message);
+    }
+
+    // Add role to user_roles table
+    const roleMapping: { [key: string]: string } = {
+      'Admin': 'admin',
+      'Aluno': 'aluno',
+      'Responsável': 'responsavel',
+      'Adulto': 'adulto',
+    };
+
+    const { error: roleInsertError } = await supabaseAdmin
+      .from("user_roles")
+      .insert({
+        user_id: newUser.user.id,
+        role: roleMapping[tipo_usuario] || 'aluno',
+      });
+
+    if (roleInsertError) {
+      console.error("Erro ao inserir role:", roleInsertError);
+      // Don't fail the operation, role can be added later
     }
 
     console.log("✅ Usuário criado com sucesso!");
