@@ -215,18 +215,38 @@ const AdminAulas = () => {
     
     const dataCompleta = `${novaData}T${novaHora}:00`;
     
-    const { error } = await supabase.from("aulas").insert({
+    const { data: aulaData, error } = await supabase.from("aulas").insert({
       aluno: novaAlunoId,
       data_aula: dataCompleta,
       status: novaStatus as any,
       conteudo: novaConteudo || null,
       observacoes: novaObservacoes || null,
-    });
+    }).select().single();
     
     if (error) {
       console.error(error);
       alert("Erro ao criar aula.");
       return;
+    }
+
+    // Criar notificação para o aluno sobre nova aula
+    try {
+      const dataFormatada = new Date(dataCompleta).toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      
+      await supabase.from("notificacoes").insert({
+        usuario_id: novaAlunoId,
+        tipo: "AULA_ATUALIZADA",
+        titulo: "Nova aula agendada",
+        mensagem: `Uma nova aula foi agendada para ${dataFormatada}.`,
+      });
+    } catch (notifError) {
+      console.error("Erro ao criar notificação:", notifError);
     }
     
     setShowNovaAula(false);
@@ -252,6 +272,10 @@ const AdminAulas = () => {
       return;
     }
     
+    // Buscar aula anterior para verificar se houve remarcação
+    const aulaAnterior = aulas.find((a) => a.aula_id === editAulaId);
+    const statusAnterior = aulaAnterior?.status;
+    
     const dataCompleta = `${editData}T${editHora}:00`;
     
     const { error } = await supabase
@@ -268,6 +292,28 @@ const AdminAulas = () => {
       console.error(error);
       alert("Erro ao editar aula.");
       return;
+    }
+
+    // Criar notificação se a aula foi remarcada
+    if (aulaAnterior && editStatus === "Remarcada" && statusAnterior !== "Remarcada") {
+      try {
+        const dataFormatada = new Date(dataCompleta).toLocaleString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        
+        await supabase.from("notificacoes").insert({
+          usuario_id: aulaAnterior.aluno,
+          tipo: "AULA_ATUALIZADA",
+          titulo: "Aula remarcada",
+          mensagem: `Sua aula foi remarcada para ${dataFormatada}.`,
+        });
+      } catch (notifError) {
+        console.error("Erro ao criar notificação:", notifError);
+      }
     }
     
     setShowEditarAula(false);

@@ -182,32 +182,32 @@ export default function AdminTarefas() {
 
       if (tarefaError) throw tarefaError;
 
-      // Se for obrigatória, criar notificação e enviar email
+      // Buscar dados do aluno
+      const { data: aluno, error: alunoError } = await supabase
+        .from("usuarios")
+        .select("nome_completo, email, responsavel_por")
+        .eq("user_id", novaTarefa.aluno_id)
+        .single();
+
+      if (alunoError) throw alunoError;
+
+      // Criar notificação para o aluno (para todas as tarefas)
+      const tipoLabel = novaTarefa.tipo === "Obrigatoria" ? "obrigatória" : "sugerida";
+      const { error: notifError } = await supabase
+        .from("notificacoes")
+        .insert({
+          usuario_id: novaTarefa.aluno_id,
+          tipo: "TAREFA_NOVA",
+          titulo: `Nova tarefa ${tipoLabel}`,
+          mensagem: `Você tem uma nova tarefa ${tipoLabel}: ${novaTarefa.titulo}`,
+        });
+
+      if (notifError) {
+        console.error("Erro ao criar notificação:", notifError);
+      }
+
+      // Enviar email para tarefas obrigatórias
       if (novaTarefa.tipo === "Obrigatoria") {
-        // Buscar dados do aluno
-        const { data: aluno, error: alunoError } = await supabase
-          .from("usuarios")
-          .select("nome_completo, email, responsavel_por")
-          .eq("user_id", novaTarefa.aluno_id)
-          .single();
-
-        if (alunoError) throw alunoError;
-
-        // Criar notificação para o aluno
-        const { error: notifError } = await supabase
-          .from("notificacoes")
-          .insert({
-            usuario_id: novaTarefa.aluno_id,
-            tipo: "TAREFA_NOVA",
-            titulo: "Nova tarefa obrigatória",
-            mensagem: `Você tem uma nova tarefa obrigatória: ${novaTarefa.titulo}`,
-          });
-
-        if (notifError) {
-          console.error("Erro ao criar notificação:", notifError);
-        }
-
-        // Enviar email
         try {
           const emailHtml = `
             <h1>Nova Tarefa Obrigatória</h1>
