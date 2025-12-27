@@ -43,6 +43,7 @@ import { Plus, Filter, X, Trash2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CalendarioAulas } from "@/components/CalendarioAulas";
 import { LogoutButton } from "@/components/LogoutButton";
+import { TimePicker } from "@/components/ui/time-picker";
 
 type Aula = {
   aula_id: string;
@@ -583,10 +584,10 @@ const AdminAulas = () => {
               </div>
               <div>
                 <Label>Hora</Label>
-                <Input
-                  type="time"
+                <TimePicker
                   value={novaHora}
-                  onChange={(e) => setNovaHora(e.target.value)}
+                  onChange={setNovaHora}
+                  placeholder="Selecione a hora"
                 />
               </div>
             </div>
@@ -649,10 +650,10 @@ const AdminAulas = () => {
               </div>
               <div>
                 <Label>Hora</Label>
-                <Input
-                  type="time"
+                <TimePicker
                   value={editHora}
-                  onChange={(e) => setEditHora(e.target.value)}
+                  onChange={setEditHora}
+                  placeholder="Selecione a hora"
                 />
               </div>
             </div>
