@@ -1,10 +1,12 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,14 +19,22 @@ interface TimePickerProps {
 
 export function TimePicker({ value, onChange, placeholder = "Selecione a hora" }: TimePickerProps) {
   const [open, setOpen] = React.useState(false);
+  const [tempHour, setTempHour] = React.useState("");
+  const [tempMinute, setTempMinute] = React.useState("");
 
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
-  const minutes = ["00", "15", "30", "45"];
+  const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"));
 
   const [selectedHour, selectedMinute] = value ? value.split(":") : ["", ""];
 
-  const handleTimeSelect = (hour: string, minute: string) => {
-    onChange(`${hour}:${minute}`);
+  const handleOpen = () => {
+    setTempHour(selectedHour || "08");
+    setTempMinute(selectedMinute || "00");
+    setOpen(true);
+  };
+
+  const handleConfirm = () => {
+    onChange(`${tempHour}:${tempMinute}`);
     setOpen(false);
   };
 
@@ -35,74 +45,91 @@ export function TimePicker({ value, onChange, placeholder = "Selecione a hora" }
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground"
-          )}
-        >
-          <Clock className="mr-2 h-4 w-4" />
-          {formatDisplayTime(value)}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-        <div className="flex">
-          {/* Hours */}
-          <div className="border-r border-border">
-            <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b border-border">
-              Hora
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        className={cn(
+          "w-full justify-start text-left font-normal",
+          !value && "text-muted-foreground"
+        )}
+        onClick={handleOpen}
+      >
+        <Clock className="mr-2 h-4 w-4" />
+        {formatDisplayTime(value)}
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[280px] p-0">
+          <DialogHeader className="px-4 pt-4 pb-2">
+            <DialogTitle className="text-center">Selecionar Horário</DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex justify-center items-center py-4 px-4">
+            <div className="flex items-center gap-2 text-4xl font-semibold">
+              <span>{tempHour}</span>
+              <span>:</span>
+              <span>{tempMinute}</span>
             </div>
-            <ScrollArea className="h-[200px]">
-              <div className="p-1">
-                {hours.map((hour) => (
-                  <Button
-                    key={hour}
-                    variant={selectedHour === hour ? "default" : "ghost"}
-                    size="sm"
-                    className="w-full justify-center"
-                    onClick={() => {
-                      if (selectedMinute) {
-                        handleTimeSelect(hour, selectedMinute);
-                      } else {
-                        onChange(`${hour}:00`);
-                      }
-                    }}
-                  >
-                    {hour}
-                  </Button>
-                ))}
-              </div>
-            </ScrollArea>
           </div>
-          {/* Minutes */}
-          <div>
-            <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b border-border">
-              Minuto
+
+          <div className="flex border-t border-border">
+            {/* Hours */}
+            <div className="flex-1 border-r border-border">
+              <div className="px-3 py-2 text-sm font-medium text-muted-foreground text-center bg-muted/50">
+                Hora
+              </div>
+              <ScrollArea className="h-[180px]">
+                <div className="p-1 grid grid-cols-4 gap-1">
+                  {hours.map((hour) => (
+                    <Button
+                      key={hour}
+                      type="button"
+                      variant={tempHour === hour ? "default" : "ghost"}
+                      size="sm"
+                      className="h-9 w-full"
+                      onClick={() => setTempHour(hour)}
+                    >
+                      {hour}
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
-            <ScrollArea className="h-[200px]">
-              <div className="p-1">
-                {minutes.map((minute) => (
-                  <Button
-                    key={minute}
-                    variant={selectedMinute === minute ? "default" : "ghost"}
-                    size="sm"
-                    className="w-full justify-center"
-                    onClick={() => {
-                      const hour = selectedHour || "08";
-                      handleTimeSelect(hour, minute);
-                    }}
-                  >
-                    {minute}
-                  </Button>
-                ))}
+            {/* Minutes */}
+            <div className="flex-1">
+              <div className="px-3 py-2 text-sm font-medium text-muted-foreground text-center bg-muted/50">
+                Minuto
               </div>
-            </ScrollArea>
+              <ScrollArea className="h-[180px]">
+                <div className="p-1 grid grid-cols-4 gap-1">
+                  {minutes.map((minute) => (
+                    <Button
+                      key={minute}
+                      type="button"
+                      variant={tempMinute === minute ? "default" : "ghost"}
+                      size="sm"
+                      className="h-9 w-full"
+                      onClick={() => setTempMinute(minute)}
+                    >
+                      {minute}
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
-        </div>
-      </PopoverContent>
-    </Popover>
+
+          <DialogFooter className="px-4 py-3 border-t border-border">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleConfirm}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
