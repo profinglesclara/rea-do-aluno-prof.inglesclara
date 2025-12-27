@@ -571,6 +571,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       usuarios: {
         Row: {
           data_criacao: string | null
@@ -593,7 +614,7 @@ export type Database = {
           progresso_geral: number | null
           progresso_por_categoria: Json | null
           responsavel_por: string | null
-          senha: string
+          senha: string | null
           show_contratos: boolean | null
           show_pagamentos: boolean | null
           show_relatorios: boolean | null
@@ -623,7 +644,7 @@ export type Database = {
           progresso_geral?: number | null
           progresso_por_categoria?: Json | null
           responsavel_por?: string | null
-          senha: string
+          senha?: string | null
           show_contratos?: boolean | null
           show_pagamentos?: boolean | null
           show_relatorios?: boolean | null
@@ -653,7 +674,7 @@ export type Database = {
           progresso_geral?: number | null
           progresso_por_categoria?: Json | null
           responsavel_por?: string | null
-          senha?: string
+          senha?: string | null
           show_contratos?: boolean | null
           show_pagamentos?: boolean | null
           show_relatorios?: boolean | null
@@ -737,6 +758,13 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["tipo_usuario"]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_responsavel_of: {
         Args: { _aluno_id: string; _user_id: string }
         Returns: boolean
@@ -747,6 +775,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "aluno" | "responsavel" | "adulto"
       categoria_topico:
         | "Grammar"
         | "Vocabulary"
@@ -905,6 +934,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "aluno", "responsavel", "adulto"],
       categoria_topico: [
         "Grammar",
         "Vocabulary",

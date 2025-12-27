@@ -174,14 +174,22 @@ const Login = () => {
       }
 
       // Criar registro na tabela usuarios (como Aluno por padrão)
+      // Note: senha is NOT stored in usuarios table - authentication is handled by Supabase Auth
       const { error: insertError } = await supabase.from("usuarios").insert({
         user_id: authData.user.id,
         nome_completo: registerName,
         nome_de_usuario: registerUsername,
         email: registerEmail,
-        senha: "***", // Placeholder - a senha real está no Auth
         tipo_usuario: "Aluno",
       });
+
+      if (!insertError) {
+        // Also add role to user_roles table
+        await supabase.from("user_roles").insert({
+          user_id: authData.user.id,
+          role: "aluno",
+        });
+      }
 
       if (insertError) {
         toast.error("Erro ao salvar perfil: " + insertError.message);
