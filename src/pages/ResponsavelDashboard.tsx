@@ -8,6 +8,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, User } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LogoutButton } from "@/components/LogoutButton";
+import { FotoPerfil } from "@/components/FotoPerfil";
+import { EditarFotoPerfilDialog } from "@/components/EditarFotoPerfilDialog";
 import { useEffect, useState } from "react";
 
 type AlunoVinculado = {
@@ -29,6 +31,7 @@ export default function ResponsavelDashboard() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [fotoDialogOpen, setFotoDialogOpen] = useState(false);
 
   // Buscar usuário logado
   useEffect(() => {
@@ -114,19 +117,22 @@ export default function ResponsavelDashboard() {
     ? "Meu Progresso" 
     : "Meus Alunos";
 
+  const handleFotoAtualizada = (novaUrl: string | null) => {
+    setCurrentUser((prev: any) => ({ ...prev, foto_perfil_url: novaUrl }));
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+            <FotoPerfil
+              fotoUrl={currentUser.foto_perfil_url}
+              nome={currentUser.nome_completo}
+              className="h-12 w-12"
+              onClick={() => setFotoDialogOpen(true)}
+            />
             <div>
               <h1 className="text-3xl font-bold">{titulo}</h1>
               <p className="text-muted-foreground">
@@ -141,6 +147,15 @@ export default function ResponsavelDashboard() {
             <LogoutButton variant="outline" />
           </div>
         </div>
+
+        <EditarFotoPerfilDialog
+          open={fotoDialogOpen}
+          onOpenChange={setFotoDialogOpen}
+          userId={currentUser.user_id}
+          nome={currentUser.nome_completo}
+          fotoAtual={currentUser.foto_perfil_url}
+          onFotoAtualizada={handleFotoAtualizada}
+        />
 
         {/* Lista de alunos vinculados */}
         {!alunosVinculados || alunosVinculados.length === 0 ? (

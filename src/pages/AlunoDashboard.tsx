@@ -1,18 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar, BookOpen, Trophy, ListTodo, Star, Target, Award, Zap, Heart, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LogoutButton } from "@/components/LogoutButton";
+import { FotoPerfil } from "@/components/FotoPerfil";
+import { EditarFotoPerfilDialog } from "@/components/EditarFotoPerfilDialog";
 import { useEffect, useState } from "react";
-
 export default function AlunoDashboard() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [fotoDialogOpen, setFotoDialogOpen] = useState(false);
 
   // Buscar usuário logado
   useEffect(() => {
@@ -144,12 +145,9 @@ export default function AlunoDashboard() {
     );
   }
 
-  const iniciais = aluno.nome_completo
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const handleFotoAtualizada = (novaUrl: string | null) => {
+    setCurrentUser((prev: any) => ({ ...prev, foto_perfil_url: novaUrl }));
+  };
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -157,9 +155,12 @@ export default function AlunoDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="text-lg">{iniciais}</AvatarFallback>
-            </Avatar>
+            <FotoPerfil
+              fotoUrl={aluno.foto_perfil_url}
+              nome={aluno.nome_completo}
+              className="h-16 w-16"
+              onClick={() => setFotoDialogOpen(true)}
+            />
             <div>
               <h1 className="text-3xl font-bold">{aluno.nome_completo}</h1>
               <p className="text-muted-foreground">Bem-vindo ao seu painel</p>
@@ -170,6 +171,15 @@ export default function AlunoDashboard() {
             <LogoutButton variant="outline" />
           </div>
         </div>
+
+        <EditarFotoPerfilDialog
+          open={fotoDialogOpen}
+          onOpenChange={setFotoDialogOpen}
+          userId={aluno.user_id}
+          nome={aluno.nome_completo}
+          fotoAtual={aluno.foto_perfil_url}
+          onFotoAtualizada={handleFotoAtualizada}
+        />
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
