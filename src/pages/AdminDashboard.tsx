@@ -24,6 +24,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Search, Eye, Calendar, FileText, ClipboardList, User } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
+import { FotoPerfil } from "@/components/FotoPerfil";
+import { EditarFotoPerfilDialog } from "@/components/EditarFotoPerfilDialog";
 
 type DashboardAluno = {
   aluno_id: string;
@@ -47,6 +49,7 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [nivelFilter, setNivelFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [fotoDialogOpen, setFotoDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -156,6 +159,14 @@ const AdminDashboard = () => {
           <CardHeader>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
+                {admin && (
+                  <FotoPerfil
+                    fotoUrl={admin.foto_perfil_url}
+                    nome={admin.nome_completo}
+                    className="h-12 w-12"
+                    onClick={() => setFotoDialogOpen(true)}
+                  />
+                )}
                 <CardTitle className="text-3xl font-bold">
                   Painel Geral de Alunos
                 </CardTitle>
@@ -197,6 +208,21 @@ const AdminDashboard = () => {
               </div>
             </div>
           </CardHeader>
+          
+          {admin && (
+            <EditarFotoPerfilDialog
+              open={fotoDialogOpen}
+              onOpenChange={setFotoDialogOpen}
+              userId={admin.user_id}
+              nome={admin.nome_completo}
+              fotoAtual={admin.foto_perfil_url}
+              onFotoAtualizada={(novaUrl) => {
+                // Refetch admin data by invalidating query
+                window.location.reload();
+              }}
+            />
+          )}
+          
           <CardContent>
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="relative flex-1">
