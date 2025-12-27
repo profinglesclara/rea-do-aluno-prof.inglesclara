@@ -40,6 +40,7 @@ type DashboardAluno = {
   total_canceladas: number;
   total_remarcadas: number;
   proxima_aula_data: string | null;
+  foto_perfil_url?: string | null;
 };
 
 const AdminDashboard = () => {
@@ -88,15 +89,29 @@ const AdminDashboard = () => {
 
   const fetchAlunos = async () => {
     try {
-      const { data, error } = await supabase
+      // Buscar dados do dashboard
+      const { data: dashboardData, error: dashboardError } = await supabase
         .from("dashboard_resumo_alunos")
         .select("*")
         .order("nome_aluno", { ascending: true });
 
-      if (error) throw error;
+      if (dashboardError) throw dashboardError;
 
-      setAlunos(data || []);
-      setFilteredAlunos(data || []);
+      // Buscar fotos de perfil dos alunos
+      const alunoIds = dashboardData?.map(a => a.aluno_id).filter(Boolean) || [];
+      const { data: usuariosData } = await supabase
+        .from("usuarios")
+        .select("user_id, foto_perfil_url")
+        .in("user_id", alunoIds);
+
+      // Combinar dados
+      const alunosComFoto = (dashboardData || []).map(aluno => ({
+        ...aluno,
+        foto_perfil_url: usuariosData?.find(u => u.user_id === aluno.aluno_id)?.foto_perfil_url || null
+      }));
+
+      setAlunos(alunosComFoto);
+      setFilteredAlunos(alunosComFoto);
     } catch (error) {
       console.error("Erro ao carregar alunos:", error);
       toast({
@@ -293,7 +308,14 @@ const AdminDashboard = () => {
                     filteredAlunos.map((aluno) => (
                       <TableRow key={aluno.aluno_id}>
                         <TableCell className="font-medium">
-                          {aluno.nome_aluno}
+                          <div className="flex items-center gap-3">
+                            <FotoPerfil
+                              fotoUrl={aluno.foto_perfil_url}
+                              nome={aluno.nome_aluno || ""}
+                              className="h-8 w-8"
+                            />
+                            {aluno.nome_aluno}
+                          </div>
                         </TableCell>
                         <TableCell className="text-center">
                           {aluno.total_aulas}
