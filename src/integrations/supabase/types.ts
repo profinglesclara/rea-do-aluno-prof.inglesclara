@@ -785,6 +785,8 @@ export type Database = {
         | "Reading"
         | "Writing"
         | "Speaking"
+        | "Phonetics"
+        | "Expressions"
       modalidade: "Online" | "Presencial" | "Híbrido"
       nivel_cefr: "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
       status_atividade: "Disponível" | "Concluída"
@@ -944,6 +946,8 @@ export const Constants = {
         "Reading",
         "Writing",
         "Speaking",
+        "Phonetics",
+        "Expressions",
       ],
       modalidade: ["Online", "Presencial", "Híbrido"],
       nivel_cefr: ["A1", "A2", "B1", "B2", "C1", "C2"],

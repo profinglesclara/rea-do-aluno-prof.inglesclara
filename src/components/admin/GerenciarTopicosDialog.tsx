@@ -235,10 +235,11 @@ export function GerenciarTopicosDialog({
       }
 
       // Inserir tópicos para o aluno
+      // Usamos type assertion porque o enum foi atualizado no banco mas os types podem estar desatualizados
       const novosTopicos = topicosPadrao.map((tp) => ({
         aluno: alunoId,
         nivel_cefr: tp.nivel_cefr,
-        categoria: tp.categoria,
+        categoria: tp.categoria as Database["public"]["Enums"]["categoria_topico"],
         descricao_topico: tp.descricao_topico,
         status: "A Introduzir" as StatusTopico,
       }));
