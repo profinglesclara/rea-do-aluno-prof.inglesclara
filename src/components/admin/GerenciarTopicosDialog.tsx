@@ -97,8 +97,8 @@ export function GerenciarTopicosDialog({
     }
   };
 
-  // Buscar tópicos do aluno
-  const fetchTopicos = async () => {
+  // Buscar tópicos do aluno - se não houver, popular automaticamente
+  const fetchTopicos = async (autoPopulate = true) => {
     if (!alunoId) return;
     
     setLoading(true);
@@ -110,7 +110,16 @@ export function GerenciarTopicosDialog({
 
       if (error) throw error;
 
-      setTopicos((data as Topico[]) || []);
+      const topicosData = (data as Topico[]) || [];
+      
+      // Se não houver tópicos e o aluno tiver nível CEFR, popular automaticamente
+      if (topicosData.length === 0 && nivelCefr && autoPopulate) {
+        setLoading(false);
+        await handlePopularTopicos();
+        return;
+      }
+
+      setTopicos(topicosData);
       setChanges({});
     } catch (error) {
       console.error("Erro ao buscar tópicos:", error);
@@ -230,7 +239,7 @@ export function GerenciarTopicosDialog({
         setLoading(false);
         setPopulando(false);
         // Atualizar lista (agora vazia)
-        fetchTopicos();
+        fetchTopicos(false);
         return;
       }
 
@@ -255,7 +264,7 @@ export function GerenciarTopicosDialog({
         description: `${novosTopicos.length} tópicos atribuídos ao aluno.`,
       });
 
-      fetchTopicos();
+      fetchTopicos(false);
       onSuccess?.();
     } catch (error) {
       console.error("Erro ao popular tópicos:", error);
