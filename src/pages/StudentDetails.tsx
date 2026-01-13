@@ -6,9 +6,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, ChevronDown, Trophy, Star, Target, Award, Zap, Heart, Pencil } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { ArrowLeft, ChevronDown, Trophy, Star, Target, Award, Zap, Heart, Pencil, BookOpen } from "lucide-react";
 import { GerenciarConquistasDialog } from "@/components/conquistas/GerenciarConquistasDialog";
 import { EditarPerfilAlunoDialog } from "@/components/admin/EditarPerfilAlunoDialog";
+import { GerenciarTopicosDialog } from "@/components/admin/GerenciarTopicosDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 type DashboardRow = {
@@ -40,6 +42,7 @@ const StudentDetails = () => {
 
   const [conquistasDialogOpen, setConquistasDialogOpen] = useState(false);
   const [editarPerfilOpen, setEditarPerfilOpen] = useState(false);
+  const [topicosDialogOpen, setTopicosDialogOpen] = useState(false);
   
   const queryClient = useQueryClient();
 
@@ -60,6 +63,35 @@ const StudentDetails = () => {
         total: mestreResult.data?.length || 0,
         desbloqueadas: alunoResult.data?.length || 0,
         conquistas: alunoResult.data || [],
+      };
+    },
+  });
+
+  // Buscar tópicos de progresso do aluno
+  const { data: topicosData, refetch: refetchTopicos } = useQuery({
+    queryKey: ["topicosAlunoDetalhes", aluno_id],
+    enabled: !!aluno_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("topicos_progresso")
+        .select("*")
+        .eq("aluno", aluno_id!);
+
+      if (error) throw error;
+
+      const topicos = data || [];
+      const total = topicos.length;
+      const concluidos = topicos.filter(t => t.status === "Concluído").length;
+      const emDesenvolvimento = topicos.filter(t => t.status === "Em Desenvolvimento").length;
+      const aIntroduzir = topicos.filter(t => t.status === "A Introduzir").length;
+      const percentualConcluido = total > 0 ? Math.round((concluidos / total) * 100) : 0;
+
+      return {
+        total,
+        concluidos,
+        emDesenvolvimento,
+        aIntroduzir,
+        percentualConcluido,
       };
     },
   });
@@ -449,6 +481,68 @@ const StudentDetails = () => {
               <p className="text-sm text-muted-foreground mt-1">Disponíveis</p>
           </CardContent>
         </Card>
+        </div>
+
+        {/* Card de Progresso por Tópicos */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Progresso por Tópicos
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setTopicosDialogOpen(true)}
+            >
+              Gerenciar Tópicos
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {topicosData && topicosData.total > 0 ? (
+              <div className="space-y-4">
+                {/* Barra de progresso geral */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Progresso geral</span>
+                    <span className="font-medium">{topicosData.percentualConcluido}%</span>
+                  </div>
+                  <Progress value={topicosData.percentualConcluido} className="h-3" />
+                </div>
+
+                {/* Resumo por status */}
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
+                    <p className="text-2xl font-bold text-green-600">{topicosData.concluidos}</p>
+                    <p className="text-xs text-muted-foreground">Concluídos</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+                    <p className="text-2xl font-bold text-yellow-600">{topicosData.emDesenvolvimento}</p>
+                    <p className="text-xs text-muted-foreground">Em desenvolvimento</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-900/20">
+                    <p className="text-2xl font-bold text-gray-600">{topicosData.aIntroduzir}</p>
+                    <p className="text-xs text-muted-foreground">A introduzir</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 space-y-3">
+                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground" />
+                <p className="text-muted-foreground">
+                  Nenhum tópico de progresso atribuído.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTopicosDialogOpen(true)}
+                >
+                  Atribuir tópicos do nível {dashboard.nivel_cefr || "CEFR"}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Card de Relatórios Recentes */}
         <Card>
@@ -507,8 +601,6 @@ const StudentDetails = () => {
             )}
           </CardContent>
         </Card>
-
-        </div>
 
         {/* Card de Aulas do Aluno */}
         <Card>
@@ -598,6 +690,19 @@ const StudentDetails = () => {
           // Recarregar dados do dashboard
           queryClient.invalidateQueries({ queryKey: ["conquistasAlunoDetalhes", aluno_id] });
           window.location.reload();
+        }}
+      />
+
+      {/* Dialog de gerenciamento de tópicos */}
+      <GerenciarTopicosDialog
+        open={topicosDialogOpen}
+        onOpenChange={setTopicosDialogOpen}
+        alunoId={aluno_id!}
+        alunoNome={dashboard.nome_aluno || "Aluno"}
+        nivelCefr={dashboard.nivel_cefr}
+        onSuccess={() => {
+          refetchTopicos();
+          queryClient.invalidateQueries({ queryKey: ["topicosAlunoDetalhes", aluno_id] });
         }}
       />
     </div>
