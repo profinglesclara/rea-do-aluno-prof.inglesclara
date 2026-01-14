@@ -388,7 +388,7 @@ export function GerenciarTopicosDialog({
             )}
 
             {/* Lista de tópicos por categoria - SEMPRE mostra as 7 categorias */}
-            <ScrollArea className="flex-1 pr-4">
+            <ScrollArea className="flex-1 max-h-[50vh] pr-4">
               <div className="space-y-4">
                 {FIXED_CATEGORIES.map(({ key, name }) => {
                   const topicosCategoria = topicosPorCategoria[key] || [];
