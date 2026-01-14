@@ -67,15 +67,32 @@ const StudentDetails = () => {
     },
   });
 
-  // Buscar tópicos de progresso do aluno
+  // Buscar tópicos de progresso do aluno - filtrar pelo nível CEFR atual
   const { data: topicosData, refetch: refetchTopicos } = useQuery({
     queryKey: ["topicosAlunoDetalhes", aluno_id],
     enabled: !!aluno_id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Primeiro buscar o nível CEFR do aluno
+      const { data: alunoData } = await supabase
+        .from("usuarios")
+        .select("nivel_cefr")
+        .eq("user_id", aluno_id!)
+        .single();
+      
+      const nivelAtual = alunoData?.nivel_cefr;
+      
+      // Buscar tópicos filtrados pelo nível CEFR atual
+      let query = supabase
         .from("topicos_progresso")
         .select("*")
         .eq("aluno", aluno_id!);
+      
+      // Filtrar pelo nível CEFR atual do aluno
+      if (nivelAtual) {
+        query = query.eq("nivel_cefr", nivelAtual);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -92,6 +109,7 @@ const StudentDetails = () => {
         emDesenvolvimento,
         aIntroduzir,
         percentualConcluido,
+        nivelCefr: nivelAtual,
       };
     },
   });
@@ -501,10 +519,19 @@ const StudentDetails = () => {
           <CardContent>
             {topicosData && topicosData.total > 0 ? (
               <div className="space-y-4">
+                {/* Badge do nível CEFR */}
+                {topicosData.nivelCefr && (
+                  <Badge variant="outline" className="mb-2">
+                    Nível {topicosData.nivelCefr}
+                  </Badge>
+                )}
+                
                 {/* Barra de progresso geral */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Progresso geral</span>
+                    <span className="text-muted-foreground">
+                      Progresso geral ({topicosData.concluidos}/{topicosData.total} tópicos)
+                    </span>
                     <span className="font-medium">{topicosData.percentualConcluido}%</span>
                   </div>
                   <Progress value={topicosData.percentualConcluido} className="h-3" />

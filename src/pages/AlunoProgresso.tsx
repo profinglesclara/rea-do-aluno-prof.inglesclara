@@ -7,6 +7,7 @@ import { ArrowLeft, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LogoutButton } from "@/components/LogoutButton";
 import { useDashboardAluno } from "@/hooks/useDashboardAluno";
+import { CATEGORIAS_FIXAS, categoriaTemTopicos, formatCategoriaLabel } from "@/hooks/useProgressoAluno";
 import { useState, useMemo, useEffect } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -98,10 +99,10 @@ export default function AlunoProgresso() {
     }
   }, [selectedCategory, historicoMesAtual, dashboard?.progresso_por_categoria]);
 
+  // Usar as 7 categorias fixas para o filtro do gráfico
   const categorias = useMemo(() => {
-    const progressoPorCategoria = dashboard?.progresso_por_categoria || {};
-    return ["Geral", ...Object.keys(progressoPorCategoria)];
-  }, [dashboard?.progresso_por_categoria]);
+    return ["Geral", ...CATEGORIAS_FIXAS];
+  }, []);
 
   // Carregar relatórios mensais do aluno
   useEffect(() => {
@@ -151,16 +152,14 @@ export default function AlunoProgresso() {
     };
   }, [relatorios, mesBase, mesComparado]);
 
-  // Gráfico comparativo por categoria
+  // Gráfico comparativo por categoria usando as 7 categorias fixas
   const chartDataComparativo = useMemo(() => {
     if (!mesBase || !mesComparado || !dashboard?.progresso_por_categoria) return [];
 
     const progressoPorCategoria = dashboard.progresso_por_categoria;
-    const categorias = Object.keys(progressoPorCategoria);
 
-    // Para simplificar, vamos usar os dados atuais como base
-    // Em uma implementação real, seria necessário ter histórico por categoria
-    return categorias.map(cat => ({
+    // Usar as 7 categorias fixas
+    return CATEGORIAS_FIXAS.map(cat => ({
       categoria: cat,
       mesBase: progressoPorCategoria[cat]?.percentual_concluido || 0,
       mesComparado: Math.max(0, (progressoPorCategoria[cat]?.percentual_concluido || 0) - Math.random() * 10) // Simulado
@@ -267,46 +266,82 @@ export default function AlunoProgresso() {
         {/* Progresso Geral */}
         <Card>
           <CardHeader>
-            <CardTitle>Progresso Geral</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Progresso Geral</span>
+              {dashboard.nivel_cefr && (
+                <Badge variant="outline">Nível {dashboard.nivel_cefr}</Badge>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium">Progresso total</span>
+                <span className="text-sm font-medium">
+                  Progresso total ({dashboard.concluidos_nivel || 0}/{dashboard.total_topicos_nivel || 0} tópicos)
+                </span>
                 <span className="text-sm font-bold">{dashboard.progresso_geral || 0}%</span>
               </div>
               <Progress value={dashboard.progresso_geral || 0} />
             </div>
+            <div className="grid grid-cols-3 gap-4 text-center text-sm">
+              <div>
+                <p className="text-muted-foreground">Concluídos</p>
+                <p className="text-lg font-bold text-green-600">{dashboard.concluidos_nivel || 0}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Em desenvolvimento</p>
+                <p className="text-lg font-bold text-blue-600">{dashboard.em_desenvolvimento_nivel || 0}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">A introduzir</p>
+                <p className="text-lg font-bold text-muted-foreground">{dashboard.a_introduzir_nivel || 0}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Progresso por Categoria */}
+        {/* Progresso por Categoria - Sempre mostra as 7 categorias fixas */}
         <Card>
           <CardHeader>
             <CardTitle>Progresso por Categoria</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              As 7 categorias do currículo CEFR para o nível {dashboard.nivel_cefr || "atual"}
+            </p>
           </CardHeader>
           <CardContent className="space-y-6">
-            {Object.keys(progressoPorCategoria).length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Nenhum dado de progresso por categoria disponível.
-              </p>
-            ) : (
-              Object.entries(progressoPorCategoria).map(([categoria, dados]: [string, any]) => (
+            {CATEGORIAS_FIXAS.map((categoria) => {
+              const dados = progressoPorCategoria[categoria] || {
+                total: 0,
+                concluidos: 0,
+                em_desenvolvimento: 0,
+                a_introduzir: 0,
+                percentual_concluido: 0,
+                percentual_em_desenvolvimento: 0,
+              };
+              const temTopicos = dados.total > 0;
+              
+              return (
                 <div key={categoria} className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">{categoria}</span>
                     <span className="text-sm text-muted-foreground">
-                      {dados.concluidos}/{dados.total}
+                      {temTopicos ? `${dados.concluidos}/${dados.total}` : "Sem tópicos"}
                     </span>
                   </div>
                   <Progress value={dados.percentual_concluido || 0} />
                   <div className="flex gap-4 text-xs text-muted-foreground">
-                    <span>Concluídos: {dados.percentual_concluido?.toFixed(1) || 0}%</span>
-                    <span>Em desenvolvimento: {dados.percentual_em_desenvolvimento?.toFixed(1) || 0}%</span>
+                    {temTopicos ? (
+                      <>
+                        <span>Concluídos: {dados.percentual_concluido?.toFixed(1) || 0}%</span>
+                        <span>Em desenvolvimento: {dados.percentual_em_desenvolvimento?.toFixed(1) || 0}%</span>
+                      </>
+                    ) : (
+                      <span className="italic">Nenhum tópico configurado para esta categoria neste nível</span>
+                    )}
                   </div>
                 </div>
-              ))
-            )}
+              );
+            })}
           </CardContent>
         </Card>
 

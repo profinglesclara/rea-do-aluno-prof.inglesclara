@@ -754,6 +754,7 @@ export type Database = {
       aluno_tem_responsavel: { Args: { p_aluno_id: string }; Returns: boolean }
       gerar_relatorios_mensais: { Args: never; Returns: undefined }
       get_dashboard_aluno: { Args: { p_aluno: string }; Returns: Json }
+      get_progresso_aluno: { Args: { p_aluno: string }; Returns: Json }
       get_user_type: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["tipo_usuario"]
