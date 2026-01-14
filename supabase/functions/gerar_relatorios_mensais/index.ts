@@ -29,19 +29,20 @@ serve(async (req) => {
     
     console.log(`📅 Mês de referência: ${mesReferencia}`);
 
-    // Buscar alunos ativos
+    // Buscar alunos ativos com nível CEFR definido
     const { data: alunos, error: alunosError } = await supabase
       .from('usuarios')
-      .select('user_id, nome_completo, progresso_geral, progresso_por_categoria, historico_progresso')
-      .eq('tipo_usuario', 'Aluno')
-      .eq('status_aluno', 'Ativo');
+      .select('user_id, nome_completo, nivel_cefr, progresso_geral, progresso_por_categoria, historico_progresso')
+      .in('tipo_usuario', ['Aluno', 'Adulto'])
+      .eq('status_aluno', 'Ativo')
+      .not('nivel_cefr', 'is', null);
 
     if (alunosError) {
       console.error('❌ Erro ao buscar alunos:', alunosError);
       throw alunosError;
     }
 
-    console.log(`👥 Encontrados ${alunos?.length || 0} alunos ativos`);
+    console.log(`👥 Encontrados ${alunos?.length || 0} alunos ativos com nível CEFR`);
 
     const resultados = {
       sucesso: 0,
@@ -52,46 +53,49 @@ serve(async (req) => {
     // Processar cada aluno
     for (const aluno of alunos || []) {
       try {
-        console.log(`\n📊 Processando aluno: ${aluno.nome_completo} (${aluno.user_id})`);
+        console.log(`\n📊 Processando aluno: ${aluno.nome_completo} (${aluno.user_id}) - Nível ${aluno.nivel_cefr}`);
 
-        // Valores seguros com fallback
-        const progressoGeral = aluno.progresso_geral || 0;
-        const progressoPorCategoria = aluno.progresso_por_categoria || {};
-        const historicoProgresso = aluno.historico_progresso || [];
+        // Buscar progresso atualizado filtrando pelo nível CEFR atual
+        const { data: progressoData, error: progressoError } = await supabase
+          .rpc('get_progresso_aluno', { p_aluno: aluno.user_id });
 
-        // Calcular porcentagens
-        let porcentagemConcluida = 0;
-        let porcentagemEmDesenvolvimento = 0;
-
-        if (typeof progressoPorCategoria === 'object' && progressoPorCategoria !== null) {
-          const categorias = Object.values(progressoPorCategoria);
-          if (categorias.length > 0) {
-            const totalConcluidos = categorias.reduce((acc: number, cat: any) => 
-              acc + (cat?.percentual_concluido || 0), 0);
-            const totalEmDesenvolvimento = categorias.reduce((acc: number, cat: any) => 
-              acc + (cat?.percentual_em_desenvolvimento || 0), 0);
-            
-            porcentagemConcluida = totalConcluidos / categorias.length;
-            porcentagemEmDesenvolvimento = totalEmDesenvolvimento / categorias.length;
-          }
+        if (progressoError) {
+          console.error(`  ❌ Erro ao buscar progresso:`, progressoError);
+          throw progressoError;
         }
 
-        console.log(`  📈 Progresso: ${progressoGeral}% | Concluída: ${porcentagemConcluida.toFixed(2)}% | Em desenvolvimento: ${porcentagemEmDesenvolvimento.toFixed(2)}%`);
+        const progresso = progressoData || {};
+        const progressoGeral = Number(progresso.progresso_geral) || 0;
+        const progressoPorCategoria = progresso.progresso_por_categoria || {};
+        const totalTopicos = Number(progresso.total_topicos) || 0;
+        const concluidos = Number(progresso.concluidos) || 0;
+        const emDesenvolvimento = Number(progresso.em_desenvolvimento) || 0;
 
-        // Gerar conteúdo textual
+        // Calcular porcentagens baseadas no nível CEFR atual
+        const porcentagemConcluida = totalTopicos > 0 ? (concluidos / totalTopicos) * 100 : 0;
+        const porcentagemEmDesenvolvimento = totalTopicos > 0 ? (emDesenvolvimento / totalTopicos) * 100 : 0;
+
+        console.log(`  📈 Nível ${aluno.nivel_cefr}: ${totalTopicos} tópicos | Progresso: ${progressoGeral}% | Concluídos: ${concluidos} (${porcentagemConcluida.toFixed(2)}%) | Em dev: ${emDesenvolvimento} (${porcentagemEmDesenvolvimento.toFixed(2)}%)`);
+
+        // Gerar conteúdo textual (incluindo nível CEFR)
         const conteudoGerado = gerarConteudoTexto(
           aluno.nome_completo,
+          aluno.nivel_cefr,
           progressoGeral,
           progressoPorCategoria,
           porcentagemConcluida,
-          porcentagemEmDesenvolvimento
+          porcentagemEmDesenvolvimento,
+          totalTopicos,
+          concluidos,
+          emDesenvolvimento
         );
 
-        // Gerar comentário automático com IA
+        // Gerar comentário automático com IA (incluindo nível CEFR)
         console.log('  🤖 Gerando comentário com IA...');
         const comentarioAutomatico = await gerarComentarioIA(
           lovableApiKey,
           aluno.nome_completo,
+          aluno.nivel_cefr,
           progressoGeral,
           progressoPorCategoria,
           porcentagemConcluida,
@@ -174,26 +178,43 @@ serve(async (req) => {
 
 function gerarConteudoTexto(
   nome: string,
+  nivelCefr: string,
   progressoGeral: number,
   progressoPorCategoria: any,
   porcentagemConcluida: number,
-  porcentagemEmDesenvolvimento: number
+  porcentagemEmDesenvolvimento: number,
+  totalTopicos: number,
+  concluidos: number,
+  emDesenvolvimento: number
 ): string {
-  let conteudo = `Relatório de Progresso - ${nome}\n\n`;
-  conteudo += `Progresso Geral: ${progressoGeral}%\n\n`;
-  conteudo += `Resumo:\n`;
-  conteudo += `- Percentual Concluído: ${porcentagemConcluida.toFixed(2)}%\n`;
-  conteudo += `- Percentual Em Desenvolvimento: ${porcentagemEmDesenvolvimento.toFixed(2)}%\n\n`;
+  let conteudo = `Relatório de Progresso - ${nome}\n`;
+  conteudo += `Nível CEFR: ${nivelCefr}\n\n`;
+  conteudo += `Progresso Geral: ${progressoGeral}%\n`;
+  conteudo += `Total de tópicos no nível: ${totalTopicos}\n`;
+  conteudo += `Tópicos concluídos: ${concluidos} (${porcentagemConcluida.toFixed(2)}%)\n`;
+  conteudo += `Tópicos em desenvolvimento: ${emDesenvolvimento} (${porcentagemEmDesenvolvimento.toFixed(2)}%)\n\n`;
   
   if (typeof progressoPorCategoria === 'object' && progressoPorCategoria !== null) {
-    conteudo += `Progresso por Categoria:\n`;
-    for (const [categoria, dados] of Object.entries(progressoPorCategoria)) {
-      const cat = dados as any;
+    conteudo += `Progresso por Categoria (Nível ${nivelCefr}):\n`;
+    // Lista fixa das 7 categorias
+    const categoriasFixas = ['Phonetics', 'Grammar', 'Vocabulary', 'Communication', 'Expressions', 'Pronunciation', 'Listening'];
+    
+    for (const categoria of categoriasFixas) {
+      const cat = progressoPorCategoria[categoria] as any;
+      const total = cat?.total || 0;
+      const catConcluidos = cat?.concluidos || 0;
+      const catEmDev = cat?.em_desenvolvimento || 0;
+      const percentual = cat?.percentual_concluido || 0;
+      
       conteudo += `\n${categoria}:\n`;
-      conteudo += `  - Total de tópicos: ${cat?.total || 0}\n`;
-      conteudo += `  - Concluídos: ${cat?.concluidos || 0}\n`;
-      conteudo += `  - Em desenvolvimento: ${cat?.em_desenvolvimento || 0}\n`;
-      conteudo += `  - Percentual concluído: ${cat?.percentual_concluido || 0}%\n`;
+      if (total > 0) {
+        conteudo += `  - Total de tópicos: ${total}\n`;
+        conteudo += `  - Concluídos: ${catConcluidos}\n`;
+        conteudo += `  - Em desenvolvimento: ${catEmDev}\n`;
+        conteudo += `  - Percentual concluído: ${percentual}%\n`;
+      } else {
+        conteudo += `  - Sem tópicos configurados para este nível\n`;
+      }
     }
   }
 
@@ -203,6 +224,7 @@ function gerarConteudoTexto(
 async function gerarComentarioIA(
   apiKey: string,
   nome: string,
+  nivelCefr: string,
   progressoGeral: number,
   progressoPorCategoria: any,
   porcentagemConcluida: number,
@@ -218,6 +240,7 @@ async function gerarComentarioIA(
     
     if (typeof progressoPorCategoria === 'object' && progressoPorCategoria !== null) {
       const categoriasArray = Object.entries(progressoPorCategoria)
+        .filter(([_, dados]: [string, any]) => (dados?.total || 0) > 0) // Só categorias com tópicos
         .map(([nome, dados]: [string, any]) => ({
           nome,
           concluido: dados?.percentual_concluido || 0,
@@ -245,6 +268,7 @@ async function gerarComentarioIA(
 DADOS DO ALUNO:
 Nome: ${nome}
 Primeiro nome: ${primeiroNome}
+Nível CEFR: ${nivelCefr}
 Progresso Geral: ${progressoGeral}%
 Percentual Concluído: ${porcentagemConcluida.toFixed(2)}%
 Percentual Em Desenvolvimento: ${porcentagemEmDesenvolvimento.toFixed(2)}%
