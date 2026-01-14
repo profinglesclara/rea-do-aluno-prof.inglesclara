@@ -324,7 +324,7 @@ export function GerenciarTopicosDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
@@ -388,8 +388,8 @@ export function GerenciarTopicosDialog({
             )}
 
             {/* Lista de tópicos por categoria - SEMPRE mostra as 7 categorias */}
-            <ScrollArea className="flex-1 max-h-[50vh] pr-4">
-              <div className="space-y-4">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+              <div className="space-y-4 pb-4">
                 {FIXED_CATEGORIES.map(({ key, name }) => {
                   const topicosCategoria = topicosPorCategoria[key] || [];
                   const hasTopics = topicosCategoria.length > 0;
@@ -462,7 +462,7 @@ export function GerenciarTopicosDialog({
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Mensagem quando não há tópicos */}
             {totalTopicos === 0 && !loading && (
