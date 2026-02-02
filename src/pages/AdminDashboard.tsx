@@ -22,10 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Calendar, FileText, ClipboardList, User } from "lucide-react";
+import { Search, Eye, Calendar, FileText, ClipboardList, User, BookOpen } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { FotoPerfil } from "@/components/FotoPerfil";
 import { EditarFotoPerfilDialog } from "@/components/EditarFotoPerfilDialog";
+import { GerenciarTopicosPadraoDialog } from "@/components/admin/GerenciarTopicosPadraoDialog";
 
 type DashboardAluno = {
   aluno_id: string;
@@ -51,6 +52,7 @@ const AdminDashboard = () => {
   const [nivelFilter, setNivelFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [fotoDialogOpen, setFotoDialogOpen] = useState(false);
+  const [topicosDialogOpen, setTopicosDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -219,6 +221,14 @@ const AdminDashboard = () => {
                   <FileText className="h-4 w-4" />
                   Relatórios Mensais
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setTopicosDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Gerenciar Tópicos
+                </Button>
                 <LogoutButton variant="destructive" />
               </div>
             </div>
@@ -237,6 +247,11 @@ const AdminDashboard = () => {
               }}
             />
           )}
+          
+          <GerenciarTopicosPadraoDialog
+            open={topicosDialogOpen}
+            onOpenChange={setTopicosDialogOpen}
+          />
           
           <CardContent>
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
