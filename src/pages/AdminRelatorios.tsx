@@ -713,33 +713,7 @@ const AdminRelatorios = () => {
                 </CardContent>
               </Card>
 
-              {/* Bloco 2 - Progresso do Relatório */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Progresso no Relatório ({selectedRelatorio.mes_referencia})</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Dados registrados em {formatDateWithTime(selectedRelatorio.data_geracao)}
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm font-medium">% Concluída</p>
-                      <p className="text-sm font-medium">{selectedRelatorio.porcentagem_concluida ?? 0}%</p>
-                    </div>
-                    <Progress value={selectedRelatorio.porcentagem_concluida ?? 0} />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm font-medium">% Em Desenvolvimento</p>
-                      <p className="text-sm font-medium">{selectedRelatorio.porcentagem_em_desenvolvimento ?? 0}%</p>
-                    </div>
-                    <Progress value={selectedRelatorio.porcentagem_em_desenvolvimento ?? 0} />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Bloco 2.5 - Progresso Atual em Tempo Real */}
+              {/* Bloco 2 - Progresso Atual em Tempo Real */}
               <Card className="border-primary/20 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
