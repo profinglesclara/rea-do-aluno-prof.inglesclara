@@ -47,6 +47,7 @@ const AdminRelatorios = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedRelatorio, setSelectedRelatorio] = useState<Relatorio | null>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [progressoAtual, setProgressoAtual] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("Geral");
   const [mesComparadoRelatorio, setMesComparadoRelatorio] = useState<string>("");
   const [relatoriosDoAluno, setRelatoriosDoAluno] = useState<Relatorio[]>([]);
@@ -182,6 +183,18 @@ const AdminRelatorios = () => {
     setSelectedRelatorio(relatorio);
     setSelectedCategory("Geral");
     setDetailsOpen(true);
+    setProgressoAtual(null);
+    
+    // Buscar progresso em tempo real do aluno (filtrado pelo nível CEFR atual)
+    const { data: progressoData, error: progressoError } = await supabase.rpc("get_progresso_aluno", {
+      p_aluno: relatorio.aluno,
+    });
+    
+    if (progressoError) {
+      console.error("Erro ao buscar progresso atual:", progressoError);
+    } else {
+      setProgressoAtual(progressoData);
+    }
     
     // Buscar dados do dashboard do aluno para os gráficos
     const { data, error } = await supabase.rpc("get_dashboard_aluno", {
@@ -700,10 +713,13 @@ const AdminRelatorios = () => {
                 </CardContent>
               </Card>
 
-              {/* Bloco 2 - Progresso */}
+              {/* Bloco 2 - Progresso do Relatório */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Progresso</CardTitle>
+                  <CardTitle className="text-lg">Progresso no Relatório ({selectedRelatorio.mes_referencia})</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Dados registrados em {formatDateWithTime(selectedRelatorio.data_geracao)}
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -720,6 +736,83 @@ const AdminRelatorios = () => {
                     </div>
                     <Progress value={selectedRelatorio.porcentagem_em_desenvolvimento ?? 0} />
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Bloco 2.5 - Progresso Atual em Tempo Real */}
+              <Card className="border-primary/20 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Progresso Atual (Tempo Real)
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Dados atualizados com base no nível CEFR atual do aluno
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {progressoAtual ? (
+                    <>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-sm text-muted-foreground">Nível atual:</span>
+                        <Badge variant="default">{progressoAtual.nivel_cefr || "—"}</Badge>
+                        <span className="text-sm text-muted-foreground ml-4">
+                          {progressoAtual.concluidos}/{progressoAtual.total_topicos} tópicos concluídos
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm font-medium">% Concluída</p>
+                          <p className="text-sm font-medium text-primary">{(progressoAtual.progresso_geral ?? 0).toFixed(1)}%</p>
+                        </div>
+                        <Progress value={progressoAtual.progresso_geral ?? 0} className="h-3" />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm font-medium">% Em Desenvolvimento</p>
+                          <p className="text-sm font-medium">
+                            {progressoAtual.total_topicos > 0 
+                              ? ((progressoAtual.em_desenvolvimento / progressoAtual.total_topicos) * 100).toFixed(1)
+                              : 0}%
+                          </p>
+                        </div>
+                        <Progress 
+                          value={progressoAtual.total_topicos > 0 
+                            ? (progressoAtual.em_desenvolvimento / progressoAtual.total_topicos) * 100
+                            : 0} 
+                          className="h-3"
+                        />
+                      </div>
+                      
+                      {/* Comparação com o relatório */}
+                      {progressoAtual.progresso_geral !== selectedRelatorio.porcentagem_concluida && (
+                        <div className="mt-4 p-3 rounded-lg bg-background border">
+                          <p className="text-sm font-medium mb-1">Comparação com o relatório:</p>
+                          {(() => {
+                            const diff = (progressoAtual.progresso_geral ?? 0) - (selectedRelatorio.porcentagem_concluida ?? 0);
+                            if (diff > 0) {
+                              return (
+                                <p className="text-sm text-green-600 flex items-center gap-1">
+                                  <TrendingUp className="h-4 w-4" />
+                                  +{diff.toFixed(1)}% desde o relatório
+                                </p>
+                              );
+                            } else if (diff < 0) {
+                              return (
+                                <p className="text-sm text-red-600 flex items-center gap-1">
+                                  <TrendingDown className="h-4 w-4" />
+                                  {diff.toFixed(1)}% desde o relatório
+                                </p>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Carregando progresso atual...</p>
+                  )}
                 </CardContent>
               </Card>
 
