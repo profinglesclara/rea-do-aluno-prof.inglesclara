@@ -158,19 +158,9 @@ export default function AlunoProgresso() {
     };
   }, [relatorios, mesBase, mesComparado]);
 
-  // Gráfico comparativo por categoria usando as 7 categorias fixas
-  const chartDataComparativo = useMemo(() => {
-    if (!mesBase || !mesComparado || !dashboard?.progresso_por_categoria) return [];
-
-    const progressoPorCategoria = dashboard.progresso_por_categoria;
-
-    // Usar as 7 categorias fixas
-    return CATEGORIAS_FIXAS.map(cat => ({
-      categoria: cat,
-      mesBase: progressoPorCategoria[cat]?.percentual_concluido || 0,
-      mesComparado: Math.max(0, (progressoPorCategoria[cat]?.percentual_concluido || 0) - Math.random() * 10) // Simulado
-    }));
-  }, [mesBase, mesComparado, dashboard?.progresso_por_categoria]);
+  // Nota: Comparação por categoria removida pois os relatórios mensais 
+  // não armazenam histórico de progresso por categoria, apenas progresso geral.
+  // A comparação real é feita apenas com os dados de porcentagem_concluida dos relatórios.
 
   if (loading || dashboardLoading) {
     return (
@@ -464,55 +454,8 @@ export default function AlunoProgresso() {
                       </Card>
                     </div>
 
-                    {/* Gráfico comparativo por categoria */}
-                    {chartDataComparativo.length > 0 && (
-                      <div className="mt-6">
-                        <h3 className="text-lg font-semibold mb-4">Comparação por categoria</h3>
-                        <ChartContainer
-                          config={{
-                            mesBase: {
-                              label: `Mês base (${mesBase})`,
-                              color: "hsl(var(--primary))",
-                            },
-                            mesComparado: {
-                              label: `Comparar com (${mesComparado})`,
-                              color: "hsl(var(--muted-foreground))",
-                            },
-                          }}
-                          className="h-80"
-                        >
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartDataComparativo}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                              <XAxis 
-                                dataKey="categoria" 
-                                stroke="hsl(var(--muted-foreground))"
-                                fontSize={12}
-                              />
-                              <YAxis 
-                                stroke="hsl(var(--muted-foreground))"
-                                fontSize={12}
-                                domain={[0, 100]}
-                              />
-                              <ChartTooltip content={<ChartTooltipContent />} />
-                              <Legend />
-                              <Bar
-                                dataKey="mesBase"
-                                fill="hsl(var(--primary))"
-                                name={`Mês base (${mesBase})`}
-                                radius={[4, 4, 0, 0]}
-                              />
-                              <Bar
-                                dataKey="mesComparado"
-                                fill="hsl(var(--muted-foreground))"
-                                name={`Comparar com (${mesComparado})`}
-                                radius={[4, 4, 0, 0]}
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </ChartContainer>
-                      </div>
-                    )}
+                    {/* Nota: Gráfico comparativo por categoria removido 
+                        pois os relatórios não armazenam histórico por categoria */}
                   </div>
                 )}
               </>
