@@ -301,8 +301,8 @@ const StudentDetails = () => {
               <p className="text-muted-foreground">Detalhes do Aluno</p>
             </div>
           </div>
-          <Button variant="outline" onClick={() => setEditarPerfilOpen(true)}>
-            <Pencil className="mr-2 h-4 w-4" />
+          <Button variant="outline" size="lg" onClick={() => setEditarPerfilOpen(true)}>
+            <Pencil className="mr-2 h-5 w-5" />
             Editar Perfil
           </Button>
         </div>
