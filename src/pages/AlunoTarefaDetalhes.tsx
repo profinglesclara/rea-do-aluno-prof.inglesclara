@@ -109,11 +109,13 @@ export default function AlunoTarefaDetalhes() {
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
+        // Use signed URL for private bucket access (1 year expiration)
+        const { data: signedData, error: signedError } = await supabase.storage
           .from("tarefas")
-          .getPublicUrl(fileName);
+          .createSignedUrl(fileName, 31536000); // 1 year expiration
 
-        uploadedUrls.push(publicUrl);
+        if (signedError) throw signedError;
+        uploadedUrls.push(signedData.signedUrl);
       }
 
       // Combinar URLs em uma string (separadas por vírgula)
