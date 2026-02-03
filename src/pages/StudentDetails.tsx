@@ -12,6 +12,7 @@ import { GerenciarConquistasDialog } from "@/components/conquistas/GerenciarConq
 import { EditarPerfilAlunoDialog } from "@/components/admin/EditarPerfilAlunoDialog";
 import { GerenciarTopicosDialog } from "@/components/admin/GerenciarTopicosDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { FotoPerfil } from "@/components/FotoPerfil";
 
 type DashboardRow = {
   aluno_id: string;
@@ -22,6 +23,7 @@ type DashboardRow = {
   total_canceladas: number;
   total_remarcadas: number;
   proxima_aula_data: string | null;
+  foto_perfil_url?: string | null;
 } & Record<string, any>;
 
 const StudentDetails = () => {
@@ -122,6 +124,22 @@ const StudentDetails = () => {
     Zap,
     Heart,
   };
+
+  // Buscar foto de perfil do aluno
+  const { data: alunoFoto } = useQuery({
+    queryKey: ["alunoFotoPerfil", aluno_id],
+    enabled: !!aluno_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("foto_perfil_url")
+        .eq("user_id", aluno_id!)
+        .single();
+      
+      if (error) throw error;
+      return data?.foto_perfil_url || null;
+    },
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -270,18 +288,23 @@ const StudentDetails = () => {
           Voltar
         </Button>
 
-        {/* Cabeçalho com nome do aluno */}
+        {/* Cabeçalho com nome do aluno e foto */}
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <h1 className="text-3xl font-bold">Detalhes do Aluno</h1>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => setEditarPerfilOpen(true)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Editar Perfil
-            </Button>
-            <Badge variant="default" className="text-base px-4 py-1">
-              {dashboard.nome_aluno}
-            </Badge>
+          <div className="flex items-center gap-4">
+            <FotoPerfil
+              fotoUrl={alunoFoto}
+              nome={dashboard.nome_aluno}
+              className="h-16 w-16 text-xl"
+            />
+            <div>
+              <h1 className="text-3xl font-bold">{dashboard.nome_aluno}</h1>
+              <p className="text-muted-foreground">Detalhes do Aluno</p>
+            </div>
           </div>
+          <Button variant="outline" onClick={() => setEditarPerfilOpen(true)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Editar Perfil
+          </Button>
         </div>
 
         {/* Card de Resumo de Aulas */}
