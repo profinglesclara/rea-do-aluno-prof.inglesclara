@@ -161,11 +161,13 @@ export default function AdminTarefas() {
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
+        // Use signed URL for private bucket access (1 year expiration for task statements)
+        const { data: signedData, error: signedError } = await supabase.storage
           .from("tarefas")
-          .getPublicUrl(fileName);
+          .createSignedUrl(fileName, 31536000); // 1 year expiration
 
-        url_enunciado = publicUrl;
+        if (signedError) throw signedError;
+        url_enunciado = signedData.signedUrl;
       }
 
       // Criar a tarefa (sem o arquivo_enunciado, que já foi processado)
