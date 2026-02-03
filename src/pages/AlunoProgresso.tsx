@@ -63,10 +63,8 @@ export default function AlunoProgresso() {
     fetchCurrentUser();
   }, [navigate]);
 
-  const aluno = currentUser;
-
-  // Usar hook existente para dashboard
-  const { data: dashboardData } = useDashboardAluno(aluno?.user_id);
+  // Usar hook existente para dashboard - passar user_id diretamente do currentUser
+  const { data: dashboardData, isLoading: dashboardLoading } = useDashboardAluno(currentUser?.user_id);
   const dashboard = dashboardData?.dashboard;
 
   // Filtrar histórico do mês atual
@@ -115,12 +113,12 @@ export default function AlunoProgresso() {
   // Carregar relatórios mensais do aluno
   useEffect(() => {
     const loadRelatorios = async () => {
-      if (!aluno?.user_id) return;
+      if (!currentUser?.user_id) return;
 
       const { data, error } = await supabase
         .from("relatorios_mensais")
         .select("mes_referencia, porcentagem_concluida, porcentagem_em_desenvolvimento, data_geracao")
-        .eq("aluno", aluno.user_id)
+        .eq("aluno", currentUser.user_id)
         .order("data_geracao", { ascending: false });
 
       if (!error && data) {
@@ -139,7 +137,7 @@ export default function AlunoProgresso() {
     };
 
     loadRelatorios();
-  }, [aluno?.user_id]);
+  }, [currentUser?.user_id]);
 
   // Dados de comparação
   const dadosComparacao = useMemo(() => {
@@ -174,10 +172,18 @@ export default function AlunoProgresso() {
     }));
   }, [mesBase, mesComparado, dashboard?.progresso_por_categoria]);
 
-  if (loading || !dashboard) {
+  if (loading || dashboardLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Carregando progresso...</p>
+      </div>
+    );
+  }
+
+  if (!dashboard) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Nenhum dado de progresso encontrado.</p>
       </div>
     );
   }
