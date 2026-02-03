@@ -214,10 +214,45 @@ const StudentDetails = () => {
       if (error) {
         console.error(error);
         setRelatoriosError("Não foi possível carregar os relatórios.");
-      } else {
-        setRelatorios(data || []);
+        setRelatoriosLoading(false);
+        return;
       }
 
+      // Buscar progresso em tempo real do aluno
+      const { data: progressoData } = await supabase.rpc("get_progresso_aluno", {
+        p_aluno: aluno_id,
+      });
+
+      let progressoAtual = 0;
+      let emDesenvolvimentoAtual = 0;
+
+      if (progressoData && typeof progressoData === 'object' && !Array.isArray(progressoData)) {
+        const progressoObj = progressoData as Record<string, any>;
+        progressoAtual = progressoObj.progresso_geral || 0;
+        
+        // Calcular média de "em desenvolvimento" por categoria
+        const progressoPorCategoria = progressoObj.progresso_por_categoria || {};
+        let totalEmDev = 0;
+        let countCategorias = 0;
+        
+        Object.values(progressoPorCategoria).forEach((cat: any) => {
+          if (cat.percentual_em_desenvolvimento !== undefined) {
+            totalEmDev += cat.percentual_em_desenvolvimento;
+            countCategorias++;
+          }
+        });
+
+        emDesenvolvimentoAtual = countCategorias > 0 ? totalEmDev / countCategorias : 0;
+      }
+
+      // Adicionar progresso em tempo real aos relatórios
+      const relatoriosComProgresso = (data || []).map((rel: any) => ({
+        ...rel,
+        progresso_atual: progressoAtual,
+        em_desenvolvimento_atual: emDesenvolvimentoAtual,
+      }));
+
+      setRelatorios(relatoriosComProgresso);
       setRelatoriosLoading(false);
     };
 
@@ -616,8 +651,8 @@ const StudentDetails = () => {
                       <TableRow>
                         <TableHead>Mês de referência</TableHead>
                         <TableHead>Data de geração</TableHead>
-                        <TableHead className="text-right">% Concluída</TableHead>
-                        <TableHead className="text-right">% Em desenvolvimento</TableHead>
+                        <TableHead className="text-right">% Concluída (Atual)</TableHead>
+                        <TableHead className="text-right">% Em desenvolvimento (Atual)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -628,10 +663,10 @@ const StudentDetails = () => {
                           </TableCell>
                           <TableCell>{formatDate(rel.data_geracao)}</TableCell>
                           <TableCell className="text-right font-semibold text-green-600">
-                            {rel.porcentagem_concluida ?? 0}%
+                            {rel.progresso_atual?.toFixed(1) ?? rel.porcentagem_concluida ?? 0}%
                           </TableCell>
-                          <TableCell className="text-right font-semibold text-blue-600">
-                            {rel.porcentagem_em_desenvolvimento ?? 0}%
+                          <TableCell className="text-right font-semibold text-amber-600">
+                            {rel.em_desenvolvimento_atual?.toFixed(1) ?? rel.porcentagem_em_desenvolvimento ?? 0}%
                           </TableCell>
                         </TableRow>
                       ))}
