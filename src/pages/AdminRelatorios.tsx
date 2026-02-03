@@ -26,6 +26,9 @@ type Relatorio = {
   aluno: string;
   nome_aluno: string;
   nivel_cefr: string | null;
+  // Progresso em tempo real
+  progresso_atual?: number;
+  em_desenvolvimento_atual?: number;
 };
 
 type Aluno = {
@@ -97,22 +100,61 @@ const AdminRelatorios = () => {
     if (queryError) {
       console.error("Erro ao carregar relatórios:", queryError);
       setError("Não foi possível carregar os relatórios.");
-    } else {
-      const mapped = (data || []).map((r: any) => ({
-        relatorio_id: r.relatorio_id,
-        mes_referencia: r.mes_referencia,
-        data_geracao: r.data_geracao,
-        porcentagem_concluida: r.porcentagem_concluida,
-        porcentagem_em_desenvolvimento: r.porcentagem_em_desenvolvimento,
-        comentario_automatico: r.comentario_automatico,
-        conteudo_gerado: r.conteudo_gerado,
-        aluno: r.aluno,
-        nome_aluno: r.usuarios?.nome_completo || "—",
-        nivel_cefr: r.usuarios?.nivel_cefr || null,
-      }));
-      setRelatorios(mapped);
+      setLoading(false);
+      return;
     }
 
+    const mapped = (data || []).map((r: any) => ({
+      relatorio_id: r.relatorio_id,
+      mes_referencia: r.mes_referencia,
+      data_geracao: r.data_geracao,
+      porcentagem_concluida: r.porcentagem_concluida,
+      porcentagem_em_desenvolvimento: r.porcentagem_em_desenvolvimento,
+      comentario_automatico: r.comentario_automatico,
+      conteudo_gerado: r.conteudo_gerado,
+      aluno: r.aluno,
+      nome_aluno: r.usuarios?.nome_completo || "—",
+      nivel_cefr: r.usuarios?.nivel_cefr || null,
+    }));
+
+    // Buscar progresso em tempo real para cada aluno único
+    const alunosUnicos = [...new Set(mapped.map(r => r.aluno))];
+    const progressoMap: Record<string, { concluido: number; em_desenvolvimento: number }> = {};
+
+    await Promise.all(
+      alunosUnicos.map(async (alunoId) => {
+        const { data: progresso } = await supabase.rpc("get_progresso_aluno", {
+          p_aluno: alunoId,
+        });
+        if (progresso && typeof progresso === 'object' && !Array.isArray(progresso)) {
+          const progressoObj = progresso as Record<string, any>;
+          const progressoPorCategoria = progressoObj.progresso_por_categoria || {};
+          let totalEmDev = 0;
+          let countCategorias = 0;
+          
+          Object.values(progressoPorCategoria).forEach((cat: any) => {
+            if (cat.percentual_em_desenvolvimento !== undefined) {
+              totalEmDev += cat.percentual_em_desenvolvimento;
+              countCategorias++;
+            }
+          });
+
+          progressoMap[alunoId] = {
+            concluido: progressoObj.progresso_geral || 0,
+            em_desenvolvimento: countCategorias > 0 ? totalEmDev / countCategorias : 0,
+          };
+        }
+      })
+    );
+
+    // Atualizar relatórios com progresso em tempo real
+    const relatoriosComProgresso = mapped.map(r => ({
+      ...r,
+      progresso_atual: progressoMap[r.aluno]?.concluido ?? r.porcentagem_concluida,
+      em_desenvolvimento_atual: progressoMap[r.aluno]?.em_desenvolvimento ?? r.porcentagem_em_desenvolvimento,
+    }));
+
+    setRelatorios(relatoriosComProgresso);
     setLoading(false);
   };
 
@@ -153,22 +195,61 @@ const AdminRelatorios = () => {
     if (queryError) {
       console.error("Erro ao carregar relatórios:", queryError);
       setError("Não foi possível carregar os relatórios.");
-    } else {
-      const mapped = (data || []).map((r: any) => ({
-        relatorio_id: r.relatorio_id,
-        mes_referencia: r.mes_referencia,
-        data_geracao: r.data_geracao,
-        porcentagem_concluida: r.porcentagem_concluida,
-        porcentagem_em_desenvolvimento: r.porcentagem_em_desenvolvimento,
-        comentario_automatico: r.comentario_automatico,
-        conteudo_gerado: r.conteudo_gerado,
-        aluno: r.aluno,
-        nome_aluno: r.usuarios?.nome_completo || "—",
-        nivel_cefr: r.usuarios?.nivel_cefr || null,
-      }));
-      setRelatorios(mapped);
+      setLoading(false);
+      return;
     }
 
+    const mapped = (data || []).map((r: any) => ({
+      relatorio_id: r.relatorio_id,
+      mes_referencia: r.mes_referencia,
+      data_geracao: r.data_geracao,
+      porcentagem_concluida: r.porcentagem_concluida,
+      porcentagem_em_desenvolvimento: r.porcentagem_em_desenvolvimento,
+      comentario_automatico: r.comentario_automatico,
+      conteudo_gerado: r.conteudo_gerado,
+      aluno: r.aluno,
+      nome_aluno: r.usuarios?.nome_completo || "—",
+      nivel_cefr: r.usuarios?.nivel_cefr || null,
+    }));
+
+    // Buscar progresso em tempo real para cada aluno único
+    const alunosUnicos = [...new Set(mapped.map(r => r.aluno))];
+    const progressoMap: Record<string, { concluido: number; em_desenvolvimento: number }> = {};
+
+    await Promise.all(
+      alunosUnicos.map(async (alunoId) => {
+        const { data: progresso } = await supabase.rpc("get_progresso_aluno", {
+          p_aluno: alunoId,
+        });
+        if (progresso && typeof progresso === 'object' && !Array.isArray(progresso)) {
+          const progressoObj = progresso as Record<string, any>;
+          const progressoPorCategoria = progressoObj.progresso_por_categoria || {};
+          let totalEmDev = 0;
+          let countCategorias = 0;
+          
+          Object.values(progressoPorCategoria).forEach((cat: any) => {
+            if (cat.percentual_em_desenvolvimento !== undefined) {
+              totalEmDev += cat.percentual_em_desenvolvimento;
+              countCategorias++;
+            }
+          });
+
+          progressoMap[alunoId] = {
+            concluido: progressoObj.progresso_geral || 0,
+            em_desenvolvimento: countCategorias > 0 ? totalEmDev / countCategorias : 0,
+          };
+        }
+      })
+    );
+
+    // Atualizar relatórios com progresso em tempo real
+    const relatoriosComProgresso = mapped.map(r => ({
+      ...r,
+      progresso_atual: progressoMap[r.aluno]?.concluido ?? r.porcentagem_concluida,
+      em_desenvolvimento_atual: progressoMap[r.aluno]?.em_desenvolvimento ?? r.porcentagem_em_desenvolvimento,
+    }));
+
+    setRelatorios(relatoriosComProgresso);
     setLoading(false);
   };
 
@@ -634,8 +715,8 @@ const AdminRelatorios = () => {
                       <TableHead>Nível CEFR</TableHead>
                       <TableHead>Mês de Referência</TableHead>
                       <TableHead>Data de Geração</TableHead>
-                      <TableHead>% Concluída</TableHead>
-                      <TableHead>% Em Desenvolvimento</TableHead>
+                      <TableHead>% Concluída (Atual)</TableHead>
+                      <TableHead>% Em Desenvolvimento (Atual)</TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -652,8 +733,16 @@ const AdminRelatorios = () => {
                         </TableCell>
                         <TableCell>{rel.mes_referencia}</TableCell>
                         <TableCell>{formatDate(rel.data_geracao)}</TableCell>
-                        <TableCell>{rel.porcentagem_concluida ?? 0}%</TableCell>
-                        <TableCell>{rel.porcentagem_em_desenvolvimento ?? 0}%</TableCell>
+                        <TableCell>
+                          <span className="font-medium text-green-600">
+                            {(rel.progresso_atual ?? rel.porcentagem_concluida ?? 0).toFixed(1)}%
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-medium text-amber-600">
+                            {(rel.em_desenvolvimento_atual ?? rel.porcentagem_em_desenvolvimento ?? 0).toFixed(1)}%
+                          </span>
+                        </TableCell>
                         <TableCell>
                           <Button
                             variant="outline"
