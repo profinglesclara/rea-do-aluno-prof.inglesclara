@@ -43,8 +43,16 @@ export default function AlunoProgresso() {
         return;
       }
 
-      if (data.tipo_usuario !== "Aluno") {
-        navigate("/login");
+      // Permitir Aluno e Adulto (alunos adultos)
+      if (data.tipo_usuario !== "Aluno" && data.tipo_usuario !== "Adulto") {
+        // Redirecionar para dashboard apropriado baseado no tipo
+        if (data.tipo_usuario === "Admin") {
+          navigate("/admin/dashboard");
+        } else if (data.tipo_usuario === "Responsável") {
+          navigate("/responsavel/dashboard");
+        } else {
+          navigate("/login");
+        }
         return;
       }
 
