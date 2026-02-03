@@ -22,11 +22,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Calendar, FileText, ClipboardList, User, BookOpen } from "lucide-react";
+import { Search, Eye, Calendar, FileText, ClipboardList, User, BookOpen, FolderTree } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { FotoPerfil } from "@/components/FotoPerfil";
 import { EditarFotoPerfilDialog } from "@/components/EditarFotoPerfilDialog";
 import { GerenciarTopicosPadraoDialog } from "@/components/admin/GerenciarTopicosPadraoDialog";
+import { GerenciarCategoriasDialog } from "@/components/admin/GerenciarCategoriasDialog";
 
 type DashboardAluno = {
   aluno_id: string;
@@ -53,6 +54,7 @@ const AdminDashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [fotoDialogOpen, setFotoDialogOpen] = useState(false);
   const [topicosDialogOpen, setTopicosDialogOpen] = useState(false);
+  const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -229,6 +231,14 @@ const AdminDashboard = () => {
                   <BookOpen className="h-4 w-4" />
                   Gerenciar Tópicos
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setCategoriasDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <FolderTree className="h-4 w-4" />
+                  Gerenciar Categorias
+                </Button>
                 <LogoutButton variant="destructive" />
               </div>
             </div>
@@ -251,6 +261,11 @@ const AdminDashboard = () => {
           <GerenciarTopicosPadraoDialog
             open={topicosDialogOpen}
             onOpenChange={setTopicosDialogOpen}
+          />
+          
+          <GerenciarCategoriasDialog
+            open={categoriasDialogOpen}
+            onOpenChange={setCategoriasDialogOpen}
           />
           
           <CardContent>

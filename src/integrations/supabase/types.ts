@@ -63,6 +63,30 @@ export type Database = {
           },
         ]
       }
+      categorias: {
+        Row: {
+          ativa: boolean
+          criada_em: string | null
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          ativa?: boolean
+          criada_em?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          ativa?: boolean
+          criada_em?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
       conquistas: {
         Row: {
           aluno: string
@@ -522,7 +546,7 @@ export type Database = {
       topicos_progresso: {
         Row: {
           aluno: string
-          categoria: Database["public"]["Enums"]["categoria_topico"]
+          categoria: string
           descricao_topico: string
           nivel_cefr: Database["public"]["Enums"]["nivel_cefr"]
           status: Database["public"]["Enums"]["status_topico"]
@@ -531,7 +555,7 @@ export type Database = {
         }
         Insert: {
           aluno: string
-          categoria: Database["public"]["Enums"]["categoria_topico"]
+          categoria: string
           descricao_topico: string
           nivel_cefr: Database["public"]["Enums"]["nivel_cefr"]
           status?: Database["public"]["Enums"]["status_topico"]
@@ -540,7 +564,7 @@ export type Database = {
         }
         Update: {
           aluno?: string
-          categoria?: Database["public"]["Enums"]["categoria_topico"]
+          categoria?: string
           descricao_topico?: string
           nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"]
           status?: Database["public"]["Enums"]["status_topico"]
