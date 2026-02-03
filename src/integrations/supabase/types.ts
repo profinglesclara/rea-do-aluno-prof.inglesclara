@@ -346,6 +346,7 @@ export type Database = {
           mes_referencia: string
           porcentagem_concluida: number | null
           porcentagem_em_desenvolvimento: number | null
+          progresso_por_categoria: Json | null
           relatorio_id: string
         }
         Insert: {
@@ -357,6 +358,7 @@ export type Database = {
           mes_referencia: string
           porcentagem_concluida?: number | null
           porcentagem_em_desenvolvimento?: number | null
+          progresso_por_categoria?: Json | null
           relatorio_id?: string
         }
         Update: {
@@ -368,6 +370,7 @@ export type Database = {
           mes_referencia?: string
           porcentagem_concluida?: number | null
           porcentagem_em_desenvolvimento?: number | null
+          progresso_por_categoria?: Json | null
           relatorio_id?: string
         }
         Relationships: [

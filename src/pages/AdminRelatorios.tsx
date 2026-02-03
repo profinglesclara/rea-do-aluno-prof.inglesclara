@@ -15,6 +15,15 @@ import { toast } from "@/hooks/use-toast";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
+type ProgressoCategoria = {
+  total: number;
+  concluidos: number;
+  em_desenvolvimento: number;
+  a_introduzir: number;
+  percentual_concluido: number;
+  percentual_em_desenvolvimento: number;
+};
+
 type Relatorio = {
   relatorio_id: string;
   mes_referencia: string;
@@ -26,6 +35,8 @@ type Relatorio = {
   aluno: string;
   nome_aluno: string;
   nivel_cefr: string | null;
+  // Progresso por categoria salvo no relatório
+  progresso_por_categoria?: Record<string, ProgressoCategoria>;
   // Progresso em tempo real
   progresso_atual?: number;
   em_desenvolvimento_atual?: number;
@@ -91,6 +102,7 @@ const AdminRelatorios = () => {
         comentario_automatico,
         conteudo_gerado,
         aluno,
+        progresso_por_categoria,
         usuarios!relatorios_mensais_aluno_fkey(nome_completo, nivel_cefr)
       `)
       .order("data_geracao", { ascending: false });
@@ -115,6 +127,7 @@ const AdminRelatorios = () => {
       aluno: r.aluno,
       nome_aluno: r.usuarios?.nome_completo || "—",
       nivel_cefr: r.usuarios?.nivel_cefr || null,
+      progresso_por_categoria: r.progresso_por_categoria || {},
     }));
 
     // Buscar progresso em tempo real para cada aluno único
@@ -177,6 +190,7 @@ const AdminRelatorios = () => {
         comentario_automatico,
         conteudo_gerado,
         aluno,
+        progresso_por_categoria,
         usuarios!relatorios_mensais_aluno_fkey(nome_completo, nivel_cefr)
       `)
       .order("data_geracao", { ascending: false });
@@ -210,6 +224,7 @@ const AdminRelatorios = () => {
       aluno: r.aluno,
       nome_aluno: r.usuarios?.nome_completo || "—",
       nivel_cefr: r.usuarios?.nivel_cefr || null,
+      progresso_por_categoria: r.progresso_por_categoria || {},
     }));
 
     // Buscar progresso em tempo real para cada aluno único
@@ -301,6 +316,7 @@ const AdminRelatorios = () => {
         comentario_automatico,
         conteudo_gerado,
         aluno,
+        progresso_por_categoria,
         usuarios!relatorios_mensais_aluno_fkey(nome_completo, nivel_cefr)
       `)
       .eq("aluno", relatorio.aluno)
@@ -318,6 +334,7 @@ const AdminRelatorios = () => {
         aluno: r.aluno,
         nome_aluno: r.usuarios?.nome_completo || "—",
         nivel_cefr: r.usuarios?.nivel_cefr || null,
+        progresso_por_categoria: r.progresso_por_categoria || {},
       }));
       setRelatoriosDoAluno(mapped);
 
@@ -603,19 +620,34 @@ const AdminRelatorios = () => {
     };
   }, [selectedRelatorio, mesComparadoRelatorio, relatoriosDoAluno]);
 
-  // Gráfico comparativo por categoria no relatório
+  // Gráfico comparativo por categoria no relatório - usando dados reais dos relatórios
   const chartDataComparativoRelatorio = useMemo(() => {
-    if (!selectedRelatorio || !mesComparadoRelatorio || !dashboardData?.progresso_por_categoria) return [];
+    if (!selectedRelatorio || !mesComparadoRelatorio) return [];
 
-    const progressoPorCategoria = dashboardData.progresso_por_categoria;
-    const categorias = Object.keys(progressoPorCategoria);
+    const relatorioComp = relatoriosDoAluno.find(r => r.mes_referencia === mesComparadoRelatorio);
+    if (!relatorioComp) return [];
 
-    return categorias.map(cat => ({
+    // Usar progresso por categoria do relatório base
+    const progressoBase = selectedRelatorio.progresso_por_categoria || {};
+    const progressoComp = relatorioComp.progresso_por_categoria || {};
+    
+    // Pegar todas as categorias (união das duas)
+    const todasCategorias = new Set([
+      ...Object.keys(progressoBase),
+      ...Object.keys(progressoComp)
+    ]);
+
+    // Se não há dados em nenhum dos relatórios, mostrar mensagem
+    if (todasCategorias.size === 0) {
+      return [];
+    }
+
+    return Array.from(todasCategorias).map(cat => ({
       categoria: cat,
-      mesBase: progressoPorCategoria[cat]?.percentual_concluido || 0,
-      mesComparado: Math.max(0, (progressoPorCategoria[cat]?.percentual_concluido || 0) - Math.random() * 10)
+      mesBase: progressoBase[cat]?.percentual_concluido || 0,
+      mesComparado: progressoComp[cat]?.percentual_concluido || 0
     }));
-  }, [selectedRelatorio, mesComparadoRelatorio, dashboardData?.progresso_por_categoria]);
+  }, [selectedRelatorio, mesComparadoRelatorio, relatoriosDoAluno]);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -1110,6 +1142,11 @@ const AdminRelatorios = () => {
                                 </ResponsiveContainer>
                               </ChartContainer>
                             </div>
+                          )}
+                          {chartDataComparativoRelatorio.length === 0 && (
+                            <p className="text-sm text-muted-foreground mt-4 text-center">
+                              Os relatórios selecionados não possuem dados de progresso por categoria salvos.
+                            </p>
                           )}
                         </div>
                       )}
