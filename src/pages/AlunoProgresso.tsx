@@ -117,7 +117,7 @@ export default function AlunoProgresso() {
 
       const { data, error } = await supabase
         .from("relatorios_mensais")
-        .select("mes_referencia, porcentagem_concluida, porcentagem_em_desenvolvimento, data_geracao")
+        .select("mes_referencia, porcentagem_concluida, porcentagem_em_desenvolvimento, data_geracao, progresso_por_categoria")
         .eq("aluno", currentUser.user_id)
         .order("data_geracao", { ascending: false });
 
@@ -158,9 +158,35 @@ export default function AlunoProgresso() {
     };
   }, [relatorios, mesBase, mesComparado]);
 
-  // Nota: Comparação por categoria removida pois os relatórios mensais 
-  // não armazenam histórico de progresso por categoria, apenas progresso geral.
-  // A comparação real é feita apenas com os dados de porcentagem_concluida dos relatórios.
+  // Gráfico comparativo por categoria usando dados reais dos relatórios
+  const chartDataComparativo = useMemo(() => {
+    if (!mesBase || !mesComparado) return [];
+
+    const relatorioBase = relatorios.find(r => r.mes_referencia === mesBase);
+    const relatorioComp = relatorios.find(r => r.mes_referencia === mesComparado);
+    
+    if (!relatorioBase || !relatorioComp) return [];
+
+    const progressoBase = relatorioBase.progresso_por_categoria || {};
+    const progressoComp = relatorioComp.progresso_por_categoria || {};
+    
+    // Pegar todas as categorias (união das duas)
+    const todasCategorias = new Set([
+      ...Object.keys(progressoBase),
+      ...Object.keys(progressoComp)
+    ]);
+
+    // Se não há dados em nenhum dos relatórios, retornar vazio
+    if (todasCategorias.size === 0) {
+      return [];
+    }
+
+    return Array.from(todasCategorias).map(cat => ({
+      categoria: cat,
+      mesBase: progressoBase[cat]?.percentual_concluido || 0,
+      mesComparado: progressoComp[cat]?.percentual_concluido || 0
+    }));
+  }, [mesBase, mesComparado, relatorios]);
 
   if (loading || dashboardLoading) {
     return (
@@ -454,8 +480,60 @@ export default function AlunoProgresso() {
                       </Card>
                     </div>
 
-                    {/* Nota: Gráfico comparativo por categoria removido 
-                        pois os relatórios não armazenam histórico por categoria */}
+                    {/* Gráfico comparativo por categoria */}
+                    {chartDataComparativo.length > 0 && (
+                      <div className="mt-6">
+                        <h3 className="text-lg font-semibold mb-4">Comparação por categoria</h3>
+                        <ChartContainer
+                          config={{
+                            mesBase: {
+                              label: `Mês base (${mesBase})`,
+                              color: "hsl(var(--primary))",
+                            },
+                            mesComparado: {
+                              label: `Comparar com (${mesComparado})`,
+                              color: "hsl(var(--muted-foreground))",
+                            },
+                          }}
+                          className="h-80"
+                        >
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartDataComparativo}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                              <XAxis 
+                                dataKey="categoria" 
+                                stroke="hsl(var(--muted-foreground))"
+                                fontSize={12}
+                              />
+                              <YAxis 
+                                stroke="hsl(var(--muted-foreground))"
+                                fontSize={12}
+                                domain={[0, 100]}
+                              />
+                              <ChartTooltip content={<ChartTooltipContent />} />
+                              <Legend />
+                              <Bar
+                                dataKey="mesBase"
+                                fill="hsl(var(--primary))"
+                                name={`Mês base (${mesBase})`}
+                                radius={[4, 4, 0, 0]}
+                              />
+                              <Bar
+                                dataKey="mesComparado"
+                                fill="hsl(var(--muted-foreground))"
+                                name={`Comparar com (${mesComparado})`}
+                                radius={[4, 4, 0, 0]}
+                              />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      </div>
+                    )}
+                    {chartDataComparativo.length === 0 && dadosComparacao && (
+                      <p className="text-sm text-muted-foreground mt-4 text-center">
+                        Os relatórios selecionados não possuem dados de progresso por categoria salvos.
+                      </p>
+                    )}
                   </div>
                 )}
               </>
