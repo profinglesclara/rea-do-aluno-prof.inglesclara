@@ -166,7 +166,7 @@ export default function AlunoProgresso() {
     }));
   }, [mesBase, mesComparado, dashboard?.progresso_por_categoria]);
 
-  if (!dashboard) {
+  if (loading || !dashboard) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Carregando progresso...</p>
