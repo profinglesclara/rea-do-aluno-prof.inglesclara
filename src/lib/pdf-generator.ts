@@ -220,34 +220,6 @@ export async function generateRelatorioPDF(
   
   currentY += infoHeight + 15;
   
-  // ========== SEÇÃO: PROGRESSO DO RELATÓRIO ==========
-  const progressHeight = 90;
-  const progressY = drawSection(pdf, "Progresso na Data do Relatório", currentY, pageWidth, progressHeight, margin);
-  
-  lineY = progressY + 5;
-  
-  // Concluído
-  pdf.setFontSize(10);
-  pdf.setFont("helvetica", "normal");
-  pdf.setTextColor(...COLORS.textLight);
-  pdf.text("Concluído:", margin + 10, lineY);
-  pdf.setFont("helvetica", "bold");
-  pdf.setTextColor(...COLORS.success);
-  pdf.text(`${data.porcentagemConcluida.toFixed(1)}%`, margin + 100, lineY);
-  drawProgressBar(pdf, data.porcentagemConcluida, margin + 150, lineY - 6, contentWidth - 160, 8, COLORS.success);
-  lineY += 20;
-  
-  // Em desenvolvimento
-  pdf.setFont("helvetica", "normal");
-  pdf.setTextColor(...COLORS.textLight);
-  pdf.text("Em Desenvolvimento:", margin + 10, lineY);
-  pdf.setFont("helvetica", "bold");
-  pdf.setTextColor(...COLORS.warning);
-  pdf.text(`${data.porcentagemEmDesenvolvimento.toFixed(1)}%`, margin + 130, lineY);
-  drawProgressBar(pdf, data.porcentagemEmDesenvolvimento, margin + 180, lineY - 6, contentWidth - 190, 8, COLORS.warning);
-  
-  currentY += progressHeight + 15;
-  
   // ========== SEÇÃO: PROGRESSO ATUAL (se disponível) ==========
   if (data.progressoAtual) {
     const atualHeight = 85;
