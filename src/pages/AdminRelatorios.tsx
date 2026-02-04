@@ -557,11 +557,13 @@ const AdminRelatorios = () => {
 
   const anos = ["2024", "2025", "2026"];
 
-  // Função auxiliar para obter as semanas de um mês
+  // Função auxiliar para obter as semanas de um mês (mes é 1-indexed: janeiro = 1)
   const getSemanasDoMes = (mes: number, ano: number) => {
     const semanas: { inicio: Date; fim: Date; label: string }[] = [];
-    const primeiroDia = new Date(ano, mes, 1);
-    const ultimoDia = new Date(ano, mes + 1, 0);
+    // Converter para 0-indexed para o Date constructor
+    const mesIndex = mes - 1;
+    const primeiroDia = new Date(ano, mesIndex, 1);
+    const ultimoDia = new Date(ano, mesIndex + 1, 0);
     
     let semanaAtual = 1;
     let inicioSemana = new Date(primeiroDia);
@@ -614,7 +616,7 @@ const AdminRelatorios = () => {
     if (!selectedRelatorio) return [];
     
     const [mesRef, anoRef] = selectedRelatorio.mes_referencia.split("/");
-    const mesNum = parseInt(mesRef) - 1;
+    const mesNum = parseInt(mesRef); // 1-indexed (janeiro = 1)
     const anoNum = parseInt(anoRef);
     const semanas = getSemanasDoMes(mesNum, anoNum);
     
