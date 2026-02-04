@@ -199,15 +199,12 @@ export async function generateRelatorioPDF(
   let currentY = margin;
   
   // ========== CABEÇALHO ==========
-  pdf.setFillColor(...COLORS.primary);
-  pdf.rect(0, 0, pageWidth, 60, "F");
-  
   pdf.setFontSize(20);
   pdf.setFont("helvetica", "bold");
-  pdf.setTextColor(...COLORS.white);
+  pdf.setTextColor(...COLORS.text);
   pdf.text("Relatório Mensal de Progresso", margin, 38);
   
-  currentY = 80;
+  currentY = 60;
   
   // ========== SEÇÃO: INFORMAÇÕES DO ALUNO ==========
   const infoHeight = 100;
@@ -216,19 +213,7 @@ export async function generateRelatorioPDF(
   let lineY = infoY + 5;
   lineY = drawInfoLine(pdf, "Nome:", data.nomeAluno, margin + 10, lineY);
   
-  // Nível CEFR como badge
-  pdf.setFontSize(10);
-  pdf.setFont("helvetica", "normal");
-  pdf.setTextColor(...COLORS.textLight);
-  pdf.text("Nível CEFR:", margin + 10, lineY);
-  if (data.nivelCefr) {
-    drawBadge(pdf, data.nivelCefr, margin + 110, lineY, COLORS.primary);
-  } else {
-    pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(...COLORS.text);
-    pdf.text("—", margin + 110, lineY);
-  }
-  lineY += 14;
+  lineY = drawInfoLine(pdf, "Nível CEFR:", data.nivelCefr || "—", margin + 10, lineY);
   
   lineY = drawInfoLine(pdf, "Mês de Referência:", data.mesReferencia, margin + 10, lineY);
   lineY = drawInfoLine(pdf, "Data de Geração:", data.dataGeracao, margin + 10, lineY);
