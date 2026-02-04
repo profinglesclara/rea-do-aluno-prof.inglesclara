@@ -14,7 +14,8 @@ import jsPDF from "jspdf";
 import { toast } from "@/hooks/use-toast";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { criarDataBrasilia, formatarDataBR, formatarDataHoraBR, TIMEZONE_BRASILIA } from "@/lib/utils";
+import { criarDataBrasilia, formatarDataBR, formatarDataHoraBR, TIMEZONE_BRASILIA, getMesAnoAtualBrasilia, paraBrasilia, agora } from "@/lib/utils";
+import { CATEGORIAS_FIXAS } from "@/hooks/useProgressoAluno";
 
 type ProgressoCategoria = {
   total: number;
@@ -558,141 +559,51 @@ const AdminRelatorios = () => {
 
   const anos = ["2024", "2025", "2026"];
 
-  // Função auxiliar para obter as semanas de um mês (mes é 1-indexed: janeiro = 1)
-  const getSemanasDoMes = (mes: number, ano: number) => {
-    const semanas: { inicio: Date; fim: Date; label: string }[] = [];
+  // ========== INÍCIO: LÓGICA COPIADA LITERALMENTE DE /aluno/progresso ==========
+  
+  // Filtrar histórico do mês atual (EXATAMENTE como em AlunoProgresso)
+  const historicoMesAtual = useMemo(() => {
+    if (!dashboardData?.historico_progresso) return [];
     
-    // Usar criarDataBrasilia para criar datas no fuso horário correto
-    const primeiroDia = criarDataBrasilia(ano, mes, 1);
-    const ultimoDia = criarDataBrasilia(ano, mes + 1, 0); // Dia 0 do próximo mês = último dia do mês atual
-    
-    // Corrigir último dia se o mês for dezembro
-    if (mes === 12) {
-      ultimoDia.setFullYear(ano);
-      ultimoDia.setMonth(11); // Dezembro (0-indexed)
-      ultimoDia.setDate(31);
-    }
-    
-    let inicioSemana = new Date(primeiroDia);
-    
-    while (inicioSemana <= ultimoDia) {
-      // Calcular fim da semana (sábado = dia 6)
-      const diasAteFimSemana = 6 - inicioSemana.getDay();
-      const fimSemana = new Date(inicioSemana);
-      fimSemana.setDate(inicioSemana.getDate() + diasAteFimSemana);
-      
-      // Se o fim da semana ultrapassar o último dia do mês, usar o último dia
-      if (fimSemana > ultimoDia) {
-        fimSemana.setTime(ultimoDia.getTime());
-      }
-      
-      // Formatar as datas usando o mês correto (mes é 1-indexed)
-      const diaInicio = String(inicioSemana.getDate()).padStart(2, '0');
-      const mesStr = String(mes).padStart(2, '0');
-      const diaFim = String(fimSemana.getDate()).padStart(2, '0');
-      
-      semanas.push({
-        inicio: new Date(inicioSemana),
-        fim: new Date(fimSemana),
-        label: `${diaInicio}/${mesStr} - ${diaFim}/${mesStr}`
-      });
-      
-      // Próxima semana começa no dia seguinte ao fim
-      inicioSemana = new Date(fimSemana);
-      inicioSemana.setDate(fimSemana.getDate() + 1);
-    }
-    
-    return semanas;
-  };
-
-  // Filtrar histórico do mês do relatório
-  const historicoMesDoRelatorio = useMemo(() => {
-    if (!dashboardData?.historico_progresso || !selectedRelatorio) return [];
-    
-    // Extrair mês e ano do mes_referencia (formato: "MM/YYYY")
-    const [mesRef, anoRef] = selectedRelatorio.mes_referencia.split("/");
-    const mesNum = parseInt(mesRef); // 1-indexed para comparação
-    const anoNum = parseInt(anoRef);
+    const { mes: mesAtual, ano: anoAtual } = getMesAnoAtualBrasilia();
     
     return (dashboardData.historico_progresso as Array<{ data: string; progresso_geral: number }>)
       .filter((item) => {
-        const dataItem = criarDataBrasilia(
-          new Date(item.data).getFullYear(),
-          new Date(item.data).getMonth() + 1,
-          new Date(item.data).getDate()
-        );
-        return (dataItem.getMonth() + 1) === mesNum && dataItem.getFullYear() === anoNum;
+        const dataItem = paraBrasilia(item.data);
+        return (dataItem.getMonth() + 1) === mesAtual && dataItem.getFullYear() === anoAtual;
       })
       .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-  }, [dashboardData?.historico_progresso, selectedRelatorio]);
+  }, [dashboardData?.historico_progresso]);
 
-  // Preparar dados para o gráfico - agrupando por semanas do mês
+  // Preparar dados para o gráfico (EXATAMENTE como em AlunoProgresso)
   const chartData = useMemo(() => {
-    if (!selectedRelatorio) return [];
-    
-    const [mesRef, anoRef] = selectedRelatorio.mes_referencia.split("/");
-    const mesNum = parseInt(mesRef); // 1-indexed (janeiro = 1)
-    const anoNum = parseInt(anoRef);
-    const semanas = getSemanasDoMes(mesNum, anoNum);
-    
     if (selectedCategory === "Geral") {
-      // Verificar se há dados no histórico para este mês
-      if (historicoMesDoRelatorio.length > 0) {
-        // Agrupar dados do histórico por semana
-        return semanas.map((semana) => {
-          const registrosNaSemana = historicoMesDoRelatorio.filter((item) => {
-            const dataItem = new Date(item.data);
-            return dataItem >= semana.inicio && dataItem <= semana.fim;
-          });
-          
-          // Pegar o último valor da semana (mais recente) ou calcular média
-          const ultimoRegistro = registrosNaSemana[registrosNaSemana.length - 1];
-          const valor = ultimoRegistro ? ultimoRegistro.progresso_geral : 0;
-          
-          return {
-            data: semana.label,
-            valor: valor || 0,
-          };
-        });
-      } else {
-        // Se não há histórico, usar os dados do próprio relatório para mostrar algo
-        // Mostrar o progresso do relatório como valor constante nas semanas
-        const progressoRelatorio = selectedRelatorio.porcentagem_concluida || 0;
-        return semanas.map((semana) => ({
-          data: semana.label,
-          valor: progressoRelatorio,
-        }));
-      }
+      return historicoMesAtual.map((item) => ({
+        data: formatarDataBR(item.data).slice(0, 5), // DD/MM
+        valor: item.progresso_geral || 0,
+      }));
     } else {
-      // Para categorias específicas, usar o progresso por categoria do relatório
-      const progressoCategoria = selectedRelatorio.progresso_por_categoria?.[selectedCategory];
-      
-      if (progressoCategoria) {
-        // Mostrar o progresso por categoria do relatório
-        return semanas.map((semana) => ({
-          data: semana.label,
-          valor: progressoCategoria.percentual_concluido || 0,
-        }));
-      }
-      
-      // Fallback para dados atuais se não houver dados salvos no relatório
-      const progressoPorCategoriaAtual = dashboardData?.progresso_por_categoria || {};
-      const categoriaData = progressoPorCategoriaAtual[selectedCategory];
+      // Para categorias específicas, usar progresso_por_categoria
+      const progressoPorCategoria = dashboardData?.progresso_por_categoria || {};
+      const categoriaData = progressoPorCategoria[selectedCategory];
       
       if (!categoriaData) return [];
       
-      // Mostrar o valor atual em todas as semanas como referência
-      return semanas.map((semana) => ({
-        data: semana.label,
+      // Como não temos histórico por categoria, mostrar apenas o valor atual
+      const agr = agora();
+      return [{
+        data: formatarDataBR(agr).slice(0, 5), // DD/MM
         valor: categoriaData.percentual_concluido || 0,
-      }));
+      }];
     }
-  }, [selectedCategory, historicoMesDoRelatorio, dashboardData?.progresso_por_categoria, selectedRelatorio]);
+  }, [selectedCategory, historicoMesAtual, dashboardData?.progresso_por_categoria]);
 
+  // Usar as 7 categorias fixas para o filtro do gráfico (EXATAMENTE como em AlunoProgresso)
   const categorias = useMemo(() => {
-    const progressoPorCategoria = dashboardData?.progresso_por_categoria || {};
-    return ["Geral", ...Object.keys(progressoPorCategoria)];
-  }, [dashboardData?.progresso_por_categoria]);
+    return ["Geral", ...CATEGORIAS_FIXAS];
+  }, []);
+  
+  // ========== FIM: LÓGICA COPIADA LITERALMENTE DE /aluno/progresso ==========
 
   // Dados de comparação para o relatório
   const dadosComparacaoRelatorio = useMemo(() => {
@@ -1004,12 +915,12 @@ const AdminRelatorios = () => {
                 </CardContent>
               </Card>
 
-              {/* Bloco 3 - Gráfico de Evolução Mensal */}
+              {/* Bloco 3 - Gráfico de Evolução Mensal - IDÊNTICO AO /aluno/progresso */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Evolução no mês do relatório</CardTitle>
+                  <CardTitle className="text-lg">Evolução no mês atual</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Acompanhe como o progresso evoluiu a cada atualização neste mês
+                    Acompanhe como seu progresso evoluiu a cada atualização neste mês
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1045,7 +956,7 @@ const AdminRelatorios = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={chartData}>
                           <defs>
-                            <linearGradient id="colorValorRelatorio" x1="0" y1="0" x2="0" y2="1">
+                            <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
                               <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                             </linearGradient>
@@ -1067,7 +978,7 @@ const AdminRelatorios = () => {
                             dataKey="valor"
                             stroke="hsl(var(--primary))"
                             fillOpacity={1}
-                            fill="url(#colorValorRelatorio)"
+                            fill="url(#colorValor)"
                             strokeWidth={2}
                           />
                         </AreaChart>
