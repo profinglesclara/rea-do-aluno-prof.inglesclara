@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Download, Mail, Pencil, Check, X } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Download, Mail, Pencil, Check, X, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { LogoutButton } from "@/components/LogoutButton";
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { toast } from "@/hooks/use-toast";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -79,6 +80,8 @@ const AdminRelatorios = () => {
   const [editingComentario, setEditingComentario] = useState(false);
   const [comentarioEditado, setComentarioEditado] = useState("");
   const [salvandoComentario, setSalvandoComentario] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  const reportContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadAlunos();
@@ -394,111 +397,140 @@ const AdminRelatorios = () => {
     }
   };
 
-  const handleDownloadPDF = () => {
-    if (!selectedRelatorio) return;
+  const handleDownloadPDF = async () => {
+    if (!selectedRelatorio || !reportContentRef.current) return;
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 20;
-    const lineHeight = 7;
-    let yPos = margin;
-
-    // Função auxiliar para adicionar texto com quebra de linha
-    const addText = (text: string, fontSize: number = 11, isBold: boolean = false) => {
-      doc.setFontSize(fontSize);
-      if (isBold) {
-        doc.setFont("helvetica", "bold");
-      } else {
-        doc.setFont("helvetica", "normal");
-      }
-      
-      const lines = doc.splitTextToSize(text, pageWidth - 2 * margin);
-      lines.forEach((line: string) => {
-        if (yPos > doc.internal.pageSize.getHeight() - margin) {
-          doc.addPage();
-          yPos = margin;
-        }
-        doc.text(line, margin, yPos);
-        yPos += lineHeight;
-      });
-    };
-
-    // Cabeçalho
-    addText("RELATÓRIO MENSAL", 16, true);
-    yPos += 3;
-    addText(`Aluno: ${selectedRelatorio.nome_aluno}`, 12, true);
-    addText(`Nível CEFR: ${selectedRelatorio.nivel_cefr || "—"}`, 11);
-    addText(`Mês de Referência: ${selectedRelatorio.mes_referencia}`, 11);
-    addText(`Data de Geração: ${formatDateWithTime(selectedRelatorio.data_geracao)}`, 11);
-    yPos += 5;
-
-    // Resumo de progresso
-    doc.setDrawColor(200, 200, 200);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 8;
+    setGeneratingPDF(true);
     
-    addText("RESUMO DE PROGRESSO", 13, true);
-    yPos += 2;
-    addText(`Progresso Concluído: ${selectedRelatorio.porcentagem_concluida ?? 0}%`, 11);
-    addText(`Em Desenvolvimento: ${selectedRelatorio.porcentagem_em_desenvolvimento ?? 0}%`, 11);
-    yPos += 5;
-
-    // Progresso por categoria (se disponível)
-    if (dashboardData?.progresso_por_categoria) {
-      doc.line(margin, yPos, pageWidth - margin, yPos);
-      yPos += 8;
-      addText("PROGRESSO POR CATEGORIA", 13, true);
-      yPos += 2;
-
-      const categorias = Object.keys(dashboardData.progresso_por_categoria);
-      categorias.forEach((cat) => {
-        const dados = dashboardData.progresso_por_categoria[cat];
-        addText(
-          `${cat}: ${dados.percentual_concluido?.toFixed(1) || 0}% concluído, ${dados.percentual_em_desenvolvimento?.toFixed(1) || 0}% em desenvolvimento`,
-          10
-        );
+    try {
+      const contentElement = reportContentRef.current;
+      
+      // Captura o conteúdo visual do modal com html2canvas
+      const canvas = await html2canvas(contentElement, {
+        scale: 2, // Maior qualidade
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        // Aguardar gráficos renderizarem
+        onclone: (clonedDoc) => {
+          // Remover botões de ação do clone para não aparecerem no PDF
+          const actionsDiv = clonedDoc.querySelector('[data-pdf-hide="true"]');
+          if (actionsDiv) actionsDiv.remove();
+          
+          // Garantir que o elemento clonado tenha fundo branco
+          const clonedContent = clonedDoc.body.querySelector('[data-pdf-content="true"]');
+          if (clonedContent) {
+            (clonedContent as HTMLElement).style.backgroundColor = "#ffffff";
+            (clonedContent as HTMLElement).style.padding = "20px";
+          }
+        },
       });
-      yPos += 3;
+
+      const imgData = canvas.toDataURL("image/png");
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      
+      // Criar PDF com dimensões adequadas
+      const pdf = new jsPDF({
+        orientation: imgWidth > imgHeight ? "landscape" : "portrait",
+        unit: "px",
+        format: [imgWidth / 2, imgHeight / 2],
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      // Calcular quebras de página se necessário
+      const pageHeight = pdfHeight;
+      const totalPages = Math.ceil((imgHeight / 2) / pageHeight);
+      
+      if (totalPages <= 1) {
+        // Cabe em uma página
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      } else {
+        // Múltiplas páginas
+        for (let page = 0; page < totalPages; page++) {
+          if (page > 0) pdf.addPage();
+          
+          const sourceY = page * pageHeight * 2; // *2 por causa do scale
+          const remainingHeight = Math.min(pageHeight * 2, imgHeight - sourceY);
+          
+          // Criar um canvas parcial para cada página
+          const pageCanvas = document.createElement("canvas");
+          pageCanvas.width = imgWidth;
+          pageCanvas.height = remainingHeight;
+          
+          const ctx = pageCanvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(
+              canvas,
+              0, sourceY,
+              imgWidth, remainingHeight,
+              0, 0,
+              imgWidth, remainingHeight
+            );
+            
+            const pageImgData = pageCanvas.toDataURL("image/png");
+            pdf.addImage(pageImgData, "PNG", 0, 0, pdfWidth, remainingHeight / 2);
+          }
+        }
+      }
+
+      // Salvar PDF
+      const fileName = `relatorio_${selectedRelatorio.nome_aluno.replace(/\s+/g, "_")}_${selectedRelatorio.mes_referencia.replace(/\//g, "-")}.pdf`;
+      pdf.save(fileName);
+
+      toast({
+        title: "PDF gerado com sucesso",
+        description: "O arquivo foi baixado para o seu computador.",
+      });
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível gerar o PDF. Tente novamente.",
+      });
+    } finally {
+      setGeneratingPDF(false);
     }
-
-    // Comentário automático
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 8;
-    addText("COMENTÁRIO DA PROFESSORA", 13, true);
-    yPos += 2;
-    addText(
-      selectedRelatorio.comentario_automatico || "Nenhum comentário disponível.",
-      10
-    );
-
-    // Salvar PDF
-    const fileName = `relatorio_${selectedRelatorio.nome_aluno.replace(/\s+/g, "_")}_${selectedRelatorio.mes_referencia.replace(/\//g, "-")}.pdf`;
-    doc.save(fileName);
-
-    toast({
-      title: "PDF gerado com sucesso",
-      description: "O arquivo foi baixado para o seu computador.",
-    });
   };
 
   const handleSendEmail = async () => {
-    if (!selectedRelatorio) return;
+    if (!selectedRelatorio || !reportContentRef.current) return;
 
     setSendingEmail(true);
     
     try {
-      // Montar conteúdo HTML do e-mail
-      let categoriasHTML = "";
-      if (dashboardData?.progresso_por_categoria) {
-        const categorias = Object.keys(dashboardData.progresso_por_categoria);
-        categoriasHTML = categorias.map((cat) => {
-          const dados = dashboardData.progresso_por_categoria[cat];
-          return `<li><strong>${cat}:</strong> ${dados.percentual_concluido?.toFixed(1) || 0}% concluído, ${dados.percentual_em_desenvolvimento?.toFixed(1) || 0}% em desenvolvimento</li>`;
-        }).join("");
-      }
+      const contentElement = reportContentRef.current;
+      
+      // Captura o conteúdo visual do modal com html2canvas
+      const canvas = await html2canvas(contentElement, {
+        scale: 1.5, // Qualidade boa para email
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Remover botões de ação do clone
+          const actionsDiv = clonedDoc.querySelector('[data-pdf-hide="true"]');
+          if (actionsDiv) actionsDiv.remove();
+          
+          const clonedContent = clonedDoc.body.querySelector('[data-pdf-content="true"]');
+          if (clonedContent) {
+            (clonedContent as HTMLElement).style.backgroundColor = "#ffffff";
+            (clonedContent as HTMLElement).style.padding = "20px";
+          }
+        },
+      });
 
+      // Converter para base64 para incluir no email
+      const imgData = canvas.toDataURL("image/png");
+      
+      // Montar conteúdo HTML do e-mail com a imagem do relatório
       const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
             Relatório Mensal - ${selectedRelatorio.mes_referencia}
           </h1>
@@ -516,18 +548,37 @@ const AdminRelatorios = () => {
             <p><strong>Em Desenvolvimento:</strong> ${selectedRelatorio.porcentagem_em_desenvolvimento ?? 0}%</p>
           </div>
 
-          ${categoriasHTML ? `
+          ${dashboardData?.progresso_por_categoria ? `
             <div style="margin: 20px 0;">
               <h2 style="color: #555; font-size: 18px;">Progresso por Categoria</h2>
               <ul style="line-height: 1.8;">
-                ${categoriasHTML}
+                ${Object.keys(dashboardData.progresso_por_categoria).map((cat) => {
+                  const dados = dashboardData.progresso_por_categoria[cat];
+                  return `<li><strong>${cat}:</strong> ${dados.percentual_concluido?.toFixed(1) || 0}% concluído, ${dados.percentual_em_desenvolvimento?.toFixed(1) || 0}% em desenvolvimento</li>`;
+                }).join("")}
               </ul>
+            </div>
+          ` : ""}
+
+          ${aulasMesAtual && aulasMesAtual.total > 0 ? `
+            <div style="margin: 20px 0; background-color: #e9ecef; padding: 15px; border-radius: 5px;">
+              <h2 style="color: #555; font-size: 18px; margin-top: 0;">Resumo de Aulas do Mês</h2>
+              <p><strong>Total de Aulas:</strong> ${aulasMesAtual.total}</p>
+              <p><strong>Realizadas:</strong> ${aulasMesAtual.realizadas}</p>
+              ${aulasMesAtual.faltas > 0 ? `<p><strong>Faltas:</strong> ${aulasMesAtual.faltas}</p>` : ""}
+              ${aulasMesAtual.remarcadas > 0 ? `<p><strong>Remarcadas:</strong> ${aulasMesAtual.remarcadas}</p>` : ""}
             </div>
           ` : ""}
 
           <div style="background-color: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h2 style="color: #555; font-size: 18px; margin-top: 0;">Comentário da Professora</h2>
             <p style="white-space: pre-wrap;">${selectedRelatorio.comentario_automatico || "Nenhum comentário disponível."}</p>
+          </div>
+
+          <div style="margin: 20px 0;">
+            <h2 style="color: #555; font-size: 18px;">Visualização Completa do Relatório</h2>
+            <p style="color: #666; font-size: 14px;">Veja abaixo a captura completa do relatório com todos os gráficos:</p>
+            <img src="${imgData}" alt="Relatório Completo" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; margin-top: 10px;" />
           </div>
 
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #777; font-size: 12px;">
@@ -850,7 +901,7 @@ const AdminRelatorios = () => {
             </DialogTitle>
           </DialogHeader>
           {selectedRelatorio && (
-            <div className="space-y-6">
+            <div ref={reportContentRef} data-pdf-content="true" className="space-y-6 bg-background p-1">
               {/* Bloco 1 - Informações Gerais */}
               <Card>
                 <CardHeader>
@@ -1322,18 +1373,29 @@ const AdminRelatorios = () => {
                 </CardContent>
               </Card>
 
-              {/* Botões de ação */}
-              <div className="flex gap-3 justify-end pt-4 border-t">
+              {/* Botões de ação - escondidos no PDF */}
+              <div data-pdf-hide="true" className="flex gap-3 justify-end pt-4 border-t">
                 <Button
                   variant="outline"
                   onClick={handleDownloadPDF}
+                  disabled={generatingPDF}
                   className="gap-2"
                 >
-                  <Download className="h-4 w-4" />
-                  Baixar PDF
+                  {generatingPDF ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Gerando PDF...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      Baixar PDF
+                    </>
+                  )}
                 </Button>
                 <Button
                   onClick={() => setShowEmailConfirm(true)}
+                  disabled={generatingPDF}
                   className="gap-2"
                 >
                   <Mail className="h-4 w-4" />
