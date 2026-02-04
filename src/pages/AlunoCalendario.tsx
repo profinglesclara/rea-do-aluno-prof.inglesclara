@@ -8,10 +8,11 @@ import { ArrowLeft, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LogoutButton } from "@/components/LogoutButton";
+import { agora } from "@/lib/utils";
 
 export default function AlunoCalendario() {
   const navigate = useNavigate();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(agora());
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

@@ -44,6 +44,7 @@ import { useNavigate } from "react-router-dom";
 import { CalendarioAulas } from "@/components/CalendarioAulas";
 import { LogoutButton } from "@/components/LogoutButton";
 import { TimePicker } from "@/components/ui/time-picker";
+import { formatarDataHoraBR, paraBrasilia, agora } from "@/lib/utils";
 
 type Aula = {
   aula_id: string;
@@ -95,7 +96,7 @@ const AdminAulas = () => {
   const [aulaParaExcluir, setAulaParaExcluir] = useState<string | null>(null);
   
   // Calendário
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(agora());
 
   const loadData = async () => {
     setLoading(true);
@@ -143,14 +144,7 @@ const AdminAulas = () => {
   }, []);
 
   const formatDateTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatarDataHoraBR(dateStr);
   };
 
   const limparFiltros = () => {

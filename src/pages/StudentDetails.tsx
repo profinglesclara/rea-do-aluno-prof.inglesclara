@@ -13,6 +13,7 @@ import { EditarPerfilAlunoDialog } from "@/components/admin/EditarPerfilAlunoDia
 import { GerenciarTopicosDialog } from "@/components/admin/GerenciarTopicosDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FotoPerfil } from "@/components/FotoPerfil";
+import { formatarDataBR, formatarDataHoraBR } from "@/lib/utils";
 
 type DashboardRow = {
   aluno_id: string;
@@ -284,10 +285,10 @@ const StudentDetails = () => {
   }
 
   const formatDateTime = (d: string | null) =>
-    d ? new Date(d).toLocaleString("pt-BR") : "—";
+    d ? formatarDataHoraBR(d) : "—";
 
   const formatDate = (dateString: string | null) =>
-    dateString ? new Date(dateString).toLocaleDateString("pt-BR") : "—";
+    dateString ? formatarDataBR(dateString) : "—";
 
   // Mapeia o status do banco para o texto exibido na UI
   const getStatusDisplay = (status: string): string => {

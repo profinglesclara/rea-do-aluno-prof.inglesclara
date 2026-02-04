@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { LogoutButton } from "@/components/LogoutButton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { paraBrasilia } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -79,7 +80,7 @@ export default function AlunoAulas() {
   const anosDisponiveis = useMemo(() => {
     if (!aulas) return [];
     const anos = new Set(
-      aulas.map((aula) => new Date(aula.data_aula).getFullYear().toString())
+      aulas.map((aula) => paraBrasilia(aula.data_aula).getFullYear().toString())
     );
     return Array.from(anos).sort((a, b) => parseInt(b) - parseInt(a));
   }, [aulas]);
@@ -89,7 +90,7 @@ export default function AlunoAulas() {
     if (!aulas) return [];
     
     return aulas.filter((aula) => {
-      const dataAula = new Date(aula.data_aula);
+      const dataAula = paraBrasilia(aula.data_aula);
       const mes = dataAula.getMonth() + 1;
       const ano = dataAula.getFullYear().toString();
       

@@ -18,6 +18,7 @@ import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { LogoutButton } from "@/components/LogoutButton";
+import { paraBrasilia } from "@/lib/utils";
 
 export default function AdminNotificacoes() {
   const navigate = useNavigate();
@@ -103,7 +104,7 @@ export default function AdminNotificacoes() {
 
   const formatDate = (date: string) => {
     try {
-      return formatDistanceToNow(new Date(date), {
+      return formatDistanceToNow(paraBrasilia(date), {
         addSuffix: true,
         locale: ptBR,
       });

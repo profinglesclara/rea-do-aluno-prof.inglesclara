@@ -14,10 +14,11 @@ import {
 import { ArrowLeft, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LogoutButton } from "@/components/LogoutButton";
+import { agora } from "@/lib/utils";
 
 export default function AdminCalendarioAulas() {
   const navigate = useNavigate();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(agora());
   const [selectedAluno, setSelectedAluno] = useState<string>("todos");
   const [selectedStatus, setSelectedStatus] = useState<string>("todos");
 
