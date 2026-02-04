@@ -14,7 +14,6 @@ import jsPDF from "jspdf";
 import { toast } from "@/hooks/use-toast";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { GraficoEvolucaoMensal } from "@/components/GraficoEvolucaoMensal";
 import { criarDataBrasilia, formatarDataBR, formatarDataHoraBR, TIMEZONE_BRASILIA } from "@/lib/utils";
 
 type ProgressoCategoria = {
@@ -1006,14 +1005,77 @@ const AdminRelatorios = () => {
               </Card>
 
               {/* Bloco 3 - Gráfico de Evolução Mensal */}
-              <GraficoEvolucaoMensal
-                historicoProgresso={dashboardData?.historico_progresso || []}
-                progressoPorCategoria={dashboardData?.progresso_por_categoria || {}}
-                mesReferencia={selectedRelatorio.mes_referencia}
-                porcentagemConcluida={selectedRelatorio.porcentagem_concluida || 0}
-                titulo="Evolução no mês do relatório"
-                subtitulo="Acompanhe como o progresso evoluiu a cada atualização neste mês"
-              />
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Evolução no mês do relatório</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Acompanhe como o progresso evoluiu a cada atualização neste mês
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Filtros de categoria */}
+                  <div className="flex flex-wrap gap-2">
+                    {categorias.map((cat) => (
+                      <Button
+                        key={cat}
+                        variant={selectedCategory === cat ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedCategory(cat)}
+                      >
+                        {cat}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Gráfico */}
+                  {chartData.length === 0 ? (
+                    <div className="flex items-center justify-center h-64 text-muted-foreground">
+                      <p>Ainda não há dados suficientes neste mês para montar o gráfico.</p>
+                    </div>
+                  ) : (
+                    <ChartContainer
+                      config={{
+                        valor: {
+                          label: "Progresso (%)",
+                          color: "hsl(var(--primary))",
+                        },
+                      }}
+                      className="h-64"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData}>
+                          <defs>
+                            <linearGradient id="colorValorRelatorio" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis 
+                            dataKey="data" 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                          />
+                          <YAxis 
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={12}
+                            domain={[0, 100]}
+                          />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Area
+                            type="monotone"
+                            dataKey="valor"
+                            stroke="hsl(var(--primary))"
+                            fillOpacity={1}
+                            fill="url(#colorValorRelatorio)"
+                            strokeWidth={2}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Bloco 4 - Comentário Automático */}
               <Card>
