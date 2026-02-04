@@ -565,28 +565,32 @@ const AdminRelatorios = () => {
     const primeiroDia = new Date(ano, mesIndex, 1);
     const ultimoDia = new Date(ano, mesIndex + 1, 0);
     
-    let semanaAtual = 1;
     let inicioSemana = new Date(primeiroDia);
     
     while (inicioSemana <= ultimoDia) {
-      // Fim da semana (domingo) ou último dia do mês
+      // Calcular fim da semana (sábado = dia 6)
+      const diasAteFimSemana = 6 - inicioSemana.getDay();
       const fimSemana = new Date(inicioSemana);
-      fimSemana.setDate(inicioSemana.getDate() + (6 - inicioSemana.getDay()));
+      fimSemana.setDate(inicioSemana.getDate() + diasAteFimSemana);
       
+      // Se o fim da semana ultrapassar o último dia do mês, usar o último dia
       if (fimSemana > ultimoDia) {
         fimSemana.setTime(ultimoDia.getTime());
       }
       
-      const inicioFormatado = inicioSemana.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-      const fimFormatado = fimSemana.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      // Formatar as datas usando o mês correto (mes é 1-indexed)
+      const diaInicio = String(inicioSemana.getDate()).padStart(2, '0');
+      const mesInicio = String(mes).padStart(2, '0');
+      const diaFim = String(fimSemana.getDate()).padStart(2, '0');
+      const mesFim = String(mes).padStart(2, '0');
       
       semanas.push({
         inicio: new Date(inicioSemana),
         fim: new Date(fimSemana),
-        label: `${inicioFormatado} - ${fimFormatado}`
+        label: `${diaInicio}/${mesInicio} - ${diaFim}/${mesFim}`
       });
       
-      semanaAtual++;
+      // Próxima semana começa no dia seguinte ao fim
       inicioSemana = new Date(fimSemana);
       inicioSemana.setDate(fimSemana.getDate() + 1);
     }
