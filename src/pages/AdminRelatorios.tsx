@@ -636,44 +636,55 @@ const AdminRelatorios = () => {
     const semanas = getSemanasDoMes(mesNum, anoNum);
     
     if (selectedCategory === "Geral") {
-      // Agrupar dados do histórico por semana
-      return semanas.map((semana) => {
-        const registrosNaSemana = historicoMesDoRelatorio.filter((item) => {
-          const dataItem = new Date(item.data);
-          return dataItem >= semana.inicio && dataItem <= semana.fim;
+      // Verificar se há dados no histórico para este mês
+      if (historicoMesDoRelatorio.length > 0) {
+        // Agrupar dados do histórico por semana
+        return semanas.map((semana) => {
+          const registrosNaSemana = historicoMesDoRelatorio.filter((item) => {
+            const dataItem = new Date(item.data);
+            return dataItem >= semana.inicio && dataItem <= semana.fim;
+          });
+          
+          // Pegar o último valor da semana (mais recente) ou calcular média
+          const ultimoRegistro = registrosNaSemana[registrosNaSemana.length - 1];
+          const valor = ultimoRegistro ? ultimoRegistro.progresso_geral : 0;
+          
+          return {
+            data: semana.label,
+            valor: valor || 0,
+          };
         });
-        
-        // Pegar o último valor da semana (mais recente) ou calcular média
-        const ultimoRegistro = registrosNaSemana[registrosNaSemana.length - 1];
-        const valor = ultimoRegistro ? ultimoRegistro.progresso_geral : 0;
-        
-        return {
+      } else {
+        // Se não há histórico, usar os dados do próprio relatório para mostrar algo
+        // Mostrar o progresso do relatório como valor constante nas semanas
+        const progressoRelatorio = selectedRelatorio.porcentagem_concluida || 0;
+        return semanas.map((semana) => ({
           data: semana.label,
-          valor: valor || 0,
-        };
-      });
+          valor: progressoRelatorio,
+        }));
+      }
     } else {
       // Para categorias específicas, usar o progresso por categoria do relatório
       const progressoCategoria = selectedRelatorio.progresso_por_categoria?.[selectedCategory];
       
-      if (!progressoCategoria) {
-        // Fallback para dados atuais se não houver dados salvos no relatório
-        const progressoPorCategoriaAtual = dashboardData?.progresso_por_categoria || {};
-        const categoriaData = progressoPorCategoriaAtual[selectedCategory];
-        
-        if (!categoriaData) return [];
-        
-        // Mostrar o valor atual em todas as semanas como referência
+      if (progressoCategoria) {
+        // Mostrar o progresso por categoria do relatório
         return semanas.map((semana) => ({
           data: semana.label,
-          valor: categoriaData.percentual_concluido || 0,
+          valor: progressoCategoria.percentual_concluido || 0,
         }));
       }
       
-      // Mostrar o progresso por categoria do relatório
-      return semanas.map((semana, index) => ({
+      // Fallback para dados atuais se não houver dados salvos no relatório
+      const progressoPorCategoriaAtual = dashboardData?.progresso_por_categoria || {};
+      const categoriaData = progressoPorCategoriaAtual[selectedCategory];
+      
+      if (!categoriaData) return [];
+      
+      // Mostrar o valor atual em todas as semanas como referência
+      return semanas.map((semana) => ({
         data: semana.label,
-        valor: progressoCategoria.percentual_concluido || 0,
+        valor: categoriaData.percentual_concluido || 0,
       }));
     }
   }, [selectedCategory, historicoMesDoRelatorio, dashboardData?.progresso_por_categoria, selectedRelatorio]);
