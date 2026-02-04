@@ -69,6 +69,12 @@ const AdminRelatorios = () => {
   const [relatoriosDoAluno, setRelatoriosDoAluno] = useState<Relatorio[]>([]);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [showEmailConfirm, setShowEmailConfirm] = useState(false);
+  const [aulasMesAtual, setAulasMesAtual] = useState<{
+    total: number;
+    realizadas: number;
+    faltas: number;
+    remarcadas: number;
+  } | null>(null);
 
   useEffect(() => {
     loadAlunos();
@@ -282,6 +288,7 @@ const AdminRelatorios = () => {
     setSelectedCategory("Geral");
     setDetailsOpen(true);
     setProgressoAtual(null);
+    setAulasMesAtual(null);
     
     // Buscar progresso em tempo real do aluno (filtrado pelo nível CEFR atual)
     const { data: progressoData, error: progressoError } = await supabase.rpc("get_progresso_aluno", {
@@ -304,6 +311,39 @@ const AdminRelatorios = () => {
       setDashboardData(null);
     } else {
       setDashboardData(data);
+    }
+
+    // Buscar aulas do mês atual para o aluno
+    const { mes: mesAtual, ano: anoAtual } = getMesAnoAtualBrasilia();
+    const primeiroDiaMes = `${anoAtual}-${String(mesAtual).padStart(2, "0")}-01`;
+    const ultimoDiaMes = new Date(anoAtual, mesAtual, 0).getDate();
+    const ultimoDiaMesStr = `${anoAtual}-${String(mesAtual).padStart(2, "0")}-${ultimoDiaMes}`;
+
+    const { data: aulasData, error: aulasError } = await supabase
+      .from("aulas")
+      .select("status")
+      .eq("aluno", relatorio.aluno)
+      .gte("data_aula", primeiroDiaMes)
+      .lte("data_aula", `${ultimoDiaMesStr}T23:59:59`);
+
+    if (aulasError) {
+      console.error("Erro ao buscar aulas do mês:", aulasError);
+    } else if (aulasData) {
+      // Usar as mesmas definições de status do sistema:
+      // "Realizada" = aula realizada
+      // "Cancelada" = aluno faltou (exibido como "Faltou" na UI)
+      // "Remarcada" = aula remarcada
+      const realizadas = aulasData.filter((a) => a.status === "Realizada").length;
+      const faltas = aulasData.filter((a) => a.status === "Cancelada").length;
+      const remarcadas = aulasData.filter((a) => a.status === "Remarcada").length;
+      const total = aulasData.length;
+
+      setAulasMesAtual({
+        total,
+        realizadas,
+        faltas,
+        remarcadas,
+      });
     }
 
     // Buscar todos os relatórios deste aluno para comparação
@@ -838,7 +878,42 @@ const AdminRelatorios = () => {
                 </CardContent>
               </Card>
 
-              {/* Bloco 2 - Progresso Atual em Tempo Real */}
+              {/* Bloco 1.5 - Resumo de Aulas do Mês Atual */}
+              {aulasMesAtual && aulasMesAtual.total > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Resumo de Aulas do Mês Atual</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Indicadores calculados apenas para o mês corrente
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 rounded-lg bg-muted/50">
+                        <p className="text-2xl font-bold">{aulasMesAtual.total}</p>
+                        <p className="text-sm text-muted-foreground">Total de Aulas</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-muted/50">
+                        <p className="text-2xl font-bold text-primary">{aulasMesAtual.realizadas}</p>
+                        <p className="text-sm text-muted-foreground">Realizadas</p>
+                      </div>
+                      {aulasMesAtual.faltas > 0 && (
+                        <div className="text-center p-3 rounded-lg bg-destructive/10">
+                          <p className="text-2xl font-bold text-destructive">{aulasMesAtual.faltas}</p>
+                          <p className="text-sm text-muted-foreground">Faltas</p>
+                        </div>
+                      )}
+                      {aulasMesAtual.remarcadas > 0 && (
+                        <div className="text-center p-3 rounded-lg bg-amber-500/10">
+                          <p className="text-2xl font-bold text-amber-600">{aulasMesAtual.remarcadas}</p>
+                          <p className="text-sm text-muted-foreground">Remarcadas</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card className="border-primary/20 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
