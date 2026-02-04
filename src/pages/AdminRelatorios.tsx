@@ -575,10 +575,13 @@ const AdminRelatorios = () => {
         fimSemana.setTime(ultimoDia.getTime());
       }
       
+      const inicioFormatado = inicioSemana.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      const fimFormatado = fimSemana.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      
       semanas.push({
         inicio: new Date(inicioSemana),
         fim: new Date(fimSemana),
-        label: `Semana ${semanaAtual}`
+        label: `${inicioFormatado} - ${fimFormatado}`
       });
       
       semanaAtual++;
