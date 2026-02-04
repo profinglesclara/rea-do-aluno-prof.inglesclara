@@ -29,55 +29,34 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // 1) Tentar encontrar o usuário na tabela `usuarios`
-      const { data: byUsername, error: userByUsernameError } = await supabase
-        .from("usuarios")
-        .select("user_id, email, tipo_usuario, nome_de_usuario")
-        .eq("nome_de_usuario", identifier)
-        .maybeSingle();
+      // Use edge function to lookup user securely (bypasses RLS)
+      const { data: lookupData, error: lookupError } = await supabase.functions.invoke(
+        "lookup-user",
+        { body: { identifier } }
+      );
 
-      if (userByUsernameError) {
-        toast.error("Erro ao buscar usuário: " + userByUsernameError.message);
+      if (lookupError) {
+        toast.error("Erro ao buscar usuário: " + lookupError.message);
         setLoading(false);
         return;
       }
 
-      let usuario = byUsername;
-
-      // 2) Se não achou por nome_de_usuario, tentar por email
-      if (!usuario) {
-        const { data: byEmail, error: userByEmailError } = await supabase
-          .from("usuarios")
-          .select("user_id, email, tipo_usuario, nome_de_usuario")
-          .eq("email", identifier)
-          .maybeSingle();
-
-        if (userByEmailError) {
-          toast.error("Erro ao buscar usuário: " + userByEmailError.message);
-          setLoading(false);
-          return;
-        }
-
-        usuario = byEmail;
-      }
-
-      // 3) Se ainda assim não achou, usuário não existe
-      if (!usuario) {
+      if (!lookupData.found) {
         toast.error("Usuário não encontrado. Verifique o nome de usuário/e-mail ou crie uma conta.");
         setLoading(false);
         return;
       }
 
-      // 4) Verificar se o usuário tem e-mail cadastrado
-      if (!usuario.email) {
+      // Verificar se o usuário tem e-mail cadastrado
+      if (!lookupData.email) {
         toast.error("Este usuário não tem e-mail cadastrado. Contate o administrador.");
         setLoading(false);
         return;
       }
 
-      // 5) Fazer login no Supabase Auth usando o e-mail
+      // Fazer login no Supabase Auth usando o e-mail
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: usuario.email,
+        email: lookupData.email,
         password,
       });
 
@@ -93,7 +72,7 @@ const Login = () => {
         return;
       }
 
-      const tipo = usuario.tipo_usuario as TipoUsuario | null;
+      const tipo = lookupData.tipo_usuario as TipoUsuario | null;
 
       if (!tipo) {
         toast.error("Tipo de usuário não definido. Contate o administrador.");
@@ -103,7 +82,7 @@ const Login = () => {
 
       toast.success("Login realizado com sucesso!");
 
-      // 6) Redirecionar conforme o tipo de usuário
+      // Redirecionar conforme o tipo de usuário
       if (tipo === "Admin") {
         navigate("/admin/dashboard");
       } else if (tipo === "Responsável") {
@@ -139,14 +118,19 @@ const Login = () => {
         return;
       }
 
-      // Verificar se username já existe
-      const { data: existingUser } = await supabase
-        .from("usuarios")
-        .select("user_id")
-        .eq("nome_de_usuario", registerUsername)
-        .maybeSingle();
+      // Verificar se username já existe usando edge function
+      const { data: checkData, error: checkError } = await supabase.functions.invoke(
+        "check-username",
+        { body: { username: registerUsername } }
+      );
 
-      if (existingUser) {
+      if (checkError) {
+        toast.error("Erro ao verificar nome de usuário: " + checkError.message);
+        setRegisterLoading(false);
+        return;
+      }
+
+      if (checkData.exists) {
         toast.error("Este nome de usuário já está em uso.");
         setRegisterLoading(false);
         return;

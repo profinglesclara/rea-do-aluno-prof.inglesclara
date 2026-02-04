@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.enviar-email-notificacao]
 verify_jwt = false
+
+[functions.lookup-user]
+verify_jwt = false
+
+[functions.check-username]
+verify_jwt = false
