@@ -398,12 +398,27 @@ const AdminRelatorios = () => {
   };
 
   const handleDownloadPDF = async () => {
-    if (!selectedRelatorio || !reportContentRef.current) return;
+    if (!selectedRelatorio) {
+      console.log("handleDownloadPDF: selectedRelatorio is null");
+      return;
+    }
+    
+    if (!reportContentRef.current) {
+      console.log("handleDownloadPDF: reportContentRef.current is null");
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível capturar o conteúdo do relatório. Por favor, tente novamente.",
+      });
+      return;
+    }
 
     setGeneratingPDF(true);
+    console.log("handleDownloadPDF: starting PDF generation");
     
     try {
       const contentElement = reportContentRef.current;
+      console.log("handleDownloadPDF: contentElement", contentElement);
       
       // Captura o conteúdo visual do modal com html2canvas
       const canvas = await html2canvas(contentElement, {
@@ -411,9 +426,10 @@ const AdminRelatorios = () => {
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
-        logging: false,
+        logging: true, // Enable logging for debugging
         // Aguardar gráficos renderizarem
         onclone: (clonedDoc) => {
+          console.log("handleDownloadPDF: onclone called");
           // Remover botões de ação do clone para não aparecerem no PDF
           const actionsDiv = clonedDoc.querySelector('[data-pdf-hide="true"]');
           if (actionsDiv) actionsDiv.remove();
@@ -426,6 +442,8 @@ const AdminRelatorios = () => {
           }
         },
       });
+      
+      console.log("handleDownloadPDF: canvas created", canvas.width, canvas.height);
 
       const imgData = canvas.toDataURL("image/png");
       const imgWidth = canvas.width;
