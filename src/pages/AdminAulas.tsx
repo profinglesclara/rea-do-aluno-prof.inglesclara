@@ -208,7 +208,8 @@ const AdminAulas = () => {
       return;
     }
     
-    const dataCompleta = `${novaData}T${novaHora}:00`;
+    // Adiciona o offset de Brasília (UTC-3) para garantir que o horário seja salvo corretamente
+    const dataCompleta = `${novaData}T${novaHora}:00-03:00`;
     
     const { data: aulaData, error } = await supabase.from("aulas").insert({
       aluno: novaAlunoId,
@@ -250,11 +251,15 @@ const AdminAulas = () => {
 
   const abrirModalEditar = (aula: Aula) => {
     setEditAulaId(aula.aula_id);
-    const dt = new Date(aula.data_aula);
-    const dataStr = dt.toISOString().split("T")[0];
-    const horaStr = dt.toTimeString().slice(0, 5);
-    setEditData(dataStr);
-    setEditHora(horaStr);
+    // Converter para timezone de Brasília antes de extrair data e hora
+    const dt = paraBrasilia(aula.data_aula);
+    const ano = dt.getFullYear();
+    const mes = String(dt.getMonth() + 1).padStart(2, '0');
+    const dia = String(dt.getDate()).padStart(2, '0');
+    const hora = String(dt.getHours()).padStart(2, '0');
+    const minuto = String(dt.getMinutes()).padStart(2, '0');
+    setEditData(`${ano}-${mes}-${dia}`);
+    setEditHora(`${hora}:${minuto}`);
     setEditStatus(aula.status);
     setEditConteudo(aula.conteudo || "");
     setEditObservacoes(aula.observacoes || "");
@@ -271,7 +276,8 @@ const AdminAulas = () => {
     const aulaAnterior = aulas.find((a) => a.aula_id === editAulaId);
     const statusAnterior = aulaAnterior?.status;
     
-    const dataCompleta = `${editData}T${editHora}:00`;
+    // Adiciona o offset de Brasília (UTC-3) para garantir que o horário seja salvo corretamente
+    const dataCompleta = `${editData}T${editHora}:00-03:00`;
     
     const { error } = await supabase
       .from("aulas")
