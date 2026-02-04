@@ -12,6 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { paraBrasilia } from "@/lib/utils";
 
 interface NotificationBellProps {
   userId: string;
@@ -42,7 +43,7 @@ export function NotificationBell({ userId, isAdmin = false }: NotificationBellPr
 
   const formatDate = (date: string) => {
     try {
-      return formatDistanceToNow(new Date(date), {
+      return formatDistanceToNow(paraBrasilia(date), {
         addSuffix: true,
         locale: ptBR,
       });

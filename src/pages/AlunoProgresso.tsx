@@ -13,6 +13,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, R
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { getMesAnoAtualBrasilia, paraBrasilia, formatarDataBR, agora } from "@/lib/utils";
 
 export default function AlunoProgresso() {
   const navigate = useNavigate();
@@ -71,14 +72,12 @@ export default function AlunoProgresso() {
   const historicoMesAtual = useMemo(() => {
     if (!dashboard?.historico_progresso) return [];
     
-    const now = new Date();
-    const mesAtual = now.getMonth();
-    const anoAtual = now.getFullYear();
+    const { mes: mesAtual, ano: anoAtual } = getMesAnoAtualBrasilia();
     
     return (dashboard.historico_progresso as Array<{ data: string; progresso_geral: number }>)
       .filter((item) => {
-        const dataItem = new Date(item.data);
-        return dataItem.getMonth() === mesAtual && dataItem.getFullYear() === anoAtual;
+        const dataItem = paraBrasilia(item.data);
+        return (dataItem.getMonth() + 1) === mesAtual && dataItem.getFullYear() === anoAtual;
       })
       .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
   }, [dashboard?.historico_progresso]);
@@ -87,7 +86,7 @@ export default function AlunoProgresso() {
   const chartData = useMemo(() => {
     if (selectedCategory === "Geral") {
       return historicoMesAtual.map((item) => ({
-        data: new Date(item.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+        data: formatarDataBR(item.data).slice(0, 5), // DD/MM
         valor: item.progresso_geral || 0,
       }));
     } else {
@@ -98,8 +97,9 @@ export default function AlunoProgresso() {
       if (!categoriaData) return [];
       
       // Como não temos histórico por categoria, mostrar apenas o valor atual
+      const agr = agora();
       return [{
-        data: new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+        data: formatarDataBR(agr).slice(0, 5), // DD/MM
         valor: categoriaData.percentual_concluido || 0,
       }];
     }

@@ -25,6 +25,7 @@ import { MarcarEntregueDialog } from "@/components/tarefas/MarcarEntregueDialog"
 import { MarcarCorrigidaDialog } from "@/components/tarefas/MarcarCorrigidaDialog";
 import { VerEntregaDialog } from "@/components/tarefas/VerEntregaDialog";
 import type { Tables } from "@/integrations/supabase/types";
+import { paraBrasilia } from "@/lib/utils";
 
 type Tarefa = Tables<"tarefas">;
 
@@ -116,7 +117,7 @@ export default function AdminTarefas() {
     // Filtro de mês/ano
     if ((filterMes && filterMes !== "todos") || filterAno) {
       const dataRef = tarefa.data_limite || tarefa.criada_em;
-      const data = new Date(dataRef);
+      const data = paraBrasilia(dataRef);
       if (filterMes && filterMes !== "todos" && (data.getMonth() + 1).toString() !== filterMes) return false;
       if (filterAno && data.getFullYear().toString() !== filterAno) return false;
     }

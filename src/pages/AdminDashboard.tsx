@@ -28,6 +28,7 @@ import { FotoPerfil } from "@/components/FotoPerfil";
 import { EditarFotoPerfilDialog } from "@/components/EditarFotoPerfilDialog";
 import { GerenciarTopicosPadraoDialog } from "@/components/admin/GerenciarTopicosPadraoDialog";
 import { GerenciarCategoriasDialog } from "@/components/admin/GerenciarCategoriasDialog";
+import { formatarDataHoraBR } from "@/lib/utils";
 
 type DashboardAluno = {
   aluno_id: string;
@@ -150,13 +151,7 @@ const AdminDashboard = () => {
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "—";
-    return new Date(dateString).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatarDataHoraBR(dateString);
   };
 
   const handleVerDetalhes = (alunoId: string) => {

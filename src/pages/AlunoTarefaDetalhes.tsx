@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { VerCorrecaoDialog } from "@/components/tarefas/VerCorrecaoDialog";
+import { agora, paraBrasilia } from "@/lib/utils";
 
 export default function AlunoTarefaDetalhes() {
   const { tarefa_id } = useParams();
@@ -176,7 +177,7 @@ export default function AlunoTarefaDetalhes() {
           <p>O aluno <strong>${aluno.nome_completo}</strong> enviou a tarefa:</p>
           <h2>${tarefa.titulo}</h2>
           <p><strong>Arquivos enviados:</strong> ${files.length}</p>
-          <p><strong>Data de envio:</strong> ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+          <p><strong>Data de envio:</strong> ${format(agora(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
           <p>Acesse o painel administrativo para visualizar e corrigir a tarefa.</p>
         `;
 

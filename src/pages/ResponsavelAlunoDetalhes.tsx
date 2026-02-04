@@ -12,13 +12,14 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarioAulas } from "@/components/CalendarioAulas";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { agora, paraBrasilia } from "@/lib/utils";
 
 export default function ResponsavelAlunoDetalhes() {
   const { aluno_id } = useParams<{ aluno_id: string }>();
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(agora());
 
   // Verificar acesso
   useEffect(() => {

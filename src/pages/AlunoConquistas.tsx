@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useEffect, useState } from "react";
+import { paraBrasilia } from "@/lib/utils";
 
 const iconMap: Record<string, any> = {
   Star,
@@ -120,7 +121,7 @@ export default function AlunoConquistas() {
           <p className="text-sm text-muted-foreground mb-2">{conquista.descricao}</p>
           {conquista.desbloqueada && conquista.dataDesbloqueio && (
             <p className="text-xs text-yellow-600 dark:text-yellow-400">
-              Conquistada em {format(new Date(conquista.dataDesbloqueio), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+              Conquistada em {format(paraBrasilia(conquista.dataDesbloqueio), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
             </p>
           )}
           {!conquista.desbloqueada && (

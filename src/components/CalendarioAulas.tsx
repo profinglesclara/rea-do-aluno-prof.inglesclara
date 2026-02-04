@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/popover";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { paraBrasilia } from "@/lib/utils";
 
 type Aula = {
   aula_id: string;
@@ -60,7 +61,7 @@ export function CalendarioAulas({
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getAulasForDay = (day: Date) => {
-    return aulas.filter((aula) => isSameDay(new Date(aula.data_aula), day));
+    return aulas.filter((aula) => isSameDay(paraBrasilia(aula.data_aula), day));
   };
 
   const previousMonth = () => {
