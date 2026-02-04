@@ -14,6 +14,7 @@ import jsPDF from "jspdf";
 import { toast } from "@/hooks/use-toast";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { criarDataBrasilia, formatarDataBR, formatarDataHoraBR, TIMEZONE_BRASILIA } from "@/lib/utils";
 
 type ProgressoCategoria = {
   total: number;
@@ -560,10 +561,17 @@ const AdminRelatorios = () => {
   // Função auxiliar para obter as semanas de um mês (mes é 1-indexed: janeiro = 1)
   const getSemanasDoMes = (mes: number, ano: number) => {
     const semanas: { inicio: Date; fim: Date; label: string }[] = [];
-    // Converter para 0-indexed para o Date constructor
-    const mesIndex = mes - 1;
-    const primeiroDia = new Date(ano, mesIndex, 1);
-    const ultimoDia = new Date(ano, mesIndex + 1, 0);
+    
+    // Usar criarDataBrasilia para criar datas no fuso horário correto
+    const primeiroDia = criarDataBrasilia(ano, mes, 1);
+    const ultimoDia = criarDataBrasilia(ano, mes + 1, 0); // Dia 0 do próximo mês = último dia do mês atual
+    
+    // Corrigir último dia se o mês for dezembro
+    if (mes === 12) {
+      ultimoDia.setFullYear(ano);
+      ultimoDia.setMonth(11); // Dezembro (0-indexed)
+      ultimoDia.setDate(31);
+    }
     
     let inicioSemana = new Date(primeiroDia);
     
@@ -580,14 +588,13 @@ const AdminRelatorios = () => {
       
       // Formatar as datas usando o mês correto (mes é 1-indexed)
       const diaInicio = String(inicioSemana.getDate()).padStart(2, '0');
-      const mesInicio = String(mes).padStart(2, '0');
+      const mesStr = String(mes).padStart(2, '0');
       const diaFim = String(fimSemana.getDate()).padStart(2, '0');
-      const mesFim = String(mes).padStart(2, '0');
       
       semanas.push({
         inicio: new Date(inicioSemana),
         fim: new Date(fimSemana),
-        label: `${diaInicio}/${mesInicio} - ${diaFim}/${mesFim}`
+        label: `${diaInicio}/${mesStr} - ${diaFim}/${mesStr}`
       });
       
       // Próxima semana começa no dia seguinte ao fim
@@ -604,13 +611,17 @@ const AdminRelatorios = () => {
     
     // Extrair mês e ano do mes_referencia (formato: "MM/YYYY")
     const [mesRef, anoRef] = selectedRelatorio.mes_referencia.split("/");
-    const mesNum = parseInt(mesRef) - 1; // 0-indexed
+    const mesNum = parseInt(mesRef); // 1-indexed para comparação
     const anoNum = parseInt(anoRef);
     
     return (dashboardData.historico_progresso as Array<{ data: string; progresso_geral: number }>)
       .filter((item) => {
-        const dataItem = new Date(item.data);
-        return dataItem.getMonth() === mesNum && dataItem.getFullYear() === anoNum;
+        const dataItem = criarDataBrasilia(
+          new Date(item.data).getFullYear(),
+          new Date(item.data).getMonth() + 1,
+          new Date(item.data).getDate()
+        );
+        return (dataItem.getMonth() + 1) === mesNum && dataItem.getFullYear() === anoNum;
       })
       .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
   }, [dashboardData?.historico_progresso, selectedRelatorio]);
