@@ -557,6 +557,38 @@ const AdminRelatorios = () => {
 
   const anos = ["2024", "2025", "2026"];
 
+  // Função auxiliar para obter as semanas de um mês
+  const getSemanasDoMes = (mes: number, ano: number) => {
+    const semanas: { inicio: Date; fim: Date; label: string }[] = [];
+    const primeiroDia = new Date(ano, mes, 1);
+    const ultimoDia = new Date(ano, mes + 1, 0);
+    
+    let semanaAtual = 1;
+    let inicioSemana = new Date(primeiroDia);
+    
+    while (inicioSemana <= ultimoDia) {
+      // Fim da semana (domingo) ou último dia do mês
+      const fimSemana = new Date(inicioSemana);
+      fimSemana.setDate(inicioSemana.getDate() + (6 - inicioSemana.getDay()));
+      
+      if (fimSemana > ultimoDia) {
+        fimSemana.setTime(ultimoDia.getTime());
+      }
+      
+      semanas.push({
+        inicio: new Date(inicioSemana),
+        fim: new Date(fimSemana),
+        label: `Semana ${semanaAtual}`
+      });
+      
+      semanaAtual++;
+      inicioSemana = new Date(fimSemana);
+      inicioSemana.setDate(fimSemana.getDate() + 1);
+    }
+    
+    return semanas;
+  };
+
   // Filtrar histórico do mês do relatório
   const historicoMesDoRelatorio = useMemo(() => {
     if (!dashboardData?.historico_progresso || !selectedRelatorio) return [];
@@ -574,27 +606,57 @@ const AdminRelatorios = () => {
       .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
   }, [dashboardData?.historico_progresso, selectedRelatorio]);
 
-  // Preparar dados para o gráfico
+  // Preparar dados para o gráfico - agrupando por semanas do mês
   const chartData = useMemo(() => {
+    if (!selectedRelatorio) return [];
+    
+    const [mesRef, anoRef] = selectedRelatorio.mes_referencia.split("/");
+    const mesNum = parseInt(mesRef) - 1;
+    const anoNum = parseInt(anoRef);
+    const semanas = getSemanasDoMes(mesNum, anoNum);
+    
     if (selectedCategory === "Geral") {
-      return historicoMesDoRelatorio.map((item) => ({
-        data: new Date(item.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-        valor: item.progresso_geral || 0,
-      }));
+      // Agrupar dados do histórico por semana
+      return semanas.map((semana) => {
+        const registrosNaSemana = historicoMesDoRelatorio.filter((item) => {
+          const dataItem = new Date(item.data);
+          return dataItem >= semana.inicio && dataItem <= semana.fim;
+        });
+        
+        // Pegar o último valor da semana (mais recente) ou calcular média
+        const ultimoRegistro = registrosNaSemana[registrosNaSemana.length - 1];
+        const valor = ultimoRegistro ? ultimoRegistro.progresso_geral : 0;
+        
+        return {
+          data: semana.label,
+          valor: valor || 0,
+        };
+      });
     } else {
-      // Para categorias específicas, usar progresso_por_categoria
-      const progressoPorCategoria = dashboardData?.progresso_por_categoria || {};
-      const categoriaData = progressoPorCategoria[selectedCategory];
+      // Para categorias específicas, usar o progresso por categoria do relatório
+      const progressoCategoria = selectedRelatorio.progresso_por_categoria?.[selectedCategory];
       
-      if (!categoriaData) return [];
+      if (!progressoCategoria) {
+        // Fallback para dados atuais se não houver dados salvos no relatório
+        const progressoPorCategoriaAtual = dashboardData?.progresso_por_categoria || {};
+        const categoriaData = progressoPorCategoriaAtual[selectedCategory];
+        
+        if (!categoriaData) return [];
+        
+        // Mostrar o valor atual em todas as semanas como referência
+        return semanas.map((semana) => ({
+          data: semana.label,
+          valor: categoriaData.percentual_concluido || 0,
+        }));
+      }
       
-      // Como não temos histórico por categoria, mostrar apenas o valor atual
-      return [{
-        data: new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-        valor: categoriaData.percentual_concluido || 0,
-      }];
+      // Mostrar o progresso por categoria do relatório
+      return semanas.map((semana, index) => ({
+        data: semana.label,
+        valor: progressoCategoria.percentual_concluido || 0,
+      }));
     }
-  }, [selectedCategory, historicoMesDoRelatorio, dashboardData?.progresso_por_categoria]);
+  }, [selectedCategory, historicoMesDoRelatorio, dashboardData?.progresso_por_categoria, selectedRelatorio]);
 
   const categorias = useMemo(() => {
     const progressoPorCategoria = dashboardData?.progresso_por_categoria || {};
