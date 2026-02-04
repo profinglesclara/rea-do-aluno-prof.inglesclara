@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LogoutButton } from "@/components/LogoutButton";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { waitForFonts, prepareForCapture } from "@/lib/pdf-utils";
 import { toast } from "@/hooks/use-toast";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -417,83 +418,56 @@ const AdminRelatorios = () => {
     console.log("handleDownloadPDF: starting PDF generation");
     
     try {
-      const contentElement = reportContentRef.current;
-      console.log("handleDownloadPDF: contentElement", contentElement);
+      // 1. Aguardar fontes carregarem
+      await waitForFonts();
+      console.log("handleDownloadPDF: fonts ready");
       
-      // Captura o conteúdo visual do modal com html2canvas
+      const contentElement = reportContentRef.current;
+      
+      // 2. Captura o conteúdo visual com html2canvas + pipeline robusto
       const canvas = await html2canvas(contentElement, {
-        scale: 2, // Maior qualidade
+        scale: 2, // Alta qualidade
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
-        logging: true, // Enable logging for debugging
-        // Aguardar gráficos renderizarem
-        onclone: (clonedDoc) => {
-          console.log("handleDownloadPDF: onclone called");
-          // Remover botões de ação do clone para não aparecerem no PDF
+        logging: false,
+        // Pipeline de preparação no clone
+        onclone: async (clonedDoc, clonedElement) => {
+          console.log("handleDownloadPDF: onclone started");
+          
+          // Remover botões de ação
           const actionsDiv = clonedDoc.querySelector('[data-pdf-hide="true"]');
           if (actionsDiv) actionsDiv.remove();
           
-          // Garantir que o elemento clonado tenha fundo branco
-          const clonedContent = clonedDoc.body.querySelector('[data-pdf-content="true"]');
-          if (clonedContent) {
-            (clonedContent as HTMLElement).style.backgroundColor = "#ffffff";
-            (clonedContent as HTMLElement).style.padding = "20px";
-          }
+          // Aplicar transformações para garantir renderização fiel
+          await prepareForCapture(clonedElement);
+          
+          // Garantir fundo branco e padding
+          clonedElement.style.backgroundColor = "#ffffff";
+          clonedElement.style.padding = "24px";
+          
+          console.log("handleDownloadPDF: onclone completed");
         },
       });
       
       console.log("handleDownloadPDF: canvas created", canvas.width, canvas.height);
 
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/png", 1.0);
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
       
-      // Criar PDF com dimensões adequadas
+      // Criar PDF com dimensões adequadas (A4-like proportions)
+      const pdfWidth = imgWidth / 2;
+      const pdfHeight = imgHeight / 2;
+      
       const pdf = new jsPDF({
-        orientation: imgWidth > imgHeight ? "landscape" : "portrait",
+        orientation: pdfWidth > pdfHeight ? "landscape" : "portrait",
         unit: "px",
-        format: [imgWidth / 2, imgHeight / 2],
+        format: [pdfWidth, pdfHeight],
       });
       
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      // Calcular quebras de página se necessário
-      const pageHeight = pdfHeight;
-      const totalPages = Math.ceil((imgHeight / 2) / pageHeight);
-      
-      if (totalPages <= 1) {
-        // Cabe em uma página
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      } else {
-        // Múltiplas páginas
-        for (let page = 0; page < totalPages; page++) {
-          if (page > 0) pdf.addPage();
-          
-          const sourceY = page * pageHeight * 2; // *2 por causa do scale
-          const remainingHeight = Math.min(pageHeight * 2, imgHeight - sourceY);
-          
-          // Criar um canvas parcial para cada página
-          const pageCanvas = document.createElement("canvas");
-          pageCanvas.width = imgWidth;
-          pageCanvas.height = remainingHeight;
-          
-          const ctx = pageCanvas.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(
-              canvas,
-              0, sourceY,
-              imgWidth, remainingHeight,
-              0, 0,
-              imgWidth, remainingHeight
-            );
-            
-            const pageImgData = pageCanvas.toDataURL("image/png");
-            pdf.addImage(pageImgData, "PNG", 0, 0, pdfWidth, remainingHeight / 2);
-          }
-        }
-      }
+      // Adicionar imagem ao PDF
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
 
       // Salvar PDF
       const fileName = `relatorio_${selectedRelatorio.nome_aluno.replace(/\s+/g, "_")}_${selectedRelatorio.mes_referencia.replace(/\//g, "-")}.pdf`;
@@ -521,30 +495,33 @@ const AdminRelatorios = () => {
     setSendingEmail(true);
     
     try {
+      // 1. Aguardar fontes carregarem
+      await waitForFonts();
+      
       const contentElement = reportContentRef.current;
       
-      // Captura o conteúdo visual do modal com html2canvas
+      // 2. Captura o conteúdo visual com pipeline robusto
       const canvas = await html2canvas(contentElement, {
-        scale: 1.5, // Qualidade boa para email
+        scale: 1.5, // Qualidade boa para email (menor que PDF)
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
         logging: false,
-        onclone: (clonedDoc) => {
+        onclone: async (clonedDoc, clonedElement) => {
           // Remover botões de ação do clone
           const actionsDiv = clonedDoc.querySelector('[data-pdf-hide="true"]');
           if (actionsDiv) actionsDiv.remove();
           
-          const clonedContent = clonedDoc.body.querySelector('[data-pdf-content="true"]');
-          if (clonedContent) {
-            (clonedContent as HTMLElement).style.backgroundColor = "#ffffff";
-            (clonedContent as HTMLElement).style.padding = "20px";
-          }
+          // Aplicar transformações
+          await prepareForCapture(clonedElement);
+          
+          clonedElement.style.backgroundColor = "#ffffff";
+          clonedElement.style.padding = "20px";
         },
       });
 
       // Converter para base64 para incluir no email
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/png", 0.9);
       
       // Montar conteúdo HTML do e-mail com a imagem do relatório
       const htmlContent = `
