@@ -11,9 +11,8 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, Download, Mail, Pencil, Check, X, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { LogoutButton } from "@/components/LogoutButton";
-import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { waitForFonts, prepareForCapture } from "@/lib/pdf-utils";
+import { downloadRelatorioPDF, type RelatorioPDFData } from "@/lib/pdf-generator";
 import { toast } from "@/hooks/use-toast";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -83,6 +82,7 @@ const AdminRelatorios = () => {
   const [salvandoComentario, setSalvandoComentario] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const reportContentRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadAlunos();
@@ -399,79 +399,43 @@ const AdminRelatorios = () => {
   };
 
   const handleDownloadPDF = async () => {
-    if (!selectedRelatorio) {
-      console.log("handleDownloadPDF: selectedRelatorio is null");
-      return;
-    }
-    
-    if (!reportContentRef.current) {
-      console.log("handleDownloadPDF: reportContentRef.current is null");
-      toast({
-        variant: "destructive",
-        title: "Erro ao gerar PDF",
-        description: "Não foi possível capturar o conteúdo do relatório. Por favor, tente novamente.",
-      });
-      return;
-    }
+    if (!selectedRelatorio) return;
 
     setGeneratingPDF(true);
-    console.log("handleDownloadPDF: starting PDF generation");
     
     try {
-      // 1. Aguardar fontes carregarem
-      await waitForFonts();
-      console.log("handleDownloadPDF: fonts ready");
-      
-      const contentElement = reportContentRef.current;
-      
-      // 2. Captura o conteúdo visual com html2canvas + pipeline robusto
-      const canvas = await html2canvas(contentElement, {
-        scale: 2, // Alta qualidade
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        // Pipeline de preparação no clone
-        onclone: async (clonedDoc, clonedElement) => {
-          console.log("handleDownloadPDF: onclone started");
-          
-          // Remover botões de ação
-          const actionsDiv = clonedDoc.querySelector('[data-pdf-hide="true"]');
-          if (actionsDiv) actionsDiv.remove();
-          
-          // Aplicar transformações para garantir renderização fiel
-          await prepareForCapture(clonedElement);
-          
-          // Garantir fundo branco e padding
-          clonedElement.style.backgroundColor = "#ffffff";
-          clonedElement.style.padding = "24px";
-          
-          console.log("handleDownloadPDF: onclone completed");
-        },
-      });
-      
-      console.log("handleDownloadPDF: canvas created", canvas.width, canvas.height);
+      // Preparar dados do relatório para o PDF
+      const pdfData: RelatorioPDFData = {
+        nomeAluno: selectedRelatorio.nome_aluno,
+        nivelCefr: selectedRelatorio.nivel_cefr,
+        mesReferencia: selectedRelatorio.mes_referencia,
+        dataGeracao: new Date(selectedRelatorio.data_geracao).toLocaleDateString("pt-BR"),
+        porcentagemConcluida: selectedRelatorio.porcentagem_concluida ?? 0,
+        porcentagemEmDesenvolvimento: selectedRelatorio.porcentagem_em_desenvolvimento ?? 0,
+        comentario: selectedRelatorio.comentario_automatico,
+      };
 
-      const imgData = canvas.toDataURL("image/png", 1.0);
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      
-      // Criar PDF com dimensões adequadas (A4-like proportions)
-      const pdfWidth = imgWidth / 2;
-      const pdfHeight = imgHeight / 2;
-      
-      const pdf = new jsPDF({
-        orientation: pdfWidth > pdfHeight ? "landscape" : "portrait",
-        unit: "px",
-        format: [pdfWidth, pdfHeight],
-      });
-      
-      // Adicionar imagem ao PDF
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      // Adicionar progresso atual se disponível
+      if (progressoAtual) {
+        pdfData.progressoAtual = {
+          progressoGeral: progressoAtual.progresso_geral ?? 0,
+          emDesenvolvimento: progressoAtual.em_desenvolvimento ?? 0,
+          totalTopicos: progressoAtual.total_topicos ?? 0,
+        };
+      }
 
-      // Salvar PDF
-      const fileName = `relatorio_${selectedRelatorio.nome_aluno.replace(/\s+/g, "_")}_${selectedRelatorio.mes_referencia.replace(/\//g, "-")}.pdf`;
-      pdf.save(fileName);
+      // Adicionar aulas do mês se disponível
+      if (aulasMesAtual && aulasMesAtual.total > 0) {
+        pdfData.aulasMes = aulasMesAtual;
+      }
+
+      // Adicionar progresso por categoria se disponível
+      if (dashboardData?.progresso_por_categoria) {
+        pdfData.progressoPorCategoria = dashboardData.progresso_por_categoria;
+      }
+
+      // Gerar PDF passando o elemento do gráfico para captura
+      await downloadRelatorioPDF(pdfData, chartRef.current);
 
       toast({
         title: "PDF gerado com sucesso",
@@ -490,57 +454,49 @@ const AdminRelatorios = () => {
   };
 
   const handleSendEmail = async () => {
-    if (!selectedRelatorio || !reportContentRef.current) return;
+    if (!selectedRelatorio) return;
 
     setSendingEmail(true);
     
     try {
-      // 1. Aguardar fontes carregarem
-      await waitForFonts();
+      // Capturar gráfico como imagem para o email
+      let chartImage = "";
+      if (chartRef.current) {
+        const canvas = await html2canvas(chartRef.current, {
+          scale: 1.5,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#ffffff",
+        });
+        chartImage = canvas.toDataURL("image/png", 0.9);
+      }
       
-      const contentElement = reportContentRef.current;
-      
-      // 2. Captura o conteúdo visual com pipeline robusto
-      const canvas = await html2canvas(contentElement, {
-        scale: 1.5, // Qualidade boa para email (menor que PDF)
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        onclone: async (clonedDoc, clonedElement) => {
-          // Remover botões de ação do clone
-          const actionsDiv = clonedDoc.querySelector('[data-pdf-hide="true"]');
-          if (actionsDiv) actionsDiv.remove();
-          
-          // Aplicar transformações
-          await prepareForCapture(clonedElement);
-          
-          clonedElement.style.backgroundColor = "#ffffff";
-          clonedElement.style.padding = "20px";
-        },
-      });
-
-      // Converter para base64 para incluir no email
-      const imgData = canvas.toDataURL("image/png", 0.9);
-      
-      // Montar conteúdo HTML do e-mail com a imagem do relatório
+      // Montar conteúdo HTML do e-mail
       const htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
+          <h1 style="color: #333; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">
             Relatório Mensal - ${selectedRelatorio.mes_referencia}
           </h1>
           
           <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h2 style="color: #555; font-size: 18px; margin-top: 0;">Informações do Aluno</h2>
             <p><strong>Nome:</strong> ${selectedRelatorio.nome_aluno}</p>
-            <p><strong>Nível CEFR:</strong> ${selectedRelatorio.nivel_cefr || "—"}</p>
+            <p><strong>Nível CEFR:</strong> <span style="background-color: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${selectedRelatorio.nivel_cefr || "—"}</span></p>
             <p><strong>Mês de Referência:</strong> ${selectedRelatorio.mes_referencia}</p>
           </div>
 
           <div style="margin: 20px 0;">
             <h2 style="color: #555; font-size: 18px;">Resumo de Progresso</h2>
-            <p><strong>Progresso Concluído:</strong> ${selectedRelatorio.porcentagem_concluida ?? 0}%</p>
-            <p><strong>Em Desenvolvimento:</strong> ${selectedRelatorio.porcentagem_em_desenvolvimento ?? 0}%</p>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0;"><strong>Progresso Concluído:</strong></td>
+                <td style="padding: 8px 0; color: #22c55e; font-weight: bold;">${(selectedRelatorio.porcentagem_concluida ?? 0).toFixed(1)}%</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Em Desenvolvimento:</strong></td>
+                <td style="padding: 8px 0; color: #f59e0b; font-weight: bold;">${(selectedRelatorio.porcentagem_em_desenvolvimento ?? 0).toFixed(1)}%</td>
+              </tr>
+            </table>
           </div>
 
           ${dashboardData?.progresso_por_categoria ? `
@@ -549,7 +505,7 @@ const AdminRelatorios = () => {
               <ul style="line-height: 1.8;">
                 ${Object.keys(dashboardData.progresso_por_categoria).map((cat) => {
                   const dados = dashboardData.progresso_por_categoria[cat];
-                  return `<li><strong>${cat}:</strong> ${dados.percentual_concluido?.toFixed(1) || 0}% concluído, ${dados.percentual_em_desenvolvimento?.toFixed(1) || 0}% em desenvolvimento</li>`;
+                  return `<li><strong>${cat}:</strong> <span style="color: #22c55e;">${dados.percentual_concluido?.toFixed(1) || 0}% concluído</span>, <span style="color: #f59e0b;">${dados.percentual_em_desenvolvimento?.toFixed(1) || 0}% em desenvolvimento</span></li>`;
                 }).join("")}
               </ul>
             </div>
@@ -565,16 +521,17 @@ const AdminRelatorios = () => {
             </div>
           ` : ""}
 
-          <div style="background-color: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h2 style="color: #555; font-size: 18px; margin-top: 0;">Comentário da Professora</h2>
             <p style="white-space: pre-wrap;">${selectedRelatorio.comentario_automatico || "Nenhum comentário disponível."}</p>
           </div>
 
-          <div style="margin: 20px 0;">
-            <h2 style="color: #555; font-size: 18px;">Visualização Completa do Relatório</h2>
-            <p style="color: #666; font-size: 14px;">Veja abaixo a captura completa do relatório com todos os gráficos:</p>
-            <img src="${imgData}" alt="Relatório Completo" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; margin-top: 10px;" />
-          </div>
+          ${chartImage ? `
+            <div style="margin: 20px 0;">
+              <h2 style="color: #555; font-size: 18px;">Evolução no Mês</h2>
+              <img src="${chartImage}" alt="Gráfico de Evolução" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; margin-top: 10px;" />
+            </div>
+          ` : ""}
 
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #777; font-size: 12px;">
             <p>Este é um e-mail automático. Por favor, não responda.</p>
@@ -582,7 +539,7 @@ const AdminRelatorios = () => {
         </div>
       `;
 
-      const { data, error } = await supabase.functions.invoke("enviar-email-notificacao", {
+      const { error } = await supabase.functions.invoke("enviar-email-notificacao", {
         body: {
           to: "responsavel@teste.com", // Email de teste - idealmente buscar do perfil do responsável
           subject: `Relatório mensal de ${selectedRelatorio.nome_aluno} – ${selectedRelatorio.mes_referencia}`,
@@ -1064,52 +1021,54 @@ const AdminRelatorios = () => {
                   </div>
 
                   {/* Gráfico */}
-                  {chartData.length === 0 ? (
-                    <div className="flex items-center justify-center h-64 text-muted-foreground">
-                      <p>Ainda não há dados suficientes neste mês para montar o gráfico.</p>
-                    </div>
-                  ) : (
-                    <ChartContainer
-                      config={{
-                        valor: {
-                          label: "Progresso (%)",
-                          color: "hsl(var(--primary))",
-                        },
-                      }}
-                      className="h-64"
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData}>
-                          <defs>
-                            <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                          <XAxis 
-                            dataKey="data" 
-                            stroke="hsl(var(--muted-foreground))"
-                            fontSize={12}
-                          />
-                          <YAxis 
-                            stroke="hsl(var(--muted-foreground))"
-                            fontSize={12}
-                            domain={[0, 100]}
-                          />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Area
-                            type="monotone"
-                            dataKey="valor"
-                            stroke="hsl(var(--primary))"
-                            fillOpacity={1}
-                            fill="url(#colorValor)"
-                            strokeWidth={2}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  )}
+                  <div ref={chartRef}>
+                    {chartData.length === 0 ? (
+                      <div className="flex items-center justify-center h-64 text-muted-foreground">
+                        <p>Ainda não há dados suficientes neste mês para montar o gráfico.</p>
+                      </div>
+                    ) : (
+                      <ChartContainer
+                        config={{
+                          valor: {
+                            label: "Progresso (%)",
+                            color: "hsl(var(--primary))",
+                          },
+                        }}
+                        className="h-64"
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData}>
+                            <defs>
+                              <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis 
+                              dataKey="data" 
+                              stroke="hsl(var(--muted-foreground))"
+                              fontSize={12}
+                            />
+                            <YAxis 
+                              stroke="hsl(var(--muted-foreground))"
+                              fontSize={12}
+                              domain={[0, 100]}
+                            />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Area
+                              type="monotone"
+                              dataKey="valor"
+                              stroke="hsl(var(--primary))"
+                              fillOpacity={1}
+                              fill="url(#colorValor)"
+                              strokeWidth={2}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
