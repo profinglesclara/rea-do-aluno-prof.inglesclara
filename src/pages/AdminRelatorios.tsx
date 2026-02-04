@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Download, Mail } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Download, Mail, Pencil, Check, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { LogoutButton } from "@/components/LogoutButton";
 import jsPDF from "jspdf";
 import { toast } from "@/hooks/use-toast";
@@ -75,6 +76,9 @@ const AdminRelatorios = () => {
     faltas: number;
     remarcadas: number;
   } | null>(null);
+  const [editingComentario, setEditingComentario] = useState(false);
+  const [comentarioEditado, setComentarioEditado] = useState("");
+  const [salvandoComentario, setSalvandoComentario] = useState(false);
 
   useEffect(() => {
     loadAlunos();
@@ -1065,15 +1069,99 @@ const AdminRelatorios = () => {
 
               {/* Bloco 4 - Comentário Automático */}
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="text-lg">Comentário Automático</CardTitle>
+                  {!editingComentario && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setComentarioEditado(selectedRelatorio.comentario_automatico || "");
+                        setEditingComentario(true);
+                      }}
+                      className="gap-1"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Editar
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  <div className="p-4 rounded-md bg-muted/50">
-                    <p className="text-sm whitespace-pre-wrap">
-                      {selectedRelatorio.comentario_automatico || "Nenhum comentário automático gerado para este relatório."}
-                    </p>
-                  </div>
+                  {editingComentario ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={comentarioEditado}
+                        onChange={(e) => setComentarioEditado(e.target.value)}
+                        placeholder="Digite o comentário do relatório..."
+                        className="min-h-[150px]"
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingComentario(false);
+                            setComentarioEditado("");
+                          }}
+                          disabled={salvandoComentario}
+                          className="gap-1"
+                        >
+                          <X className="h-4 w-4" />
+                          Cancelar
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            setSalvandoComentario(true);
+                            const { error } = await supabase
+                              .from("relatorios_mensais")
+                              .update({ comentario_automatico: comentarioEditado })
+                              .eq("relatorio_id", selectedRelatorio.relatorio_id);
+
+                            if (error) {
+                              console.error("Erro ao salvar comentário:", error);
+                              toast({
+                                title: "Erro ao salvar",
+                                description: "Não foi possível salvar o comentário.",
+                                variant: "destructive",
+                              });
+                            } else {
+                              // Atualiza o estado local
+                              setSelectedRelatorio({
+                                ...selectedRelatorio,
+                                comentario_automatico: comentarioEditado,
+                              });
+                              // Atualiza na lista de relatórios também
+                              setRelatorios((prev) =>
+                                prev.map((r) =>
+                                  r.relatorio_id === selectedRelatorio.relatorio_id
+                                    ? { ...r, comentario_automatico: comentarioEditado }
+                                    : r
+                                )
+                              );
+                              toast({
+                                title: "Comentário salvo",
+                                description: "O comentário foi atualizado com sucesso.",
+                              });
+                              setEditingComentario(false);
+                            }
+                            setSalvandoComentario(false);
+                          }}
+                          disabled={salvandoComentario}
+                          className="gap-1"
+                        >
+                          <Check className="h-4 w-4" />
+                          {salvandoComentario ? "Salvando..." : "Salvar"}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-md bg-muted/50">
+                      <p className="text-sm whitespace-pre-wrap">
+                        {selectedRelatorio.comentario_automatico || "Nenhum comentário automático gerado para este relatório."}
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
