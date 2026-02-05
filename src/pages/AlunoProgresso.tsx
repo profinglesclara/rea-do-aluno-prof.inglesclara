@@ -14,6 +14,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { getMesAnoAtualBrasilia, paraBrasilia, formatarDataBR, agora } from "@/lib/utils";
+import { useAutoSyncTopicos } from "@/hooks/useAutoSyncTopicos";
+import { useCategoriasAtivasNomes } from "@/hooks/useCategoriasAtivas";
 
 export default function AlunoProgresso() {
   const navigate = useNavigate();
@@ -68,6 +70,12 @@ export default function AlunoProgresso() {
   const { data: dashboardData, isLoading: dashboardLoading } = useDashboardAluno(currentUser?.user_id);
   const dashboard = dashboardData?.dashboard;
 
+  // AUTO-SYNC: Sincronizar tópicos do aluno automaticamente ao abrir a página
+  useAutoSyncTopicos(currentUser?.user_id);
+
+  // Buscar apenas categorias ativas (não desativadas)
+  const { categoriasAtivas, lista: categoriasAtivasList } = useCategoriasAtivasNomes();
+
   // Filtrar histórico do mês atual
   const historicoMesAtual = useMemo(() => {
     if (!dashboard?.historico_progresso) return [];
@@ -105,10 +113,11 @@ export default function AlunoProgresso() {
     }
   }, [selectedCategory, historicoMesAtual, dashboard?.progresso_por_categoria]);
 
-  // Usar as 7 categorias fixas para o filtro do gráfico
+  // Usar apenas categorias ATIVAS para o filtro do gráfico (não CATEGORIAS_FIXAS)
   const categorias = useMemo(() => {
-    return ["Geral", ...CATEGORIAS_FIXAS];
-  }, []);
+    const nomesAtivos = categoriasAtivasList.map(c => c.nome);
+    return ["Geral", ...nomesAtivos];
+  }, [categoriasAtivasList]);
 
   // Carregar relatórios mensais do aluno
   useEffect(() => {
@@ -330,48 +339,54 @@ export default function AlunoProgresso() {
           </CardContent>
         </Card>
 
-        {/* Progresso por Categoria - Sempre mostra as 7 categorias fixas */}
+        {/* Progresso por Categoria - Apenas categorias ATIVAS */}
         <Card>
           <CardHeader>
             <CardTitle>Progresso por Categoria</CardTitle>
             <p className="text-sm text-muted-foreground">
-              As 7 categorias do currículo CEFR para o nível {dashboard.nivel_cefr || "atual"}
+              Categorias ativas do currículo para o nível {dashboard.nivel_cefr || "atual"}
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
-            {CATEGORIAS_FIXAS.map((categoria) => {
-              const dados = progressoPorCategoria[categoria] || {
-                total: 0,
-                concluidos: 0,
-                em_desenvolvimento: 0,
-                a_introduzir: 0,
-                percentual_concluido: 0,
-                percentual_em_desenvolvimento: 0,
-              };
-              const temTopicos = dados.total > 0;
-              
-              return (
-                <div key={categoria} className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">{categoria}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {temTopicos ? `${dados.concluidos}/${dados.total}` : "Sem tópicos"}
-                    </span>
+            {categoriasAtivasList.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhuma categoria ativa configurada.
+              </p>
+            ) : (
+              categoriasAtivasList.map((cat) => {
+                const dados = progressoPorCategoria[cat.nome] || {
+                  total: 0,
+                  concluidos: 0,
+                  em_desenvolvimento: 0,
+                  a_introduzir: 0,
+                  percentual_concluido: 0,
+                  percentual_em_desenvolvimento: 0,
+                };
+                const temTopicos = dados.total > 0;
+                
+                return (
+                  <div key={cat.id} className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">{cat.nome}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {temTopicos ? `${dados.concluidos}/${dados.total}` : "Sem tópicos"}
+                      </span>
+                    </div>
+                    <Progress value={dados.percentual_concluido || 0} />
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      {temTopicos ? (
+                        <>
+                          <span>Concluídos: {dados.percentual_concluido?.toFixed(1) || 0}%</span>
+                          <span>Em desenvolvimento: {dados.percentual_em_desenvolvimento?.toFixed(1) || 0}%</span>
+                        </>
+                      ) : (
+                        <span className="italic">Nenhum tópico configurado para esta categoria neste nível</span>
+                      )}
+                    </div>
                   </div>
-                  <Progress value={dados.percentual_concluido || 0} />
-                  <div className="flex gap-4 text-xs text-muted-foreground">
-                    {temTopicos ? (
-                      <>
-                        <span>Concluídos: {dados.percentual_concluido?.toFixed(1) || 0}%</span>
-                        <span>Em desenvolvimento: {dados.percentual_em_desenvolvimento?.toFixed(1) || 0}%</span>
-                      </>
-                    ) : (
-                      <span className="italic">Nenhum tópico configurado para esta categoria neste nível</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </CardContent>
         </Card>
 

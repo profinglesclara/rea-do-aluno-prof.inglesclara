@@ -18,6 +18,8 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis, Responsive
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { criarDataBrasilia, formatarDataBR, formatarDataHoraBR, TIMEZONE_BRASILIA, getMesAnoAtualBrasilia, paraBrasilia, agora } from "@/lib/utils";
 import { CATEGORIAS_FIXAS } from "@/hooks/useProgressoAluno";
+import { syncTopicosAluno } from "@/hooks/useAutoSyncTopicos";
+import { useCategoriasAtivasNomes } from "@/hooks/useCategoriasAtivas";
 
 type ProgressoCategoria = {
   total: number;
@@ -298,6 +300,9 @@ const AdminRelatorios = () => {
     setProgressoAtual(null);
     setAulasMesAtual(null);
     
+    // AUTO-SYNC: Sincronizar tópicos antes de buscar progresso
+    await syncTopicosAluno(relatorio.aluno);
+    
     // Buscar progresso em tempo real do aluno (filtrado pelo nível CEFR atual)
     const { data: progressoData, error: progressoError } = await supabase.rpc("get_progresso_aluno", {
       p_aluno: relatorio.aluno,
@@ -404,6 +409,14 @@ const AdminRelatorios = () => {
     setGeneratingPDF(true);
     
     try {
+      // AUTO-SYNC: Sincronizar tópicos do aluno antes de gerar PDF
+      await syncTopicosAluno(selectedRelatorio.aluno);
+      
+      // Buscar progresso ATUALIZADO após sync
+      const { data: progressoSincronizado } = await supabase.rpc("get_progresso_aluno", {
+        p_aluno: selectedRelatorio.aluno,
+      });
+      
       // Preparar dados do relatório para o PDF
       const pdfData: RelatorioPDFData = {
         nomeAluno: selectedRelatorio.nome_aluno,
@@ -415,23 +428,24 @@ const AdminRelatorios = () => {
         comentario: selectedRelatorio.comentario_automatico,
       };
 
-      // Adicionar progresso atual se disponível
-      if (progressoAtual) {
+      // Usar progresso sincronizado
+      const progressoFinal = progressoSincronizado || progressoAtual;
+      if (progressoFinal) {
         pdfData.progressoAtual = {
-          progressoGeral: progressoAtual.progresso_geral ?? 0,
-          emDesenvolvimento: progressoAtual.em_desenvolvimento ?? 0,
-          totalTopicos: progressoAtual.total_topicos ?? 0,
+          progressoGeral: (progressoFinal as any).progresso_geral ?? 0,
+          emDesenvolvimento: (progressoFinal as any).em_desenvolvimento ?? 0,
+          totalTopicos: (progressoFinal as any).total_topicos ?? 0,
         };
+        
+        // Usar progresso por categoria sincronizado (apenas categorias que existem)
+        if ((progressoFinal as any).progresso_por_categoria) {
+          pdfData.progressoPorCategoria = (progressoFinal as any).progresso_por_categoria;
+        }
       }
 
       // Adicionar aulas do mês se disponível
       if (aulasMesAtual && aulasMesAtual.total > 0) {
         pdfData.aulasMes = aulasMesAtual;
-      }
-
-      // Adicionar progresso por categoria se disponível
-      if (dashboardData?.progresso_por_categoria) {
-        pdfData.progressoPorCategoria = dashboardData.progresso_por_categoria;
       }
 
       // Gerar PDF passando o elemento do gráfico para captura
@@ -459,6 +473,14 @@ const AdminRelatorios = () => {
     setSendingEmail(true);
     
     try {
+      // AUTO-SYNC: Sincronizar tópicos do aluno antes de enviar email
+      await syncTopicosAluno(selectedRelatorio.aluno);
+      
+      // Buscar progresso ATUALIZADO após sync
+      const { data: progressoSincronizado } = await supabase.rpc("get_progresso_aluno", {
+        p_aluno: selectedRelatorio.aluno,
+      });
+      
       // Capturar gráfico como imagem para o email
       let chartImage = "";
       if (chartRef.current) {
@@ -470,6 +492,9 @@ const AdminRelatorios = () => {
         });
         chartImage = canvas.toDataURL("image/png", 0.9);
       }
+      
+      // Usar progresso sincronizado para o email
+      const progressoParaEmail = (progressoSincronizado as any)?.progresso_por_categoria || dashboardData?.progresso_por_categoria || {};
       
       // Montar conteúdo HTML do e-mail
       const htmlContent = `
@@ -499,12 +524,12 @@ const AdminRelatorios = () => {
             </table>
           </div>
 
-          ${dashboardData?.progresso_por_categoria ? `
+          ${Object.keys(progressoParaEmail).length > 0 ? `
             <div style="margin: 20px 0;">
               <h2 style="color: #555; font-size: 18px;">Progresso por Categoria</h2>
               <ul style="line-height: 1.8;">
-                ${Object.keys(dashboardData.progresso_por_categoria).map((cat) => {
-                  const dados = dashboardData.progresso_por_categoria[cat];
+                ${Object.keys(progressoParaEmail).map((cat) => {
+                  const dados = progressoParaEmail[cat];
                   return `<li><strong>${cat}:</strong> <span style="color: #22c55e;">${dados.percentual_concluido?.toFixed(1) || 0}% concluído</span>, <span style="color: #f59e0b;">${dados.percentual_em_desenvolvimento?.toFixed(1) || 0}% em desenvolvimento</span></li>`;
                 }).join("")}
               </ul>

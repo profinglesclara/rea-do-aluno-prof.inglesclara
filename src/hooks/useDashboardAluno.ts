@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIAS_FIXAS, CategoriaProgresso } from "./useProgressoAluno";
+import { syncTopicosAluno } from "./useAutoSyncTopicos";
 
 export type AlunoData = {
   aluno_id: string;
@@ -75,13 +76,20 @@ export function useDashboardAluno(alunoId?: string) {
     queryKey: ["dashboardAluno", alunoId],
     enabled: !!alunoId,
     queryFn: async () => {
+      // AUTO-SYNC: Sincronizar tópicos antes de buscar dashboard
+      // Isso garante que os dados estão sempre atualizados com a fonte da verdade
+      if (alunoId) {
+        await syncTopicosAluno(alunoId);
+      }
+      
       const { data, error } = await supabase.rpc("get_dashboard_aluno", {
         p_aluno: alunoId,
       });
       if (error) throw error;
       if (!data) return { dashboard: null };
       
-      // Processar dados garantindo as 7 categorias fixas
+      // Processar dados - NÃO garantir categorias fixas, usar apenas as que vêm do backend
+      // O backend já filtra por categorias ativas
       const rawData = data as any;
       const processedData: AlunoData = {
         ...rawData,
@@ -90,7 +98,7 @@ export function useDashboardAluno(alunoId?: string) {
         concluidos_nivel: Number(rawData.concluidos_nivel) || 0,
         em_desenvolvimento_nivel: Number(rawData.em_desenvolvimento_nivel) || 0,
         a_introduzir_nivel: Number(rawData.a_introduzir_nivel) || 0,
-        progresso_por_categoria: ensureAllCategories(rawData.progresso_por_categoria),
+        progresso_por_categoria: rawData.progresso_por_categoria || {},
       };
       
       return { dashboard: processedData };
