@@ -106,8 +106,9 @@ Deno.serve(async (req) => {
     // Criar email técnico baseado no nome de usuário
     const emailTecnico = `${nome_de_usuario}@portal-aluno.internal`;
 
-    // Criar usuário no Auth
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    // Tentar criar usuário no Auth
+    let newUser;
+    const { data: createdUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: emailTecnico,
       password: senha,
       email_confirm: true,
@@ -118,8 +119,63 @@ Deno.serve(async (req) => {
     });
 
     if (createError) {
-      console.error("Erro ao criar usuário no Auth:", createError);
-      throw new Error(createError.message);
+      // Se o email já existe no Auth, tentar recuperar o usuário existente
+      if (createError.message.includes("already been registered")) {
+        console.log("⚠️ Email já existe no Auth, verificando se podemos recuperar o usuário...");
+        
+        // Buscar usuário existente pelo email
+        const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        
+        if (listError) {
+          console.error("Erro ao listar usuários:", listError);
+          throw new Error("Nome de usuário já existe no sistema de autenticação. Por favor, escolha outro nome.");
+        }
+        
+        const existingAuthUser = listData.users.find(u => u.email === emailTecnico);
+        
+        if (existingAuthUser) {
+          // Verificar se já existe registro na tabela usuarios
+          const { data: existingDbUser } = await supabaseAdmin
+            .from("usuarios")
+            .select("user_id")
+            .eq("user_id", existingAuthUser.id)
+            .maybeSingle();
+          
+          if (existingDbUser) {
+            // Usuário já existe completamente
+            throw new Error("Este nome de usuário já está em uso. Por favor, escolha outro.");
+          }
+          
+          // Usuário existe no Auth mas não na tabela - podemos reutilizar
+          console.log("✅ Encontrado usuário órfão no Auth, reutilizando:", existingAuthUser.id);
+          
+          // Atualizar a senha e metadata do usuário existente
+          const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+            existingAuthUser.id,
+            {
+              password: senha,
+              user_metadata: {
+                nome_completo,
+                nome_de_usuario,
+              },
+            }
+          );
+          
+          if (updateError) {
+            console.error("Erro ao atualizar usuário existente:", updateError);
+            throw new Error("Erro ao configurar usuário. Por favor, tente novamente.");
+          }
+          
+          newUser = { user: updatedUser.user };
+        } else {
+          throw new Error("Nome de usuário já existe no sistema. Por favor, escolha outro.");
+        }
+      } else {
+        console.error("Erro ao criar usuário no Auth:", createError);
+        throw new Error(createError.message);
+      }
+    } else {
+      newUser = createdUser;
     }
 
     // Preparar dados para inserir na tabela usuarios (WITHOUT senha - it's handled by Auth)
