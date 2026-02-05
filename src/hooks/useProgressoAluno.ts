@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { syncTopicosAluno } from "./useAutoSyncTopicos";
 
 // 7 categorias fixas do currículo CEFR
 export const CATEGORIAS_FIXAS = [
@@ -43,6 +44,11 @@ export function useProgressoAluno(alunoId?: string) {
     queryKey: ["progressoAluno", alunoId],
     enabled: !!alunoId,
     queryFn: async () => {
+      // AUTO-SYNC: Sincronizar tópicos antes de buscar progresso
+      if (alunoId) {
+        await syncTopicosAluno(alunoId);
+      }
+      
       const { data, error } = await supabase.rpc("get_progresso_aluno", {
         p_aluno: alunoId,
       });
@@ -53,7 +59,8 @@ export function useProgressoAluno(alunoId?: string) {
         return getEmptyProgresso();
       }
       
-      // Garantir que todas as 7 categorias estão presentes
+      // Usar progresso por categoria que vem do backend (já filtrado por categorias ativas)
+      // NÃO mais garantir categorias fixas - usar apenas as ativas
       const progressoPorCategoria = ensureAllCategories(
         (data as any).progresso_por_categoria || {}
       );

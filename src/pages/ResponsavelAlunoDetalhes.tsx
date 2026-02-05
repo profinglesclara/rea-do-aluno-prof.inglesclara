@@ -13,6 +13,8 @@ import { CalendarioAulas } from "@/components/CalendarioAulas";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { agora, paraBrasilia } from "@/lib/utils";
+import { syncTopicosAluno } from "@/hooks/useAutoSyncTopicos";
+import { useCategoriasAtivasNomes } from "@/hooks/useCategoriasAtivas";
 
 export default function ResponsavelAlunoDetalhes() {
   const { aluno_id } = useParams<{ aluno_id: string }>();
@@ -93,19 +95,23 @@ export default function ResponsavelAlunoDetalhes() {
     },
   });
 
-  // Buscar progresso por categoria
+  // Buscar categorias ativas
+  const { lista: categoriasAtivasList } = useCategoriasAtivasNomes();
+
+  // Buscar progresso por categoria usando RPC (com auto-sync)
   const { data: progressoData } = useQuery({
     queryKey: ["progressoCategorias", aluno_id],
     enabled: !!aluno_id && !loading,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("usuarios")
-        .select("progresso_por_categoria")
-        .eq("user_id", aluno_id!)
-        .single();
+      // AUTO-SYNC: Sincronizar tópicos antes de buscar progresso
+      await syncTopicosAluno(aluno_id!);
+      
+      const { data, error } = await supabase.rpc("get_progresso_aluno", {
+        p_aluno: aluno_id!,
+      });
 
       if (error) throw error;
-      return data?.progresso_por_categoria as Record<string, any> | null;
+      return (data as any)?.progresso_por_categoria as Record<string, any> | null;
     },
   });
 

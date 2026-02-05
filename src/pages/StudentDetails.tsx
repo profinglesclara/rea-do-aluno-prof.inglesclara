@@ -14,6 +14,7 @@ import { GerenciarTopicosDialog } from "@/components/admin/GerenciarTopicosDialo
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FotoPerfil } from "@/components/FotoPerfil";
 import { formatarDataBR, formatarDataHoraBR } from "@/lib/utils";
+import { syncTopicosAluno } from "@/hooks/useAutoSyncTopicos";
 
 type DashboardRow = {
   aluno_id: string;
@@ -218,6 +219,9 @@ const StudentDetails = () => {
         setRelatoriosLoading(false);
         return;
       }
+
+      // AUTO-SYNC: Sincronizar tópicos antes de buscar progresso
+      await syncTopicosAluno(aluno_id);
 
       // Buscar progresso em tempo real do aluno
       const { data: progressoData } = await supabase.rpc("get_progresso_aluno", {
