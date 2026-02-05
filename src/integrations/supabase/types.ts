@@ -641,7 +641,6 @@ export type Database = {
           progresso_geral: number | null
           progresso_por_categoria: Json | null
           responsavel_por: string | null
-          senha: string | null
           show_contratos: boolean | null
           show_pagamentos: boolean | null
           show_relatorios: boolean | null
@@ -671,7 +670,6 @@ export type Database = {
           progresso_geral?: number | null
           progresso_por_categoria?: Json | null
           responsavel_por?: string | null
-          senha?: string | null
           show_contratos?: boolean | null
           show_pagamentos?: boolean | null
           show_relatorios?: boolean | null
@@ -701,7 +699,6 @@ export type Database = {
           progresso_geral?: number | null
           progresso_por_categoria?: Json | null
           responsavel_por?: string | null
-          senha?: string | null
           show_contratos?: boolean | null
           show_pagamentos?: boolean | null
           show_relatorios?: boolean | null
