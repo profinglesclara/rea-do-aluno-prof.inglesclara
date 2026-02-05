@@ -798,6 +798,7 @@ export type Database = {
         Args: { status: Database["public"]["Enums"]["status_topico"] }
         Returns: number
       }
+      sync_topicos_aluno: { Args: { p_aluno: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "aluno" | "responsavel" | "adulto"

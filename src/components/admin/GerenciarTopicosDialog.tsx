@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -23,22 +23,17 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronDown, Loader2, BookOpen, RefreshCw } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Database } from "@/integrations/supabase/types";
 
 type StatusTopico = Database["public"]["Enums"]["status_topico"];
 type NivelCefr = Database["public"]["Enums"]["nivel_cefr"];
 
-// 7 categorias fixas - sempre exibidas nesta ordem
-const FIXED_CATEGORIES = [
-  { key: "Phonetics", name: "Phonetics", sortOrder: 1 },
-  { key: "Grammar", name: "Grammar", sortOrder: 2 },
-  { key: "Vocabulary", name: "Vocabulary", sortOrder: 3 },
-  { key: "Communication", name: "Communication", sortOrder: 4 },
-  { key: "Expressions", name: "Expressions", sortOrder: 5 },
-  { key: "Pronunciation", name: "Pronunciation", sortOrder: 6 },
-  { key: "Listening", name: "Listening", sortOrder: 7 },
-] as const;
+type Categoria = {
+  id: string;
+  nome: string;
+  ordem: number;
+  ativa: boolean;
+};
 
 type Topico = {
   topico_id: string;
@@ -46,14 +41,6 @@ type Topico = {
   categoria: string;
   nivel_cefr: NivelCefr;
   status: StatusTopico;
-};
-
-type TopicoPadrao = {
-  modelo_id: string;
-  descricao_topico: string;
-  categoria: string;
-  nivel_cefr: NivelCefr;
-  ordem: number | null;
 };
 
 interface GerenciarTopicosDialogProps {
@@ -74,14 +61,13 @@ export function GerenciarTopicosDialog({
   onSuccess,
 }: GerenciarTopicosDialogProps) {
   const { toast } = useToast();
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [topicos, setTopicos] = useState<Topico[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [changes, setChanges] = useState<Record<string, StatusTopico>>({});
-  const [populando, setPopulando] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(FIXED_CATEGORIES.map(c => c.key))
-  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   const statusOptions: StatusTopico[] = ["A Introduzir", "Em Desenvolvimento", "Concluído"];
 
@@ -97,8 +83,56 @@ export function GerenciarTopicosDialog({
     }
   };
 
-  // Buscar tópicos do aluno - se não houver, popular automaticamente
-  const fetchTopicos = async (autoPopulate = true) => {
+  // Buscar categorias ATIVAS do banco
+  const fetchCategorias = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("categorias")
+      .select("*")
+      .eq("ativa", true)
+      .order("ordem", { ascending: true });
+
+    if (error) {
+      console.error("Erro ao buscar categorias:", error);
+      return [];
+    }
+    return (data as Categoria[]) || [];
+  }, []);
+
+  // Sincronizar tópicos do aluno com backend (RPC)
+  const syncTopicos = useCallback(async () => {
+    if (!alunoId || !nivelCefr) return;
+    
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.rpc("sync_topicos_aluno", {
+        p_aluno: alunoId,
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; inserted?: number; deleted?: number; error?: string };
+      
+      if (!result.success) {
+        console.warn("Sync não sucedido:", result.error);
+        return;
+      }
+
+      // Mostrar toast apenas se houve mudanças
+      if ((result.inserted || 0) > 0 || (result.deleted || 0) > 0) {
+        toast({
+          title: "Tópicos sincronizados",
+          description: `${result.inserted || 0} adicionados, ${result.deleted || 0} removidos.`,
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar tópicos:", error);
+    } finally {
+      setSyncing(false);
+    }
+  }, [alunoId, nivelCefr, toast]);
+
+  // Buscar tópicos do aluno
+  const fetchTopicos = useCallback(async () => {
     if (!alunoId) return;
     
     setLoading(true);
@@ -110,16 +144,7 @@ export function GerenciarTopicosDialog({
 
       if (error) throw error;
 
-      const topicosData = (data as Topico[]) || [];
-      
-      // Se não houver tópicos e o aluno tiver nível CEFR, popular automaticamente
-      if (topicosData.length === 0 && nivelCefr && autoPopulate) {
-        setLoading(false);
-        await handlePopularTopicos();
-        return;
-      }
-
-      setTopicos(topicosData);
+      setTopicos((data as Topico[]) || []);
       setChanges({});
     } catch (error) {
       console.error("Erro ao buscar tópicos:", error);
@@ -131,17 +156,33 @@ export function GerenciarTopicosDialog({
     } finally {
       setLoading(false);
     }
-  };
+  }, [alunoId, toast]);
 
+  // Auto-sync e carregamento ao abrir modal
   useEffect(() => {
-    if (open) {
-      fetchTopicos();
+    if (open && alunoId) {
+      const initializeModal = async () => {
+        setLoading(true);
+        
+        // 1. Buscar categorias ativas
+        const cats = await fetchCategorias();
+        setCategorias(cats);
+        setExpandedCategories(new Set(cats.map(c => c.nome)));
+        
+        // 2. Auto-sync (garante que progresso está alinhado)
+        await syncTopicos();
+        
+        // 3. Buscar tópicos atualizados
+        await fetchTopicos();
+      };
+      
+      initializeModal();
     }
-  }, [open, alunoId]);
+  }, [open, alunoId, fetchCategorias, syncTopicos, fetchTopicos]);
 
-  // Agrupar tópicos por categoria
-  const topicosPorCategoria = FIXED_CATEGORIES.reduce((acc, cat) => {
-    acc[cat.key] = topicos.filter(t => t.categoria === cat.key);
+  // Agrupar tópicos por categoria (apenas categorias ativas do banco)
+  const topicosPorCategoria = categorias.reduce((acc, cat) => {
+    acc[cat.nome] = topicos.filter(t => t.categoria === cat.nome);
     return acc;
   }, {} as Record<string, Topico[]>);
 
@@ -200,103 +241,20 @@ export function GerenciarTopicosDialog({
     }
   };
 
-  // Popular tópicos para o aluno a partir do topicos_padrao
-  const handlePopularTopicos = async () => {
+  // Forçar re-sync manual (botão opcional)
+  const handleForceSync = async () => {
     if (!nivelCefr) {
       toast({
         variant: "destructive",
         title: "Nível CEFR não definido",
-        description: "Defina o nível CEFR do aluno antes de atribuir os tópicos.",
+        description: "Defina o nível CEFR do aluno antes de sincronizar os tópicos.",
       });
       return;
     }
 
-    setPopulando(true);
-    try {
-      // Primeiro, remover tópicos antigos do aluno
-      const { error: deleteError } = await supabase
-        .from("topicos_progresso")
-        .delete()
-        .eq("aluno", alunoId);
-
-      if (deleteError) throw deleteError;
-
-      // Buscar tópicos padrão do nível CEFR do aluno
-      const { data: topicosPadrao, error: fetchError } = await supabase
-        .from("topicos_padrao")
-        .select("*")
-        .eq("nivel_cefr", nivelCefr as NivelCefr)
-        .order("ordem", { ascending: true });
-
-      if (fetchError) throw fetchError;
-
-      if (!topicosPadrao || topicosPadrao.length === 0) {
-        toast({
-          variant: "destructive",
-          title: "Sem tópicos padrão",
-          description: `Não há tópicos padrão cadastrados para o nível ${nivelCefr}.`,
-        });
-        setLoading(false);
-        setPopulando(false);
-        // Atualizar lista (agora vazia)
-        fetchTopicos(false);
-        return;
-      }
-
-      // Inserir tópicos para o aluno
-      // Usamos type assertion porque o enum foi atualizado no banco mas os types podem estar desatualizados
-      const novosTopicos = topicosPadrao.map((tp) => ({
-        aluno: alunoId,
-        nivel_cefr: tp.nivel_cefr,
-        categoria: tp.categoria as Database["public"]["Enums"]["categoria_topico"],
-        descricao_topico: tp.descricao_topico,
-        status: "A Introduzir" as StatusTopico,
-      }));
-
-      const { error: insertError } = await supabase
-        .from("topicos_progresso")
-        .insert(novosTopicos);
-
-      if (insertError) throw insertError;
-
-      toast({
-        title: "Sucesso",
-        description: `${novosTopicos.length} tópicos atribuídos ao aluno.`,
-      });
-
-      fetchTopicos(false);
-      onSuccess?.();
-    } catch (error) {
-      console.error("Erro ao popular tópicos:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível atribuir os tópicos.",
-      });
-    } finally {
-      setPopulando(false);
-    }
-  };
-
-  // Atualizar tópicos quando nível CEFR muda (re-popular com novos tópicos)
-  const handleRefreshTopicos = async () => {
-    if (!nivelCefr) {
-      toast({
-        variant: "destructive",
-        title: "Nível CEFR não definido",
-        description: "Defina o nível CEFR do aluno antes de atualizar os tópicos.",
-      });
-      return;
-    }
-
-    // Confirmação antes de substituir
-    const confirmMsg = topicos.length > 0 
-      ? `Isso irá substituir os ${topicos.length} tópicos atuais pelos tópicos do nível ${nivelCefr}. Deseja continuar?`
-      : `Deseja atribuir os tópicos do nível ${nivelCefr}?`;
-    
-    if (!window.confirm(confirmMsg)) return;
-
-    await handlePopularTopicos();
+    setLoading(true);
+    await syncTopicos();
+    await fetchTopicos();
   };
 
   const toggleCategory = (categoria: string) => {
@@ -341,15 +299,16 @@ export function GerenciarTopicosDialog({
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={handleRefreshTopicos}
-                disabled={populando}
+                onClick={handleForceSync}
+                disabled={loading || syncing}
+                title="Forçar sincronização com tópicos padrão"
               >
-                {populando ? (
+                {syncing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
                     <RefreshCw className="h-4 w-4 mr-1" />
-                    {topicos.length > 0 ? "Atualizar para " + nivelCefr : "Atribuir " + nivelCefr}
+                    Sincronizar
                   </>
                 )}
               </Button>
@@ -387,22 +346,22 @@ export function GerenciarTopicosDialog({
               </div>
             )}
 
-            {/* Lista de tópicos por categoria - SEMPRE mostra as 7 categorias */}
+            {/* Lista de tópicos por categoria - apenas categorias ATIVAS */}
             <div className="flex-1 min-h-0 overflow-y-auto pr-2">
               <div className="space-y-4 pb-4">
-                {FIXED_CATEGORIES.map(({ key, name }) => {
-                  const topicosCategoria = topicosPorCategoria[key] || [];
+                {categorias.map((cat) => {
+                  const topicosCategoria = topicosPorCategoria[cat.nome] || [];
                   const hasTopics = topicosCategoria.length > 0;
                   
                   return (
                     <Collapsible
-                      key={key}
-                      open={expandedCategories.has(key)}
-                      onOpenChange={() => toggleCategory(key)}
+                      key={cat.id}
+                      open={expandedCategories.has(cat.nome)}
+                      onOpenChange={() => toggleCategory(cat.nome)}
                     >
                       <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{name}</span>
+                          <span className="font-medium">{cat.nome}</span>
                           <Badge 
                             variant={hasTopics ? "secondary" : "outline"} 
                             className={`text-xs ${!hasTopics ? 'text-muted-foreground' : ''}`}
@@ -410,7 +369,7 @@ export function GerenciarTopicosDialog({
                             {topicosCategoria.length} {topicosCategoria.length === 1 ? 'tópico' : 'tópicos'}
                           </Badge>
                         </div>
-                        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedCategories.has(key) ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedCategories.has(cat.nome) ? 'rotate-180' : ''}`} />
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <div className="space-y-2 mt-2 pl-2">
@@ -461,32 +420,24 @@ export function GerenciarTopicosDialog({
                     </Collapsible>
                   );
                 })}
+
+                {categorias.length === 0 && !loading && (
+                  <div className="p-6 text-center text-muted-foreground">
+                    Nenhuma categoria ativa encontrada.
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Mensagem quando não há tópicos */}
-            {totalTopicos === 0 && !loading && (
+            {totalTopicos === 0 && !loading && categorias.length > 0 && (
               <div className="flex flex-col items-center justify-center py-6 space-y-3 border-t">
                 <BookOpen className="h-10 w-10 text-muted-foreground" />
                 <p className="text-muted-foreground text-center text-sm">
-                  Este aluno ainda não possui tópicos atribuídos.
+                  {nivelCefr 
+                    ? `Não há tópicos padrão cadastrados para o nível ${nivelCefr}.`
+                    : "Defina o nível CEFR do aluno para carregar os tópicos."}
                 </p>
-                {nivelCefr ? (
-                  <Button onClick={handlePopularTopicos} disabled={populando} size="sm">
-                    {populando ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Atribuindo...
-                      </>
-                    ) : (
-                      <>Atribuir tópicos do nível {nivelCefr}</>
-                    )}
-                  </Button>
-                ) : (
-                  <p className="text-sm text-destructive">
-                    Defina o nível CEFR do aluno para atribuir os tópicos.
-                  </p>
-                )}
               </div>
             )}
           </>
