@@ -55,15 +55,15 @@ export default function ResponsavelAlunoDetalhes() {
           return;
         }
       } else {
-        // Responsavel precisa ter este aluno vinculado
-        const { data: alunoData } = await supabase
-          .from("usuarios")
-          .select("responsavel_por")
-          .eq("user_id", aluno_id!)
-          .eq("tipo_usuario", "Aluno")
-          .single();
+        // Responsavel precisa ter este aluno vinculado via tabela responsaveis_alunos
+        const { data: vinculoData, error: vinculoError } = await supabase
+          .from("responsaveis_alunos")
+          .select("aluno_id")
+          .eq("responsavel_id", userData.user_id)
+          .eq("aluno_id", aluno_id!)
+          .maybeSingle();
 
-        if (!alunoData || alunoData.responsavel_por !== userData.user_id) {
+        if (vinculoError || !vinculoData) {
           navigate("/responsavel/dashboard");
           return;
         }
