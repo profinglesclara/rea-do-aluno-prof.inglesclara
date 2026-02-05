@@ -9,6 +9,7 @@ import AdminAulas from "./pages/AdminAulas";
 import AdminRelatorios from "./pages/AdminRelatorios";
 import AdminTarefas from "./pages/AdminTarefas";
 import AdminCriarUsuario from "./pages/AdminCriarUsuario";
+import AdminResponsaveis from "./pages/AdminResponsaveis";
 import StudentDetails from "./pages/StudentDetails";
 import AlunoDashboard from "./pages/AlunoDashboard";
 import AlunoProgresso from "./pages/AlunoProgresso";
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/admin/aluno/:aluno_id" element={<AdminProtectedRoute><StudentDetails /></AdminProtectedRoute>} />
           <Route path="/admin/notificacoes" element={<AdminProtectedRoute><AdminNotificacoes /></AdminProtectedRoute>} />
           <Route path="/admin/calendario-aulas" element={<AdminProtectedRoute><AdminCalendarioAulas /></AdminProtectedRoute>} />
+          <Route path="/admin/responsaveis" element={<AdminProtectedRoute><AdminResponsaveis /></AdminProtectedRoute>} />
           
           {/* Rotas Aluno */}
           <Route path="/aluno/dashboard" element={<AlunoProtectedRoute><AlunoDashboard /></AlunoProtectedRoute>} />
