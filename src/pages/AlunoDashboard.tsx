@@ -1,18 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, BookOpen, Trophy, ListTodo, Star, Target, Award, Zap, Heart, FileText } from "lucide-react";
+import { Calendar, BookOpen, Trophy, ListTodo, Star, Target, Award, Zap, Heart, FileText, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LogoutButton } from "@/components/LogoutButton";
 import { FotoPerfil } from "@/components/FotoPerfil";
+import { PerfilAlunoDialog } from "@/components/PerfilAlunoDialog";
 import { useEffect, useState } from "react";
 export default function AlunoDashboard() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+  const [perfilOpen, setPerfilOpen] = useState(false);
 
   // Buscar usuário logado
   useEffect(() => {
@@ -154,11 +155,17 @@ export default function AlunoDashboard() {
               fotoUrl={aluno.foto_perfil_url}
               nome={aluno.nome_completo}
               className="h-16 w-16"
-              onClick={() => navigate("/aluno/perfil")}
+              onClick={() => setPerfilOpen(true)}
             />
             <div>
               <h1 className="text-3xl font-bold">{aluno.nome_completo}</h1>
-              <p className="text-muted-foreground">Bem-vindo ao seu painel</p>
+              <div className="flex items-center gap-2">
+                <p className="text-muted-foreground">Bem-vindo ao seu painel</p>
+                <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground h-auto py-0.5 px-1.5" onClick={() => setPerfilOpen(true)}>
+                  <User className="h-3.5 w-3.5" />
+                  Meu Perfil
+                </Button>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -166,6 +173,13 @@ export default function AlunoDashboard() {
             <LogoutButton variant="outline" />
           </div>
         </div>
+
+        <PerfilAlunoDialog
+          open={perfilOpen}
+          onOpenChange={setPerfilOpen}
+          user={aluno}
+          onUserUpdated={(updates) => setCurrentUser((prev: any) => ({ ...prev, ...updates }))}
+        />
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
