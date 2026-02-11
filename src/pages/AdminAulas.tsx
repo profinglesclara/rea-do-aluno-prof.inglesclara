@@ -474,6 +474,7 @@ const AdminAulas = () => {
                   showAlunoName={true}
                   currentMonth={currentMonth}
                   onMonthChange={setCurrentMonth}
+                  onAulaClick={(aula) => abrirModalEditar(aula as Aula)}
                 />
               </CardContent>
             </Card>
