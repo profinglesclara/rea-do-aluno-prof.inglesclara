@@ -24,6 +24,7 @@ import AlunoAulas from "./pages/AlunoAulas";
 import AdminCalendarioAulas from "./pages/AdminCalendarioAulas";
 import ResponsavelDashboard from "./pages/ResponsavelDashboard";
 import ResponsavelAlunoDetalhes from "./pages/ResponsavelAlunoDetalhes";
+import ResponsavelNotificacoes from "./pages/ResponsavelNotificacoes";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
@@ -68,6 +69,7 @@ const App = () => (
           {/* Rotas Responsável */}
           <Route path="/responsavel/dashboard" element={<ResponsavelProtectedRoute><ResponsavelDashboard /></ResponsavelProtectedRoute>} />
           <Route path="/responsavel/aluno/:aluno_id" element={<ResponsavelProtectedRoute><ResponsavelAlunoDetalhes /></ResponsavelProtectedRoute>} />
+          <Route path="/responsavel/notificacoes" element={<ResponsavelProtectedRoute><ResponsavelNotificacoes /></ResponsavelProtectedRoute>} />
           
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />

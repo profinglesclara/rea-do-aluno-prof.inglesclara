@@ -17,6 +17,7 @@ import { paraBrasilia } from "@/lib/utils";
 interface NotificationBellProps {
   userId: string;
   isAdmin?: boolean;
+  isResponsavel?: boolean;
 }
 
 const notificationIcons: Record<Notification["tipo"], string> = {
@@ -25,9 +26,10 @@ const notificationIcons: Record<Notification["tipo"], string> = {
   TAREFA_CORRIGIDA: "✏️",
   AULA_ATUALIZADA: "📅",
   CONQUISTA_DESBLOQUEADA: "🏆",
+  RELATORIO_DISPONIVEL: "📊",
 };
 
-export function NotificationBell({ userId, isAdmin = false }: NotificationBellProps) {
+export function NotificationBell({ userId, isAdmin = false, isResponsavel = false }: NotificationBellProps) {
   const { notifications, unreadCount, markAsRead } = useNotifications(userId);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -124,7 +126,7 @@ export function NotificationBell({ userId, isAdmin = false }: NotificationBellPr
             variant="ghost"
             className="w-full"
             onClick={() =>
-              navigate(isAdmin ? "/admin/notificacoes" : "/aluno/notificacoes")
+              navigate(isAdmin ? "/admin/notificacoes" : isResponsavel ? "/responsavel/notificacoes" : "/aluno/notificacoes")
             }
           >
             Ver todas as notificações

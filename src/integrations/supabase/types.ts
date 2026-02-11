@@ -644,6 +644,7 @@ export type Database = {
           nome_completo: string
           nome_de_usuario: string
           notas_internas: string | null
+          notif_email_ativo: boolean
           objetivo_principal: string | null
           observacoes_internas: string | null
           preferencia_contato: string | null
@@ -673,6 +674,7 @@ export type Database = {
           nome_completo: string
           nome_de_usuario: string
           notas_internas?: string | null
+          notif_email_ativo?: boolean
           objetivo_principal?: string | null
           observacoes_internas?: string | null
           preferencia_contato?: string | null
@@ -702,6 +704,7 @@ export type Database = {
           nome_completo?: string
           nome_de_usuario?: string
           notas_internas?: string | null
+          notif_email_ativo?: boolean
           objetivo_principal?: string | null
           observacoes_internas?: string | null
           preferencia_contato?: string | null
@@ -844,6 +847,7 @@ export type Database = {
         | "TAREFA_CORRIGIDA"
         | "AULA_ATUALIZADA"
         | "CONQUISTA_DESBLOQUEADA"
+        | "RELATORIO_DISPONIVEL"
       tipo_usuario: "Aluno" | "Responsável" | "Adulto" | "Admin"
     }
     CompositeTypes: {
@@ -1008,6 +1012,7 @@ export const Constants = {
         "TAREFA_CORRIGIDA",
         "AULA_ATUALIZADA",
         "CONQUISTA_DESBLOQUEADA",
+        "RELATORIO_DISPONIVEL",
       ],
       tipo_usuario: ["Aluno", "Responsável", "Adulto", "Admin"],
     },

@@ -564,9 +564,40 @@ const AdminRelatorios = () => {
         </div>
       `;
 
+      // Send email to responsável
+      const { data: responsaveis } = await supabase
+        .from("responsaveis_alunos")
+        .select("responsavel_id")
+        .eq("aluno_id", selectedRelatorio.aluno);
+
+      // Get responsável emails
+      const responsavelIds = responsaveis?.map(r => r.responsavel_id) || [];
+      let emailDestino = "responsavel@teste.com";
+      if (responsavelIds.length > 0) {
+        const { data: responsavelData } = await supabase
+          .from("usuarios")
+          .select("email, user_id, notif_email_ativo")
+          .in("user_id", responsavelIds);
+        
+        const activeResponsavel = responsavelData?.find(r => (r as any).notif_email_ativo !== false);
+        if (activeResponsavel) {
+          emailDestino = activeResponsavel.email;
+        }
+
+        // Create RELATORIO_DISPONIVEL notification for each responsável
+        for (const resp of responsavelIds) {
+          await supabase.from("notificacoes").insert({
+            usuario_id: resp,
+            tipo: "RELATORIO_DISPONIVEL" as any,
+            titulo: "Relatório mensal disponível",
+            mensagem: `O relatório de ${selectedRelatorio.nome_aluno} referente a ${selectedRelatorio.mes_referencia} está disponível.`,
+          });
+        }
+      }
+
       const { error } = await supabase.functions.invoke("enviar-email-notificacao", {
         body: {
-          to: "responsavel@teste.com", // Email de teste - idealmente buscar do perfil do responsável
+          to: emailDestino,
           subject: `Relatório mensal de ${selectedRelatorio.nome_aluno} – ${selectedRelatorio.mes_referencia}`,
           html: htmlContent,
         },

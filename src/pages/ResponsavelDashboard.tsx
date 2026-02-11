@@ -143,7 +143,7 @@ export default function ResponsavelDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <NotificationBell userId={currentUser.user_id} />
+            <NotificationBell userId={currentUser.user_id} isResponsavel />
             <LogoutButton variant="outline" />
           </div>
         </div>
