@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 export type Notification = {
   id: string;
   usuario_id: string;
-  tipo: "TAREFA_NOVA" | "TAREFA_ENTREGUE" | "TAREFA_CORRIGIDA" | "AULA_ATUALIZADA" | "CONQUISTA_DESBLOQUEADA";
+  tipo: "TAREFA_NOVA" | "TAREFA_ENTREGUE" | "TAREFA_CORRIGIDA" | "AULA_ATUALIZADA" | "CONQUISTA_DESBLOQUEADA" | "RELATORIO_DISPONIVEL";
   titulo: string;
   mensagem: string;
   lida: boolean;
@@ -19,6 +19,7 @@ const notificationMessages: Record<Notification["tipo"], string> = {
   TAREFA_CORRIGIDA: "Tarefa corrigida",
   AULA_ATUALIZADA: "Aula atualizada",
   CONQUISTA_DESBLOQUEADA: "Nova conquista!",
+  RELATORIO_DISPONIVEL: "Relatório disponível",
 };
 
 export function useNotifications(userId: string | undefined) {
