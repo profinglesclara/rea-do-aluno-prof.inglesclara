@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,7 @@ type CalendarioAulasProps = {
   showAlunoName?: boolean;
   currentMonth: Date;
   onMonthChange: (date: Date) => void;
+  onAulaClick?: (aula: Aula) => void;
 };
 
 const getStatusDisplay = (status: string): string => {
@@ -53,6 +54,7 @@ export function CalendarioAulas({
   showAlunoName = false,
   currentMonth,
   onMonthChange,
+  onAulaClick,
 }: CalendarioAulasProps) {
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -138,7 +140,7 @@ export function CalendarioAulas({
                       {format(day, "d 'de' MMMM", { locale: ptBR })}
                     </h3>
                     {dayAulas.map((aula) => (
-                      <Card key={aula.aula_id}>
+                      <Card key={aula.aula_id} className={onAulaClick ? "cursor-pointer hover:ring-1 hover:ring-primary transition-all" : ""} onClick={() => onAulaClick?.(aula)}>
                         <CardContent className="p-3 space-y-2">
                           {showAlunoName && aula.aluno_nome && (
                             <div className="font-medium text-sm">
@@ -149,9 +151,14 @@ export function CalendarioAulas({
                             <span className="text-sm font-medium">
                               {format(new Date(aula.data_aula), "HH:mm")}
                             </span>
-                            <Badge className={getStatusColorClasses(aula.status)}>
-                              {getStatusDisplay(aula.status)}
-                            </Badge>
+                            <div className="flex items-center gap-1.5">
+                              <Badge className={getStatusColorClasses(aula.status)}>
+                                {getStatusDisplay(aula.status)}
+                              </Badge>
+                              {onAulaClick && (
+                                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                              )}
+                            </div>
                           </div>
                           {aula.conteudo && (
                             <div className="text-sm text-muted-foreground">
