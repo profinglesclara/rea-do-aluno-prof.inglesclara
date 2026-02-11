@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, BookOpen, Trophy, ListTodo, Star, Target, Award, Zap, Heart, FileText, User } from "lucide-react";
+import { Calendar, BookOpen, Trophy, ListTodo, Star, Target, Award, Zap, Heart, FileText, UserCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -159,17 +159,14 @@ export default function AlunoDashboard() {
             />
             <div>
               <h1 className="text-3xl font-bold">{aluno.nome_completo}</h1>
-              <div className="flex items-center gap-2">
-                <p className="text-muted-foreground">Bem-vindo ao seu painel</p>
-                <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground h-auto py-0.5 px-1.5" onClick={() => setPerfilOpen(true)}>
-                  <User className="h-3.5 w-3.5" />
-                  Meu Perfil
-                </Button>
-              </div>
+              <p className="text-muted-foreground">Bem-vindo ao seu painel</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell userId={aluno.user_id} />
+            <Button variant="outline" size="icon" onClick={() => setPerfilOpen(true)} title="Meu Perfil">
+              <UserCircle className="h-4 w-4" />
+            </Button>
             <LogoutButton variant="outline" />
           </div>
         </div>
