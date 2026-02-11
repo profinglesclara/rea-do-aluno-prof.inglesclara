@@ -198,33 +198,42 @@ export type Database = {
       conquistas_mestre: {
         Row: {
           ativa: boolean
+          automacao: boolean
           criada_em: string | null
           descricao: string
           icone: string
           id: string
+          nivel_cefr: Database["public"]["Enums"]["nivel_cefr"] | null
           nome: string
           ordem_exibicao: number
           slug: string
+          tipo: Database["public"]["Enums"]["tipo_conquista_mestre"]
         }
         Insert: {
           ativa?: boolean
+          automacao?: boolean
           criada_em?: string | null
           descricao: string
           icone: string
           id?: string
+          nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"] | null
           nome: string
           ordem_exibicao: number
           slug: string
+          tipo?: Database["public"]["Enums"]["tipo_conquista_mestre"]
         }
         Update: {
           ativa?: boolean
+          automacao?: boolean
           criada_em?: string | null
           descricao?: string
           icone?: string
           id?: string
+          nivel_cefr?: Database["public"]["Enums"]["nivel_cefr"] | null
           nome?: string
           ordem_exibicao?: number
           slug?: string
+          tipo?: Database["public"]["Enums"]["tipo_conquista_mestre"]
         }
         Relationships: []
       }
@@ -828,6 +837,7 @@ export type Database = {
         | "Extra"
         | "Comportamento"
         | "Engajamento"
+      tipo_conquista_mestre: "GERAL" | "NIVEL"
       tipo_notificacao:
         | "TAREFA_NOVA"
         | "TAREFA_ENTREGUE"
@@ -991,6 +1001,7 @@ export const Constants = {
         "Comportamento",
         "Engajamento",
       ],
+      tipo_conquista_mestre: ["GERAL", "NIVEL"],
       tipo_notificacao: [
         "TAREFA_NOVA",
         "TAREFA_ENTREGUE",

@@ -8,6 +8,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminAulas from "./pages/AdminAulas";
 import AdminRelatorios from "./pages/AdminRelatorios";
 import AdminTarefas from "./pages/AdminTarefas";
+import AdminConquistas from "./pages/AdminConquistas";
 import AdminCriarUsuario from "./pages/AdminCriarUsuario";
 import AdminResponsaveis from "./pages/AdminResponsaveis";
 import StudentDetails from "./pages/StudentDetails";
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/admin/notificacoes" element={<AdminProtectedRoute><AdminNotificacoes /></AdminProtectedRoute>} />
           <Route path="/admin/calendario-aulas" element={<AdminProtectedRoute><AdminCalendarioAulas /></AdminProtectedRoute>} />
           <Route path="/admin/responsaveis" element={<AdminProtectedRoute><AdminResponsaveis /></AdminProtectedRoute>} />
+          <Route path="/admin/conquistas" element={<AdminProtectedRoute><AdminConquistas /></AdminProtectedRoute>} />
           
           {/* Rotas Aluno */}
           <Route path="/aluno/dashboard" element={<AlunoProtectedRoute><AlunoDashboard /></AlunoProtectedRoute>} />
