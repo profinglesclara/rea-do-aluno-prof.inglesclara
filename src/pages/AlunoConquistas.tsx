@@ -56,18 +56,35 @@ export default function AlunoConquistas() {
     fetchCurrentUser();
   }, [navigate]);
 
-  // Buscar todas as conquistas disponíveis
+  // Buscar todas as conquistas disponíveis (GERAL + NIVEL do aluno)
   const { data: conquistasMestre = [] } = useQuery({
-    queryKey: ["conquistasMestre"],
+    queryKey: ["conquistasMestre", currentUser?.nivel_cefr],
+    enabled: !!currentUser,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch GERAL achievements
+      const { data: gerais, error: e1 } = await supabase
         .from("conquistas_mestre")
         .select("*")
         .eq("ativa", true)
+        .eq("tipo", "GERAL")
         .order("ordem_exibicao");
-      
-      if (error) throw error;
-      return data;
+      if (e1) throw e1;
+
+      // Fetch NIVEL achievements matching student's CEFR
+      let nivel: any[] = [];
+      if (currentUser?.nivel_cefr) {
+        const { data: nivelData, error: e2 } = await supabase
+          .from("conquistas_mestre")
+          .select("*")
+          .eq("ativa", true)
+          .eq("tipo", "NIVEL")
+          .eq("nivel_cefr", currentUser.nivel_cefr)
+          .order("ordem_exibicao");
+        if (e2) throw e2;
+        nivel = nivelData || [];
+      }
+
+      return [...(gerais || []), ...nivel];
     },
   });
 

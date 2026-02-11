@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Calendar, FileText, ClipboardList, User, BookOpen, FolderTree, Users } from "lucide-react";
+import { Search, Eye, Calendar, FileText, ClipboardList, User, BookOpen, FolderTree, Users, Trophy } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { FotoPerfil } from "@/components/FotoPerfil";
 import { EditarFotoPerfilDialog } from "@/components/EditarFotoPerfilDialog";
@@ -233,6 +233,14 @@ const AdminDashboard = () => {
                 >
                   <FolderTree className="h-4 w-4" />
                   Gerenciar Categorias
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/admin/conquistas")}
+                  className="gap-2"
+                >
+                  <Trophy className="h-4 w-4" />
+                  Gerenciar Conquistas
                 </Button>
                 <Button
                   variant="outline"

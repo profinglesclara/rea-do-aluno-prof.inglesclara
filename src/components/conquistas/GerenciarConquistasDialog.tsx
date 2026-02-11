@@ -31,7 +31,7 @@ export function GerenciarConquistasDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Buscar todas as conquistas disponíveis
+  // Buscar todas as conquistas disponíveis (ativas)
   const { data: conquistasMestre = [], isLoading } = useQuery({
     queryKey: ["conquistasMestre"],
     queryFn: async () => {
@@ -41,6 +41,21 @@ export function GerenciarConquistasDialog({
         .eq("ativa", true)
         .order("ordem_exibicao");
       
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Buscar nível CEFR do aluno para exibir info de tipo
+  const { data: alunoData } = useQuery({
+    queryKey: ["alunoNivelCefr", alunoId],
+    enabled: !!alunoId && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("nivel_cefr")
+        .eq("user_id", alunoId)
+        .single();
       if (error) throw error;
       return data;
     },
@@ -202,6 +217,12 @@ export function GerenciarConquistasDialog({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold">{conquista.nome}</h3>
+                      <Badge variant="outline" className="text-xs">
+                        {(conquista as any).tipo === "NIVEL" ? `Nível ${(conquista as any).nivel_cefr}` : "Geral"}
+                      </Badge>
+                      {(conquista as any).automacao && (
+                        <Badge variant="outline" className="text-xs text-green-600 border-green-600">Auto</Badge>
+                      )}
                       {desbloqueada && (
                         <Badge variant="default" className="bg-yellow-500">
                           <Check className="h-3 w-3 mr-1" />
