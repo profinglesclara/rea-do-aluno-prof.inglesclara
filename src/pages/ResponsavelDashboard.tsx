@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft, User, FileText } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LogoutButton } from "@/components/LogoutButton";
 import { FotoPerfil } from "@/components/FotoPerfil";
@@ -143,6 +143,9 @@ export default function ResponsavelDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => navigate("/responsavel/relatorios")} title="Relatórios">
+              <FileText className="h-5 w-5" />
+            </Button>
             <NotificationBell userId={currentUser.user_id} isResponsavel />
             <LogoutButton variant="outline" />
           </div>
