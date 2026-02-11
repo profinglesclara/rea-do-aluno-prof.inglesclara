@@ -7,13 +7,12 @@ import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LogoutButton } from "@/components/LogoutButton";
 import { FotoPerfil } from "@/components/FotoPerfil";
-import { EditarFotoPerfilDialog } from "@/components/EditarFotoPerfilDialog";
 import { useEffect, useState } from "react";
 export default function AlunoDashboard() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [fotoDialogOpen, setFotoDialogOpen] = useState(false);
+  
 
   // Buscar usuário logado
   useEffect(() => {
@@ -145,10 +144,6 @@ export default function AlunoDashboard() {
     );
   }
 
-  const handleFotoAtualizada = (novaUrl: string | null) => {
-    setCurrentUser((prev: any) => ({ ...prev, foto_perfil_url: novaUrl }));
-  };
-
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -159,7 +154,7 @@ export default function AlunoDashboard() {
               fotoUrl={aluno.foto_perfil_url}
               nome={aluno.nome_completo}
               className="h-16 w-16"
-              onClick={() => setFotoDialogOpen(true)}
+              onClick={() => navigate("/aluno/perfil")}
             />
             <div>
               <h1 className="text-3xl font-bold">{aluno.nome_completo}</h1>
@@ -171,15 +166,6 @@ export default function AlunoDashboard() {
             <LogoutButton variant="outline" />
           </div>
         </div>
-
-        <EditarFotoPerfilDialog
-          open={fotoDialogOpen}
-          onOpenChange={setFotoDialogOpen}
-          userId={aluno.user_id}
-          nome={aluno.nome_completo}
-          fotoAtual={aluno.foto_perfil_url}
-          onFotoAtualizada={handleFotoAtualizada}
-        />
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

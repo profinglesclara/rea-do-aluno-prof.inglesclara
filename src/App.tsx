@@ -21,6 +21,7 @@ import AlunoNotificacoes from "./pages/AlunoNotificacoes";
 import AdminNotificacoes from "./pages/AdminNotificacoes";
 import AlunoCalendario from "./pages/AlunoCalendario";
 import AlunoAulas from "./pages/AlunoAulas";
+import AlunoPerfil from "./pages/AlunoPerfil";
 import AdminCalendarioAulas from "./pages/AdminCalendarioAulas";
 import ResponsavelDashboard from "./pages/ResponsavelDashboard";
 import ResponsavelAlunoDetalhes from "./pages/ResponsavelAlunoDetalhes";
@@ -65,6 +66,7 @@ const App = () => (
           <Route path="/aluno/notificacoes" element={<AlunoProtectedRoute><AlunoNotificacoes /></AlunoProtectedRoute>} />
           <Route path="/aluno/calendario" element={<AlunoProtectedRoute><AlunoCalendario /></AlunoProtectedRoute>} />
           <Route path="/aluno/aulas" element={<AlunoProtectedRoute><AlunoAulas /></AlunoProtectedRoute>} />
+          <Route path="/aluno/perfil" element={<AlunoProtectedRoute><AlunoPerfil /></AlunoProtectedRoute>} />
           
           {/* Rotas Responsável */}
           <Route path="/responsavel/dashboard" element={<ResponsavelProtectedRoute><ResponsavelDashboard /></ResponsavelProtectedRoute>} />
