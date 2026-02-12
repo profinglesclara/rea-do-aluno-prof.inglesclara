@@ -15,6 +15,8 @@ import { ptBR } from "date-fns/locale";
 import { agora, paraBrasilia } from "@/lib/utils";
 import { syncTopicosAluno } from "@/hooks/useAutoSyncTopicos";
 import { useCategoriasAtivasNomes } from "@/hooks/useCategoriasAtivas";
+import { downloadRelatorioPDF, type RelatorioPDFData } from "@/lib/pdf-generator";
+import { toast } from "sonner";
 
 export default function ResponsavelAlunoDetalhes() {
   const { aluno_id } = useParams<{aluno_id: string;}>();
@@ -221,20 +223,100 @@ export default function ResponsavelAlunoDetalhes() {
     }
   };
 
-  const handleVisualizarRelatorio = (arquivoPdf: string | null) => {
-    if (!arquivoPdf) return;
-    window.open(arquivoPdf, "_blank");
+  const gerarPDFOnTheFly = async (relatorio: any): Promise<RelatorioPDFData> => {
+    // Sync before generating
+    await syncTopicosAluno(aluno_id!);
+
+    const { data: progressoAtualData } = await supabase.rpc("get_progresso_aluno", { p_aluno: aluno_id! });
+    const progressoAtualParsed = progressoAtualData as any;
+
+    // Parse mes_referencia
+    const parts = relatorio.mes_referencia.includes("/") ? relatorio.mes_referencia.split("/") : relatorio.mes_referencia.split("-");
+    const [first, second] = parts;
+    const month = relatorio.mes_referencia.includes("/") ? parseInt(first) : parseInt(second);
+    const year = relatorio.mes_referencia.includes("/") ? parseInt(second) : parseInt(first);
+
+    // Fetch aulas for the report month
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endDate = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    const { data: aulasDoMes } = await supabase
+      .from("aulas")
+      .select("status")
+      .eq("aluno", aluno_id!)
+      .gte("data_aula", startDate)
+      .lt("data_aula", endDate);
+
+    const aulasMes = aulasDoMes ? {
+      total: aulasDoMes.length,
+      realizadas: aulasDoMes.filter(a => a.status === "Realizada").length,
+      faltas: aulasDoMes.filter(a => a.status === "Cancelada").length,
+      remarcadas: aulasDoMes.filter(a => a.status === "Remarcada").length,
+    } : undefined;
+
+    // Fetch comentario from full report
+    const { data: fullReport } = await supabase
+      .from("relatorios_mensais")
+      .select("comentario_automatico, progresso_por_categoria")
+      .eq("relatorio_id", relatorio.relatorio_id)
+      .single();
+
+    return {
+      nomeAluno: dashboard?.nome_aluno || "Aluno",
+      nivelCefr: dashboard?.nivel_cefr || null,
+      mesReferencia: formatMesReferencia(relatorio.mes_referencia),
+      dataGeracao: formatDataEmissao(relatorio.data_geracao),
+      porcentagemConcluida: relatorio.porcentagem_concluida || 0,
+      porcentagemEmDesenvolvimento: relatorio.porcentagem_em_desenvolvimento || 0,
+      progressoAtual: progressoAtualParsed ? {
+        progressoGeral: progressoAtualParsed.progresso_geral || 0,
+        emDesenvolvimento: progressoAtualParsed.em_desenvolvimento || 0,
+        totalTopicos: progressoAtualParsed.total_topicos || 0,
+      } : undefined,
+      aulasMes,
+      comentario: fullReport?.comentario_automatico || null,
+      progressoPorCategoria: (fullReport?.progresso_por_categoria as any) || progressoPorCategoria,
+    };
   };
 
-  const handleDownloadRelatorio = (arquivoPdf: string | null, mes: string) => {
-    if (!arquivoPdf) return;
-    const link = document.createElement("a");
-    link.href = arquivoPdf;
-    link.download = `Relatorio_${dashboard?.nome_aluno?.replace(/\s+/g, "_") || "aluno"}_${mes}.pdf`;
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleVisualizarRelatorio = async (relatorio: any) => {
+    if (relatorio.arquivo_pdf) {
+      window.open(relatorio.arquivo_pdf, "_blank");
+      return;
+    }
+    toast.info("Gerando relatório...");
+    try {
+      const pdfData = await gerarPDFOnTheFly(relatorio);
+      const pdf = await (await import("@/lib/pdf-generator")).generateRelatorioPDF(pdfData);
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      toast.success("Relatório gerado com sucesso!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao gerar relatório.");
+    }
+  };
+
+  const handleDownloadRelatorio = async (relatorio: any) => {
+    if (relatorio.arquivo_pdf) {
+      const link = document.createElement("a");
+      link.href = relatorio.arquivo_pdf;
+      link.download = `Relatorio_${dashboard?.nome_aluno?.replace(/\s+/g, "_") || "aluno"}_${relatorio.mes_referencia}.pdf`;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+    toast.info("Gerando relatório...");
+    try {
+      const pdfData = await gerarPDFOnTheFly(relatorio);
+      await downloadRelatorioPDF(pdfData);
+      toast.success("Relatório baixado com sucesso!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao gerar relatório.");
+    }
   };
 
   if (loading || dashboardLoading) {
@@ -508,8 +590,7 @@ export default function ResponsavelAlunoDetalhes() {
                       <Button
                     variant="outline"
                     size="sm"
-                    disabled={!r.arquivo_pdf}
-                    onClick={() => handleVisualizarRelatorio(r.arquivo_pdf)}>
+                    onClick={() => handleVisualizarRelatorio(r)}>
 
                         <Eye className="h-4 w-4 mr-1" />
                         Ver
@@ -517,8 +598,7 @@ export default function ResponsavelAlunoDetalhes() {
                       <Button
                     variant="outline"
                     size="sm"
-                    disabled={!r.arquivo_pdf}
-                    onClick={() => handleDownloadRelatorio(r.arquivo_pdf, r.mes_referencia)}>
+                    onClick={() => handleDownloadRelatorio(r)}>
 
                         <Download className="h-4 w-4 mr-1" />
                         Baixar
