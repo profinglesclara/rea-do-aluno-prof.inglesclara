@@ -1,0 +1,2 @@
+ALTER TABLE public.usuarios DROP CONSTRAINT usuarios_status_aluno_check;
+ALTER TABLE public.usuarios ADD CONSTRAINT usuarios_status_aluno_check CHECK (status_aluno = ANY (ARRAY['Ativo'::text, 'Em pausa'::text, 'Cancelado'::text, 'Inativo'::text]));
