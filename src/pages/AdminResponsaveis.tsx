@@ -21,7 +21,7 @@ import { FotoPerfil } from "@/components/FotoPerfil";
 import { GerenciarVinculosDialog } from "@/components/admin/GerenciarVinculosDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-const STATUS_RESPONSAVEL = ["Ativo", "Pausado", "Encerrado"];
+const STATUS_RESPONSAVEL = ["Ativo", "Em pausa", "Cancelado", "Inativo"];
 
 type Responsavel = {
   user_id: string;
