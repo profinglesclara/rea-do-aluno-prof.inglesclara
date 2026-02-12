@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -20,12 +21,15 @@ import { FotoPerfil } from "@/components/FotoPerfil";
 import { GerenciarVinculosDialog } from "@/components/admin/GerenciarVinculosDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
+const STATUS_RESPONSAVEL = ["Ativo", "Pausado", "Encerrado"];
+
 type Responsavel = {
   user_id: string;
   nome_completo: string;
   nome_de_usuario: string;
   email: string;
   foto_perfil_url: string | null;
+  status_aluno: string | null;
   alunos_vinculados: {
     user_id: string;
     nome_completo: string;
@@ -50,7 +54,7 @@ const AdminResponsaveis = () => {
       // Buscar todos os responsáveis
       const { data: responsaveisData, error: responsaveisError } = await supabase
         .from("usuarios")
-        .select("user_id, nome_completo, nome_de_usuario, email, foto_perfil_url")
+        .select("user_id, nome_completo, nome_de_usuario, email, foto_perfil_url, status_aluno")
         .eq("tipo_usuario", "Responsável")
         .order("nome_completo");
 
@@ -103,6 +107,20 @@ const AdminResponsaveis = () => {
 
   const handleVinculosAlterados = () => {
     refetch();
+  };
+
+  const handleStatusChange = async (responsavelId: string, novoStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from("usuarios")
+        .update({ status_aluno: novoStatus })
+        .eq("user_id", responsavelId);
+      if (error) throw error;
+      toast.success("Status atualizado com sucesso!");
+      refetch();
+    } catch (err: any) {
+      toast.error("Erro ao atualizar status: " + (err.message || "Erro desconhecido"));
+    }
   };
 
   if (isLoading) {
@@ -168,6 +186,7 @@ const AdminResponsaveis = () => {
                   <TableRow>
                     <TableHead>Responsável</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Alunos Vinculados</TableHead>
                     <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
@@ -176,7 +195,7 @@ const AdminResponsaveis = () => {
                   {filteredResponsaveis.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={4}
+                        colSpan={5}
                         className="h-24 text-center text-muted-foreground"
                       >
                         {responsaveis?.length === 0
@@ -204,6 +223,23 @@ const AdminResponsaveis = () => {
                         </TableCell>
                         <TableCell>
                           <p className="text-sm">{resp.email || "—"}</p>
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={resp.status_aluno || ""}
+                            onValueChange={(value) => handleStatusChange(resp.user_id, value)}
+                          >
+                            <SelectTrigger className="w-[130px]">
+                              <SelectValue placeholder="Sem status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STATUS_RESPONSAVEL.map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell>
                           {resp.alunos_vinculados.length === 0 ? (
