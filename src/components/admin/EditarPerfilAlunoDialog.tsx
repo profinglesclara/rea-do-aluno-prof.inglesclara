@@ -30,7 +30,7 @@ interface EditarPerfilAlunoDialogProps {
 
 const NIVEIS_CEFR = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const MODALIDADES = ["Online", "Presencial", "Híbrido"];
-const STATUS_ALUNO = ["Ativo", "Em pausa", "Cancelado", "Inativo"];
+const STATUS_ALUNO = ["Ativo", "Pausado", "Encerrado"];
 
 export function EditarPerfilAlunoDialog({
   open,
