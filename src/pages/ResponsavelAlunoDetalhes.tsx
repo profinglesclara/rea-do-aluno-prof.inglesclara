@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Calendar, BookOpen, Award } from "lucide-react";
+import { ArrowLeft, Calendar, BookOpen, Award, FileText, Eye, Download } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LogoutButton } from "@/components/LogoutButton";
 import { useQuery } from "@tanstack/react-query";
@@ -181,6 +181,57 @@ export default function ResponsavelAlunoDetalhes() {
       };
     },
   });
+
+  // Buscar relatórios do aluno
+  const { data: relatorios } = useQuery({
+    queryKey: ["relatoriosAluno", aluno_id],
+    enabled: !!aluno_id && !loading,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relatorios_mensais")
+        .select("relatorio_id, mes_referencia, data_geracao, arquivo_pdf, porcentagem_concluida, porcentagem_em_desenvolvimento")
+        .eq("aluno", aluno_id!)
+        .order("data_geracao", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const formatMesReferencia = (mes: string) => {
+    try {
+      const [year, month] = mes.split("-");
+      const date = new Date(parseInt(year), parseInt(month) - 1);
+      return format(date, "MMMM/yyyy", { locale: ptBR }).replace(/^\w/, c => c.toUpperCase());
+    } catch {
+      return mes;
+    }
+  };
+
+  const formatDataEmissao = (data: string | null) => {
+    if (!data) return "—";
+    try {
+      return format(paraBrasilia(data), "dd/MM/yyyy", { locale: ptBR });
+    } catch {
+      return "—";
+    }
+  };
+
+  const handleVisualizarRelatorio = (arquivoPdf: string | null) => {
+    if (!arquivoPdf) return;
+    window.open(arquivoPdf, "_blank");
+  };
+
+  const handleDownloadRelatorio = (arquivoPdf: string | null, mes: string) => {
+    if (!arquivoPdf) return;
+    const link = document.createElement("a");
+    link.href = arquivoPdf;
+    link.download = `Relatorio_${dashboard?.nome_aluno?.replace(/\s+/g, "_") || "aluno"}_${mes}.pdf`;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (loading || dashboardLoading) {
     return (
@@ -414,6 +465,63 @@ export default function ResponsavelAlunoDetalhes() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Relatórios Mensais */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Relatórios Mensais
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!relatorios || relatorios.length === 0 ? (
+              <div className="text-center py-8 space-y-2">
+                <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto" />
+                <p className="text-muted-foreground">Nenhum relatório disponível ainda.</p>
+                <p className="text-sm text-muted-foreground">
+                  Os relatórios aparecerão aqui assim que forem gerados pelo professor.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {relatorios.map((r) => (
+                  <div key={r.relatorio_id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-medium">{formatMesReferencia(r.mes_referencia)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Emitido em: {formatDataEmissao(r.data_geracao)}
+                      </p>
+                      <Badge variant="secondary" className="mt-1">
+                        {r.porcentagem_concluida ?? 0}% concluído
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!r.arquivo_pdf}
+                        onClick={() => handleVisualizarRelatorio(r.arquivo_pdf)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!r.arquivo_pdf}
+                        onClick={() => handleDownloadRelatorio(r.arquivo_pdf, r.mes_referencia)}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Baixar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
