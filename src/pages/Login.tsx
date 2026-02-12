@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { toast } from "sonner";
 
 type TipoUsuario = "Admin" | "Responsável" | "Aluno";
@@ -14,13 +14,6 @@ const Login = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  
-  // Cadastro states
-  const [registerName, setRegisterName] = useState("");
-  const [registerUsername, setRegisterUsername] = useState("");
-  const [registerEmail, setRegisterEmail] = useState("");
-  const [registerPassword, setRegisterPassword] = useState("");
-  const [registerLoading, setRegisterLoading] = useState(false);
   
   const navigate = useNavigate();
 
@@ -100,103 +93,6 @@ const Login = () => {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRegisterLoading(true);
-
-    try {
-      // Validações básicas
-      if (!registerName || !registerUsername || !registerEmail || !registerPassword) {
-        toast.error("Preencha todos os campos obrigatórios.");
-        setRegisterLoading(false);
-        return;
-      }
-
-      if (registerPassword.length < 6) {
-        toast.error("A senha deve ter pelo menos 6 caracteres.");
-        setRegisterLoading(false);
-        return;
-      }
-
-      // Verificar se username já existe usando edge function
-      const { data: checkData, error: checkError } = await supabase.functions.invoke(
-        "check-username",
-        { body: { username: registerUsername } }
-      );
-
-      if (checkError) {
-        toast.error("Erro ao verificar nome de usuário: " + checkError.message);
-        setRegisterLoading(false);
-        return;
-      }
-
-      if (checkData.exists) {
-        toast.error("Este nome de usuário já está em uso.");
-        setRegisterLoading(false);
-        return;
-      }
-
-      // Criar usuário no Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: registerEmail,
-        password: registerPassword,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (authError) {
-        toast.error("Erro ao criar conta: " + authError.message);
-        setRegisterLoading(false);
-        return;
-      }
-
-      if (!authData.user) {
-        toast.error("Erro ao criar conta: usuário não retornado.");
-        setRegisterLoading(false);
-        return;
-      }
-
-      // Criar registro na tabela usuarios (como Aluno por padrão)
-      // Note: senha is NOT stored in usuarios table - authentication is handled by Supabase Auth
-      const { error: insertError } = await supabase.from("usuarios").insert({
-        user_id: authData.user.id,
-        nome_completo: registerName,
-        nome_de_usuario: registerUsername,
-        email: registerEmail,
-        tipo_usuario: "Aluno",
-      });
-
-      if (!insertError) {
-        // Also add role to user_roles table
-        await supabase.from("user_roles").insert({
-          user_id: authData.user.id,
-          role: "aluno",
-        });
-      }
-
-      if (insertError) {
-        toast.error("Erro ao salvar perfil: " + insertError.message);
-        // Tentar excluir o usuário do Auth se falhar
-        setRegisterLoading(false);
-        return;
-      }
-
-      toast.success("Conta criada com sucesso! Faça login para continuar.");
-      
-      // Limpar formulário e voltar para aba de login
-      setRegisterName("");
-      setRegisterUsername("");
-      setRegisterEmail("");
-      setRegisterPassword("");
-      
-    } catch (err: any) {
-      console.error(err);
-      toast.error("Ocorreu um erro inesperado ao criar conta.");
-    } finally {
-      setRegisterLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted p-4">
@@ -205,96 +101,32 @@ const Login = () => {
           <CardTitle className="text-center text-2xl font-bold">Bem-vindo</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="register">Criar Conta</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4 mt-4">
-                <div>
-                  <Label htmlFor="identifier">Nome de usuário ou e-mail</Label>
-                  <Input
-                    id="identifier"
-                    type="text"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="seu_usuario ou email@exemplo.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Entrando..." : "Entrar"}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4 mt-4">
-                <div>
-                  <Label htmlFor="registerName">Nome completo *</Label>
-                  <Input
-                    id="registerName"
-                    type="text"
-                    value={registerName}
-                    onChange={(e) => setRegisterName(e.target.value)}
-                    placeholder="João da Silva"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="registerUsername">Nome de usuário *</Label>
-                  <Input
-                    id="registerUsername"
-                    type="text"
-                    value={registerUsername}
-                    onChange={(e) => setRegisterUsername(e.target.value.toLowerCase().replace(/\s/g, "_"))}
-                    placeholder="joao_silva"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="registerEmail">E-mail *</Label>
-                  <Input
-                    id="registerEmail"
-                    type="email"
-                    value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
-                    placeholder="joao@email.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="registerPassword">Senha *</Label>
-                  <Input
-                    id="registerPassword"
-                    type="password"
-                    value={registerPassword}
-                    onChange={(e) => setRegisterPassword(e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={registerLoading}>
-                  {registerLoading ? "Criando conta..." : "Criar Conta"}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Novas contas são criadas como Aluno. Contate o administrador para alterar o tipo.
-                </p>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <Label htmlFor="identifier">Nome de usuário ou e-mail</Label>
+              <Input
+                id="identifier"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="seu_usuario ou email@exemplo.com"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Entrando..." : "Entrar"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
