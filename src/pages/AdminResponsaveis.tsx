@@ -175,7 +175,6 @@ const AdminResponsaveis = () => {
                   <TableRow>
                     <TableHead>Responsável</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Alunos Vinculados</TableHead>
                     <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
@@ -184,7 +183,7 @@ const AdminResponsaveis = () => {
                   {filteredResponsaveis.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={4}
                         className="h-24 text-center text-muted-foreground"
                       >
                         {responsaveis?.length === 0
@@ -212,11 +211,6 @@ const AdminResponsaveis = () => {
                         </TableCell>
                         <TableCell>
                           <p className="text-sm">{resp.email || "—"}</p>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={resp.status_aluno === "Ativo" ? "default" : "secondary"}>
-                            {resp.status_aluno || "Sem status"}
-                          </Badge>
                         </TableCell>
                         <TableCell>
                           {resp.alunos_vinculados.length === 0 ? (
