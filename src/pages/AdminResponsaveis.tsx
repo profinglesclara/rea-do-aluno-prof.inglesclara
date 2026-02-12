@@ -15,10 +15,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Search, ArrowLeft, Users, UserPlus, Link2 } from "lucide-react";
+import { Search, ArrowLeft, Users, UserPlus, Link2, Pencil } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { FotoPerfil } from "@/components/FotoPerfil";
 import { GerenciarVinculosDialog } from "@/components/admin/GerenciarVinculosDialog";
+import { EditarPerfilResponsavelDialog } from "@/components/admin/EditarPerfilResponsavelDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const STATUS_RESPONSAVEL = ["Ativo", "Em pausa", "Cancelado", "Inativo"];
@@ -30,6 +31,8 @@ type Responsavel = {
   email: string;
   foto_perfil_url: string | null;
   status_aluno: string | null;
+  telefone_responsavel: string | null;
+  notas_internas: string | null;
   alunos_vinculados: {
     user_id: string;
     nome_completo: string;
@@ -42,10 +45,8 @@ const AdminResponsaveis = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [vinculosDialogOpen, setVinculosDialogOpen] = useState(false);
-  const [selectedResponsavel, setSelectedResponsavel] = useState<{
-    id: string;
-    nome: string;
-  } | null>(null);
+  const [editarPerfilOpen, setEditarPerfilOpen] = useState(false);
+  const [selectedResponsavel, setSelectedResponsavel] = useState<Responsavel | null>(null);
 
   // Buscar responsáveis
   const { data: responsaveis, isLoading, refetch } = useQuery({
@@ -54,7 +55,7 @@ const AdminResponsaveis = () => {
       // Buscar todos os responsáveis
       const { data: responsaveisData, error: responsaveisError } = await supabase
         .from("usuarios")
-        .select("user_id, nome_completo, nome_de_usuario, email, foto_perfil_url, status_aluno")
+        .select("user_id, nome_completo, nome_de_usuario, email, foto_perfil_url, status_aluno, telefone_responsavel, notas_internas")
         .eq("tipo_usuario", "Responsável")
         .order("nome_completo");
 
@@ -98,11 +99,13 @@ const AdminResponsaveis = () => {
     ) || [];
 
   const handleGerenciarVinculos = (responsavel: Responsavel) => {
-    setSelectedResponsavel({
-      id: responsavel.user_id,
-      nome: responsavel.nome_completo,
-    });
+    setSelectedResponsavel(responsavel);
     setVinculosDialogOpen(true);
+  };
+
+  const handleEditarPerfil = (responsavel: Responsavel) => {
+    setSelectedResponsavel(responsavel);
+    setEditarPerfilOpen(true);
   };
 
   const handleVinculosAlterados = () => {
@@ -262,15 +265,26 @@ const AdminResponsaveis = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleGerenciarVinculos(resp)}
-                            className="gap-2"
-                          >
-                            <Link2 className="h-4 w-4" />
-                            Gerenciar Vínculos
-                          </Button>
+                          <div className="flex gap-2 justify-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditarPerfil(resp)}
+                              className="gap-1"
+                            >
+                              <Pencil className="h-4 w-4" />
+                              Editar
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleGerenciarVinculos(resp)}
+                              className="gap-1"
+                            >
+                              <Link2 className="h-4 w-4" />
+                              Vínculos
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -289,13 +303,29 @@ const AdminResponsaveis = () => {
 
       {/* Dialog de vínculos */}
       {selectedResponsavel && (
-        <GerenciarVinculosDialog
-          open={vinculosDialogOpen}
-          onOpenChange={setVinculosDialogOpen}
-          responsavelId={selectedResponsavel.id}
-          responsavelNome={selectedResponsavel.nome}
-          onVinculosAlterados={handleVinculosAlterados}
-        />
+        <>
+          <GerenciarVinculosDialog
+            open={vinculosDialogOpen}
+            onOpenChange={setVinculosDialogOpen}
+            responsavelId={selectedResponsavel.user_id}
+            responsavelNome={selectedResponsavel.nome_completo}
+            onVinculosAlterados={handleVinculosAlterados}
+          />
+          <EditarPerfilResponsavelDialog
+            open={editarPerfilOpen}
+            onOpenChange={setEditarPerfilOpen}
+            responsavelId={selectedResponsavel.user_id}
+            dadosAtuais={{
+              nome_completo: selectedResponsavel.nome_completo,
+              nome_de_usuario: selectedResponsavel.nome_de_usuario,
+              email: selectedResponsavel.email,
+              telefone_responsavel: selectedResponsavel.telefone_responsavel,
+              status_aluno: selectedResponsavel.status_aluno,
+              notas_internas: selectedResponsavel.notas_internas,
+            }}
+            onSuccess={() => refetch()}
+          />
+        </>
       )}
     </div>
   );
