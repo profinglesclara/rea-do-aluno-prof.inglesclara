@@ -113,8 +113,11 @@ export default function ResponsavelRelatorios() {
 
   const formatMesReferencia = (mes: string) => {
     try {
-      const [year, month] = mes.split("-");
-      const date = new Date(parseInt(year), parseInt(month) - 1);
+      const parts = mes.includes("/") ? mes.split("/") : mes.split("-");
+      const [first, second] = parts;
+      const month = mes.includes("/") ? parseInt(first) - 1 : parseInt(second) - 1;
+      const year = mes.includes("/") ? parseInt(second) : parseInt(first);
+      const date = new Date(year, month);
       return format(date, "MMMM/yyyy", { locale: ptBR }).replace(/^\w/, c => c.toUpperCase());
     } catch {
       return mes;
