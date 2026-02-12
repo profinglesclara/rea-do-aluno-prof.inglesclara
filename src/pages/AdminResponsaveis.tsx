@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -22,7 +21,7 @@ import { GerenciarVinculosDialog } from "@/components/admin/GerenciarVinculosDia
 import { EditarPerfilResponsavelDialog } from "@/components/admin/EditarPerfilResponsavelDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-const STATUS_RESPONSAVEL = ["Ativo", "Em pausa", "Cancelado", "Inativo"];
+
 
 type Responsavel = {
   user_id: string;
@@ -112,19 +111,6 @@ const AdminResponsaveis = () => {
     refetch();
   };
 
-  const handleStatusChange = async (responsavelId: string, novoStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from("usuarios")
-        .update({ status_aluno: novoStatus })
-        .eq("user_id", responsavelId);
-      if (error) throw error;
-      toast.success("Status atualizado com sucesso!");
-      refetch();
-    } catch (err: any) {
-      toast.error("Erro ao atualizar status: " + (err.message || "Erro desconhecido"));
-    }
-  };
 
   if (isLoading) {
     return (
@@ -228,21 +214,9 @@ const AdminResponsaveis = () => {
                           <p className="text-sm">{resp.email || "—"}</p>
                         </TableCell>
                         <TableCell>
-                          <Select
-                            value={resp.status_aluno || ""}
-                            onValueChange={(value) => handleStatusChange(resp.user_id, value)}
-                          >
-                            <SelectTrigger className="w-[130px]">
-                              <SelectValue placeholder="Sem status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {STATUS_RESPONSAVEL.map((status) => (
-                                <SelectItem key={status} value={status}>
-                                  {status}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Badge variant={resp.status_aluno === "Ativo" ? "default" : "secondary"}>
+                            {resp.status_aluno || "Sem status"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {resp.alunos_vinculados.length === 0 ? (
