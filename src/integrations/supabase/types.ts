@@ -811,6 +811,10 @@ export type Database = {
         Returns: number
       }
       sync_topicos_aluno: { Args: { p_aluno: string }; Returns: Json }
+      verificar_conquistas_automaticas: {
+        Args: { p_aluno_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "aluno" | "responsavel" | "adulto"
