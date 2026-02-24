@@ -30,7 +30,7 @@ const notificationIcons: Record<Notification["tipo"], string> = {
 };
 
 export function NotificationBell({ userId, isAdmin = false, isResponsavel = false }: NotificationBellProps) {
-  const { notifications, unreadCount, markAsRead } = useNotifications(userId);
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(userId);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -73,7 +73,17 @@ export function NotificationBell({ userId, isAdmin = false, isResponsavel = fals
         <div className="flex items-center justify-between border-b p-4">
           <h3 className="font-semibold">Notificações</h3>
           {unreadCount > 0 && (
-            <Badge variant="secondary">{unreadCount} não lidas</Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => {
+                markAllAsRead();
+                toast({ title: "Todas as notificações marcadas como lidas" });
+              }}
+            >
+              Marcar todas como lidas
+            </Button>
           )}
         </div>
         <ScrollArea className="h-[400px]">
