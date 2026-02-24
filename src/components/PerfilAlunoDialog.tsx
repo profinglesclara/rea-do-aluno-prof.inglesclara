@@ -80,8 +80,15 @@ export function PerfilAlunoDialog({ open, onOpenChange, user, onUserUpdated }: P
     setSavingPassword(true);
     try {
       if (senhaAtual) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const authEmail = session?.user?.email;
+        if (!authEmail) {
+          toast({ title: "Erro", description: "Sessão não encontrada. Faça login novamente.", variant: "destructive" });
+          setSavingPassword(false);
+          return;
+        }
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: `${user.nome_de_usuario}@aluno.app`,
+          email: authEmail,
           password: senhaAtual,
         });
         if (signInError) {
