@@ -815,6 +815,10 @@ export type Database = {
         Args: { p_aluno_id: string }
         Returns: undefined
       }
+      verificar_conquistas_nivel: {
+        Args: { p_aluno_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "aluno" | "responsavel" | "adulto"
