@@ -136,8 +136,16 @@ export function PerfilResponsavelDialog({ open, onOpenChange, user, onUserUpdate
     setSavingPassword(true);
     try {
       if (senhaAtual) {
+        // Get the actual auth email from the current session
+        const { data: { session } } = await supabase.auth.getSession();
+        const authEmail = session?.user?.email;
+        if (!authEmail) {
+          toast({ title: "Erro", description: "Sessão não encontrada. Faça login novamente.", variant: "destructive" });
+          setSavingPassword(false);
+          return;
+        }
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: `${user.nome_de_usuario}@aluno.app`,
+          email: authEmail,
           password: senhaAtual,
         });
         if (signInError) {
