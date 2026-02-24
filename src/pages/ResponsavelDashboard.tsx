@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, FileText } from "lucide-react";
+import { ArrowLeft, User, FileText, UserCircle } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LogoutButton } from "@/components/LogoutButton";
 import { FotoPerfil } from "@/components/FotoPerfil";
 import { EditarFotoPerfilDialog } from "@/components/EditarFotoPerfilDialog";
+import { PerfilResponsavelDialog } from "@/components/PerfilResponsavelDialog";
 import { useEffect, useState } from "react";
 
 type AlunoVinculado = {
@@ -32,6 +33,7 @@ export default function ResponsavelDashboard() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [fotoDialogOpen, setFotoDialogOpen] = useState(false);
+  const [perfilDialogOpen, setPerfilDialogOpen] = useState(false);
 
   // Buscar usuário logado
   useEffect(() => {
@@ -121,6 +123,10 @@ export default function ResponsavelDashboard() {
     setCurrentUser((prev: any) => ({ ...prev, foto_perfil_url: novaUrl }));
   };
 
+  const handleUserUpdated = (updates: Partial<any>) => {
+    setCurrentUser((prev: any) => ({ ...prev, ...updates }));
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -131,7 +137,7 @@ export default function ResponsavelDashboard() {
               fotoUrl={currentUser.foto_perfil_url}
               nome={currentUser.nome_completo}
               className="h-12 w-12"
-              onClick={() => setFotoDialogOpen(true)}
+              onClick={() => setPerfilDialogOpen(true)}
             />
             <div>
               <h1 className="text-3xl font-bold">{titulo}</h1>
@@ -143,6 +149,9 @@ export default function ResponsavelDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setPerfilDialogOpen(true)} title="Meu Perfil">
+              <UserCircle className="h-5 w-5" />
+            </Button>
             <Button variant="outline" size="icon" onClick={() => navigate("/responsavel/relatorios")} title="Relatórios">
               <FileText className="h-5 w-5" />
             </Button>
@@ -158,6 +167,20 @@ export default function ResponsavelDashboard() {
           nome={currentUser.nome_completo}
           fotoAtual={currentUser.foto_perfil_url}
           onFotoAtualizada={handleFotoAtualizada}
+        />
+
+        <PerfilResponsavelDialog
+          open={perfilDialogOpen}
+          onOpenChange={setPerfilDialogOpen}
+          user={{
+            user_id: currentUser.user_id,
+            nome_completo: currentUser.nome_completo,
+            nome_de_usuario: currentUser.nome_de_usuario,
+            email: currentUser.email,
+            telefone_responsavel: currentUser.telefone_responsavel,
+            foto_perfil_url: currentUser.foto_perfil_url,
+          }}
+          onUserUpdated={handleUserUpdated}
         />
 
         {/* Lista de alunos vinculados */}
