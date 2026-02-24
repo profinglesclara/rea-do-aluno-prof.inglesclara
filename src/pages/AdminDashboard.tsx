@@ -314,8 +314,9 @@ const AdminDashboard = () => {
                   <SelectContent>
                     <SelectItem value="all">Todos os status</SelectItem>
                     <SelectItem value="Ativo">Ativo</SelectItem>
+                    <SelectItem value="Em pausa">Em pausa</SelectItem>
+                    <SelectItem value="Cancelado">Cancelado</SelectItem>
                     <SelectItem value="Inativo">Inativo</SelectItem>
-                    <SelectItem value="Pausado">Pausado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
