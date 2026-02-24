@@ -44,7 +44,7 @@ export default function AlunoNotificacoes() {
     },
   });
 
-  const { notifications, markAsRead } = useNotifications(aluno?.user_id);
+  const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications(aluno?.user_id);
 
   // Filtrar notificações
   const filteredNotifications = notifications
@@ -109,7 +109,14 @@ export default function AlunoNotificacoes() {
             </Button>
             <h1 className="text-3xl font-bold">Notificações</h1>
           </div>
-          <LogoutButton variant="outline" />
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <Button variant="outline" onClick={() => { markAllAsRead(); toast({ title: "Todas as notificações marcadas como lidas" }); }}>
+                Marcar todas como lidas
+              </Button>
+            )}
+            <LogoutButton variant="outline" />
+          </div>
         </div>
 
         <Card>

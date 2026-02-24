@@ -70,7 +70,7 @@ export default function AdminNotificacoes() {
     },
   });
 
-  const { notifications, markAsRead } = useNotifications(admin?.user_id);
+  const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications(admin?.user_id);
 
   // Filtrar notificações
   const filteredNotifications = notifications.filter((n) => {
@@ -142,7 +142,14 @@ export default function AdminNotificacoes() {
             </Button>
             <h1 className="text-3xl font-bold">Notificações</h1>
           </div>
-          <LogoutButton variant="destructive" />
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <Button variant="outline" onClick={() => { markAllAsRead(); toast({ title: "Todas as notificações marcadas como lidas" }); }}>
+                Marcar todas como lidas
+              </Button>
+            )}
+            <LogoutButton variant="destructive" />
+          </div>
         </div>
 
         <Card>
