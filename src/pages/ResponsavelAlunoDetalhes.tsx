@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Calendar, BookOpen, Award, FileText, Eye, Download } from "lucide-react";
+import { ArrowLeft, Calendar, BookOpen, Award, FileText, Eye, Download, Trophy, Star, Target, Zap, Heart } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { LogoutButton } from "@/components/LogoutButton";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +17,15 @@ import { syncTopicosAluno } from "@/hooks/useAutoSyncTopicos";
 import { useCategoriasAtivasNomes } from "@/hooks/useCategoriasAtivas";
 import { downloadRelatorioPDF, type RelatorioPDFData } from "@/lib/pdf-generator";
 import { toast } from "sonner";
+
+const iconMap: Record<string, any> = {
+  Star,
+  Trophy,
+  Target,
+  Award,
+  Zap,
+  Heart,
+};
 
 export default function ResponsavelAlunoDetalhes() {
   const { aluno_id } = useParams<{aluno_id: string;}>();
@@ -546,7 +555,7 @@ export default function ResponsavelAlunoDetalhes() {
                     !isDesbloqueada ? "opacity-40 grayscale" : ""}`
                     }>
 
-                      <div className="text-4xl mb-2">{conquista.icone}</div>
+                      {(() => { const Icon = iconMap[conquista.icone] || Trophy; return <Icon className={`h-10 w-10 mx-auto ${conquistas.desbloqueadas.some((d: any) => d.conquista_id === conquista.id) ? "text-yellow-500" : "text-muted-foreground"}`} />; })()}
                       <p className="text-sm font-medium">{conquista.nome}</p>
                     </div>);
 
