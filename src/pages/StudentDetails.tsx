@@ -59,7 +59,9 @@ const StudentDetails = () => {
   const [conquistasDialogOpen, setConquistasDialogOpen] = useState(false);
   const [editarPerfilOpen, setEditarPerfilOpen] = useState(false);
   const [topicosDialogOpen, setTopicosDialogOpen] = useState(false);
+  const [deletando, setDeletando] = useState(false);
   
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Buscar conquistas do aluno
