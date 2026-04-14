@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ChevronDown, Trophy, Star, Target, Award, Zap, Heart, Pencil, BookOpen } from "lucide-react";
+import { ArrowLeft, ChevronDown, Trophy, Star, Target, Award, Zap, Heart, Pencil, BookOpen, Trash2 } from "lucide-react";
 import { GerenciarConquistasDialog } from "@/components/conquistas/GerenciarConquistasDialog";
 import { EditarPerfilAlunoDialog } from "@/components/admin/EditarPerfilAlunoDialog";
 import { GerenciarTopicosDialog } from "@/components/admin/GerenciarTopicosDialog";
@@ -15,6 +15,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FotoPerfil } from "@/components/FotoPerfil";
 import { formatarDataBR, formatarDataHoraBR } from "@/lib/utils";
 import { syncTopicosAluno } from "@/hooks/useAutoSyncTopicos";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 type DashboardRow = {
   aluno_id: string;
