@@ -387,11 +387,40 @@ const StudentDetails = () => {
               <p className="text-muted-foreground">Detalhes do Aluno</p>
             </div>
           </div>
-          <Button variant="outline" size="lg" onClick={() => setEditarPerfilOpen(true)}>
-            <Pencil className="mr-2 h-5 w-5" />
-            Editar Perfil
-          </Button>
-        </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="lg" onClick={() => setEditarPerfilOpen(true)}>
+              <Pencil className="mr-2 h-5 w-5" />
+              Editar Perfil
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="lg">
+                  <Trash2 className="mr-2 h-5 w-5" />
+                  Excluir Aluno
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Tem certeza que deseja excluir este aluno?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação é <strong>irreversível</strong>. Todos os dados do aluno serão permanentemente removidos, incluindo:
+                    aulas, tarefas, entregas, conquistas, tópicos de progresso, relatórios, notificações, vínculos com responsáveis
+                    e credenciais de acesso.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeletarUsuario}
+                    disabled={deletando}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deletando ? "Excluindo..." : "Sim, excluir permanentemente"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
 
         {/* Card de Resumo de Aulas */}
         <Card>
