@@ -421,6 +421,7 @@ const StudentDetails = () => {
               </AlertDialogContent>
             </AlertDialog>
           </div>
+        </div>
 
         {/* Card de Resumo de Aulas */}
         <Card>
