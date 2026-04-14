@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ChevronDown, Trophy, Star, Target, Award, Zap, Heart, Pencil, BookOpen } from "lucide-react";
+import { ArrowLeft, ChevronDown, Trophy, Star, Target, Award, Zap, Heart, Pencil, BookOpen, Trash2 } from "lucide-react";
 import { GerenciarConquistasDialog } from "@/components/conquistas/GerenciarConquistasDialog";
 import { EditarPerfilAlunoDialog } from "@/components/admin/EditarPerfilAlunoDialog";
 import { GerenciarTopicosDialog } from "@/components/admin/GerenciarTopicosDialog";
@@ -15,6 +15,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FotoPerfil } from "@/components/FotoPerfil";
 import { formatarDataBR, formatarDataHoraBR } from "@/lib/utils";
 import { syncTopicosAluno } from "@/hooks/useAutoSyncTopicos";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 type DashboardRow = {
   aluno_id: string;
@@ -47,7 +59,9 @@ const StudentDetails = () => {
   const [conquistasDialogOpen, setConquistasDialogOpen] = useState(false);
   const [editarPerfilOpen, setEditarPerfilOpen] = useState(false);
   const [topicosDialogOpen, setTopicosDialogOpen] = useState(false);
+  const [deletando, setDeletando] = useState(false);
   
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Buscar conquistas do aluno
@@ -288,6 +302,38 @@ const StudentDetails = () => {
     );
   }
 
+  const handleDeletarUsuario = async () => {
+    if (!aluno_id) return;
+    setDeletando(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("deletar-usuario", {
+        body: { user_id: aluno_id },
+        headers: {
+          Authorization: `Bearer ${sessionData.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Usuário excluído",
+        description: "Todas as informações do aluno foram removidas com sucesso.",
+      });
+      navigate("/admin");
+    } catch (err: any) {
+      console.error("Erro ao excluir usuário:", err);
+      toast({
+        title: "Erro ao excluir",
+        description: err.message || "Não foi possível excluir o usuário.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletando(false);
+    }
+  };
+
   const formatDateTime = (d: string | null) =>
     d ? formatarDataHoraBR(d) : "—";
 
@@ -341,10 +387,40 @@ const StudentDetails = () => {
               <p className="text-muted-foreground">Detalhes do Aluno</p>
             </div>
           </div>
-          <Button variant="outline" size="lg" onClick={() => setEditarPerfilOpen(true)}>
-            <Pencil className="mr-2 h-5 w-5" />
-            Editar Perfil
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="lg" onClick={() => setEditarPerfilOpen(true)}>
+              <Pencil className="mr-2 h-5 w-5" />
+              Editar Perfil
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="lg">
+                  <Trash2 className="mr-2 h-5 w-5" />
+                  Excluir Aluno
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Tem certeza que deseja excluir este aluno?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação é <strong>irreversível</strong>. Todos os dados do aluno serão permanentemente removidos, incluindo:
+                    aulas, tarefas, entregas, conquistas, tópicos de progresso, relatórios, notificações, vínculos com responsáveis
+                    e credenciais de acesso.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeletarUsuario}
+                    disabled={deletando}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deletando ? "Excluindo..." : "Sim, excluir permanentemente"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
 
         {/* Card de Resumo de Aulas */}
