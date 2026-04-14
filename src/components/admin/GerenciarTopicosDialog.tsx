@@ -137,10 +137,16 @@ export function GerenciarTopicosDialog({
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("topicos_progresso")
         .select("*")
         .eq("aluno", alunoId);
+      
+      if (nivelCefr) {
+        query = query.eq("nivel_cefr", nivelCefr as NivelCefr);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
