@@ -302,6 +302,38 @@ const StudentDetails = () => {
     );
   }
 
+  const handleDeletarUsuario = async () => {
+    if (!aluno_id) return;
+    setDeletando(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("deletar-usuario", {
+        body: { user_id: aluno_id },
+        headers: {
+          Authorization: `Bearer ${sessionData.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Usuário excluído",
+        description: "Todas as informações do aluno foram removidas com sucesso.",
+      });
+      navigate("/admin");
+    } catch (err: any) {
+      console.error("Erro ao excluir usuário:", err);
+      toast({
+        title: "Erro ao excluir",
+        description: err.message || "Não foi possível excluir o usuário.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletando(false);
+    }
+  };
+
   const formatDateTime = (d: string | null) =>
     d ? formatarDataHoraBR(d) : "—";
 
