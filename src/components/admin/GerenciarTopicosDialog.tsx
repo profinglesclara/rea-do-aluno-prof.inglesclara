@@ -143,7 +143,7 @@ export function GerenciarTopicosDialog({
         .eq("aluno", alunoId);
       
       if (nivelCefr) {
-        query = query.eq("nivel_cefr", nivelCefr);
+        query = query.eq("nivel_cefr", nivelCefr as NivelCefr);
       }
 
       const { data, error } = await query;
